@@ -1,0 +1,31 @@
+name: napari-interactive
+display_name: Interactive Segmentation
+# use 'hidden' to remove plugin from napari hub search results
+visibility: hidden
+# see https://napari.org/stable/plugins/technical_references/manifest.html#fields for valid categories
+categories: ["Utilities"]
+contributions:
+  commands:
+    - id: "napari-interactive.InteractiveSegmentationWidget"
+      title: "Interactive Segmentation"
+      python_name: "napari_interactive:InteractiveSegmentationWidget"
+    - id: "napari-interactive.InteractiveSegmentationWidgetSAM2"
+      title: "SAM2 2D"
+      python_name: "napari_interactive:InteractiveSegmentationWidgetSAM2"
+    - id: "napari-interactive.InteractiveSegmentationWidgetSAM2_t"
+      title: "SAM2 2D+t"
+      python_name: "napari_interactive:InteractiveSegmentationWidgetSAM2_t"
+    - id: "napari-interactive.InteractiveSegmentationWidgetSAM2_3D"
+      title: "SAM2 3D"
+      python_name: "napari_interactive:InteractiveSegmentationWidgetSAM2_3D"
+      
+  widgets:
+    - command: "napari-interactive.InteractiveSegmentationWidget"
+      display_name: Interactive Segmentation
+    - command: "napari-interactive.InteractiveSegmentationWidgetSAM2"
+      display_name: SAM2 2D
+    - command: "napari-interactive.InteractiveSegmentationWidgetSAM2_t"
+      display_name: SAM2 2D+t
+    - command: "napari-interactive.InteractiveSegmentationWidgetSAM2_3D"
+      display_name: SAM2 3D
+      #autogenerate: true

@@ -1,0 +1,15 @@
+name: napari-label-metrics
+display_name: Label Metrics
+# use 'hidden' to remove plugin from napari hub search results
+visibility: hidden
+# see https://napari.org/stable/plugins/technical_references/manifest.html#fields for valid categories
+categories: ["Utilities"]
+contributions:
+  commands:
+    - id: "napari-label-metrics.LabelMetricsWidget"
+      title: "Label Metrics"
+      python_name: "napari_label_metrics:LabelMetricsWidget"
+  widgets:
+    - command: "napari-label-metrics.LabelMetricsWidget"
+      display_name: Label Metrics
+      #autogenerate: true

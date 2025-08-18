@@ -1,0 +1,15 @@
+name: napari-merge-labels
+display_name: Merge Labels
+# use 'hidden' to remove plugin from napari hub search results
+visibility: hidden
+# see https://napari.org/stable/plugins/technical_references/manifest.html#fields for valid categories
+categories: ["Utilities"]
+contributions:
+  commands:
+    - id: "napari-merge-labels.MergeLabelsWidget"
+      title: "Merge Labels"
+      python_name: "napari_merge_labels:LabelMetricsWidget"
+  widgets:
+    - command: "napari-merge-labels.MergeLabelsWidget"
+      display_name: Merge Labels
+      #autogenerate: true

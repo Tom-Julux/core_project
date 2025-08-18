@@ -1,0 +1,19 @@
+# Dockerfile for project
+
+# inherit from python image
+FROM ghcr.io/napari/napari:sha-010f1e1
+
+# update to latest pip version 
+RUN pip uninstall opencv-python
+RUN pip install opencv-python-headless
+RUN pip install simpleitk
+
+RUN pip install torch torchvision hydra-core iopath
+
+WORKDIR /app
+
+COPY start.sh /app/start.sh
+
+ENV USE_DEBUG=True
+
+ENTRYPOINT [ "/bin/bash", "start.sh" ]
