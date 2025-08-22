@@ -28,7 +28,6 @@ from napari_toolkit.widgets import (
     setup_lineedit,
     setup_labeledslider,
     setup_pushbutton,
-    setup_hswitch,
     setup_radiobutton,
     setup_savefileselect,
     setup_dirselect,
@@ -84,11 +83,12 @@ class InteractiveSegmentationWidgetSAM2(QWidget):
         
         self.propagating_lock = threading.Lock()
 
-        self._multi_viwer_widget = None# MultipleViewerWidget(self._viewer)
+        self._multi_viwer_widget = MultipleViewerWidget(self._viewer)
+        self._viewer.window.add_dock_widget(self._multi_viwer_widget, name='Linked Viewer', area='bottom')
 
         self.build_gui()
         self.load_model()
-
+        
     # GUI
     def build_gui(self):
        
@@ -127,26 +127,14 @@ class InteractiveSegmentationWidgetSAM2(QWidget):
         )
 
 
-        _container, _layout = setup_vgroupbox(_scroll_layout, "View Control:")
-        self.view_select = setup_hswitch(_layout, ["View A", "View B", "View C"], default=1, function=lambda: self.set_view())
-        
-        # Progress indicatoin
-        setup_label(_layout, "Progress:")
-        self.progress_indicator_1 = setup_checkbox(_layout,"Contour in view 1", False)
-        self.progress_indicator_1.setDisabled(True)
-        self.progress_indicator_2 = setup_checkbox(_layout,"Contour in view 2", False)
-        self.progress_indicator_2.setDisabled(True)
-        self.progress_indicator_3 = setup_checkbox(_layout,"Contour in view 3", False)
-        self.progress_indicator_3.setDisabled(True)
-        #self.multi_view_checkbox = setup_checkbox(
-        #    _layout, "Use Multi View", False, function=lambda: self.setup_multiple_viewer_widget()
-        #)
-
         _container, _layout = setup_vgroupbox(_scroll_layout, "Hyperparameters:")
         _ = setup_label(_layout, "Threshold:")
         self.threshold_slider = setup_editdoubleslider(
             _layout, 2, -3, 3.0, 0.5, function=lambda: self.update_hyperparameters(), include_buttons=False
         )
+        
+        #self.scoring_ckbx = setup_checkbox(_layout, "Use Scoring", True, function=lambda: self.predict())
+        #self.connected_component_ckbx = setup_checkbox(_layout, "Connected Component", True, function=lambda: self.predict())
         
         _group_box, _layout = setup_vcollapsiblegroupbox(_scroll_layout, text="Propagation:", collapsed=False)
 
@@ -171,43 +159,16 @@ class InteractiveSegmentationWidgetSAM2(QWidget):
             _layout, "Export", "pop_out", self._viewer.theme, self.export_preview
         )
         self.update_prompt_type()
-    def setup_multiple_viewer_widget(self):
-        return
-        if get_value(self.multi_view_checkbox):
-            self._viewer.window.add_dock_widget(self._multi_viwer_widget, name='Linked Viewer', area='bottom')
-            #self._multi_viwer_widget.show()
-        else:
-            # If multi-view is disabled, hide the multiple viewer widget
-            #self._multi_viwer_widget.hide()
-            # remove the widget from the viewer
-            self._viewer.window.remove_dock_widget(self._multi_viwer_widget)
-
-    def set_view(self):
-        # Set the current view based on the selected option in the view_select widget
-        selected_view = get_value(self.view_select)[1]
-
-        print(f"Selected View: {selected_view}")
         
-        if selected_view == 0:
-            self._viewer.dims.order = (0, 1, 2)  # Set the order of dimensions to A
-        elif selected_view == 1:
-            self._viewer.dims.order = (1, 0, 2)
-        elif selected_view == 2:
-            self._viewer.dims.order = (2, 0, 1)
-
     def load_model(self):
         
-        try:
-            from sam2.build_sam import build_sam2_camera_predictor,build_sam2
-            from sam2.sam2_camera_predictor import SAM2CameraPredictor
+        from sam2.build_sam import build_sam2_camera_predictor,build_sam2
+        from sam2.sam2_camera_predictor import SAM2CameraPredictor
 
-            checkpoint = "/app/MedSAM2_latest.pt"
-            model_cfg= "configs/sam2.1_hiera_t512.yaml"
-            self.predictor = build_sam2_camera_predictor(model_cfg, checkpoint, device="cuda")
-            set_value(self.threshold_slider, self.predictor.mask_threshold)
-        except Exception as e:
-            self.predictor = None
-            return
+        checkpoint = "/app/MedSAM2_latest.pt"
+        model_cfg= "configs/sam2.1_hiera_t512.yaml"
+        self.predictor = build_sam2_camera_predictor(model_cfg, checkpoint, device="cuda")
+        set_value(self.threshold_slider, self.predictor.mask_threshold)
 
     def prepare_preview_layer(self):
         img_layer = get_value(self.layerselect_a)[1]
@@ -306,14 +267,59 @@ class InteractiveSegmentationWidgetSAM2(QWidget):
             img_data = (img_data - np.min(img_data)) / (np.max(img_data) - np.min(img_data)) * 255
             img_data = img_data.astype(np.uint8)
 
-            if prompt_type == "Mask":
+            if prompt_type == "Points":
+                # Get the positive and negative point layers
+                point_layer_positive = self.prompt_layers['point_positive']
+                point_layer_negative = self.prompt_layers['point_negative']
+
+                if len(point_layer_positive.data) == 0:
+                    return
+                
+                print(point_layer_positive.data, point_layer_negative.data)
+                # Get the data from the positive and negative point layers
+                pos_points = point_layer_positive.data#point_layer_positive.data[:, self._viewer.dims.order[::-1]][:, :2]
+                neg_points = point_layer_negative.data#.data[:, self._viewer.dims.order[::-1]][:, :2]
+
+                point_prompts = np.concatenate((pos_points, neg_points), axis=0)  # Use only the first two dimensions (x, y)
+                point_labels = np.concatenate((np.ones(len(pos_points)), np.zeros(len(neg_points))), axis=0)
+
+                out_mask_logits = np.zeros_like(np.zeros_like(self.preview_layer.data, dtype=np.uint8))
+                for point in point_prompts:
+                    # Convert point coordinates to the format expected by the predictor
+                    out_mask_logits[int(point[0]), int(point[1]), int(point[2])] = 1  # Assuming point is in (z, y, x) format
+                # apply binary dilation to the mask logits
+                from scipy.ndimage import binary_dilation
+                out_mask_logits = binary_dilation(out_mask_logits, structure=np.ones((3,3,3)), iterations=10).astype(np.float32)
+                print(out_mask_logits.sum())
+                #_, out_obj_ids, out_mask_logits = self.predictor.add_new_points(frame_idx=0, obj_id=0, points=point_prompts, labels=point_labels)
+                #frame_idx, obj_ids, out_mask_logits = self.predictor.add_new_points(frame_idx=0, obj_id=0, points=point_prompts, labels=point_labels)  # Use the multi-mask option if checked
+                
+
+                out_mask_masks = out_mask_logits > 0.5
+                #out_mask_masks = out_mask_masks.squeeze().cpu().numpy()  # Convert to numpy array
+
+            elif prompt_type == "BBox":
+                bbox_layer = self.prompt_layers['bbox']
+                if len(bbox_layer.data) == 0:
+                    return
+                bbox_data = bbox_layer.data[-1][:, self._viewer.dims.order][:,1:]
+
+                bbox_prompt = np.array([
+                    np.min(bbox_data[:, 1]), np.min(bbox_data[:, 0]),
+                    np.max(bbox_data[:, 1]), np.max(bbox_data[:, 0])
+                ])
+                frame_idx, obj_ids, out_mask_logits = self.predictor.add_new_prompt(frame_idx=0, obj_id=0, bbox=bbox_prompt) # XYXY format
+                out_mask_masks = out_mask_logits > self.predictor.mask_threshold
+                out_mask_masks = out_mask_masks.squeeze().cpu().numpy()  # Convert to numpy array
+
+            elif prompt_type == "Mask":
                 mask_prompt_layer = self.prompt_layers['mask']
                 prompt_frames = self._viewer.dims.current_step
                 mask_1 = mask_prompt_layer.data[prompt_frames[0]]
                 mask_2 = mask_prompt_layer.data[:,prompt_frames[1]]
                 mask_3 = mask_prompt_layer.data[:,:,prompt_frames[2]]
                 
-                if self.predictor is None:
+                if False:
                     # expand the mask to match the shape of the image data
                     mask_1 = np.repeat(mask_1[None,...], img_data.shape[0], axis=0)
                     mask_2 = np.repeat(mask_2[:,None,:], img_data.shape[1], axis=1)
@@ -385,15 +391,4 @@ class InteractiveSegmentationWidgetSAM2(QWidget):
 
 
     def export_preview(self):
-        # Export the contents of the preview layer to a separate layer
-        if self.preview_layer is None:
-            show_warning("No preview layer to export.")
-            return
-        
-        # Create a new Labels layer with the data from the preview layer
-        new_layer = Labels(name='Exported Layer', data=self.preview_layer.data.copy())
-        
-        # Add the new layer to the viewer
-        self._viewer.add_layer(new_layer)
-        
-        show_info("Preview layer exported successfully.")
+       pass

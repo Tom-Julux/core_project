@@ -206,16 +206,19 @@ class MultipleViewerWidget(QSplitter):
             self.viewer_model2.dims.order = order
             self.viewer_model3.dims.order = order
             return
-
-
-        order[-3:] = order[-2], order[-3], order[-1]
-        self.viewer_model1.dims.order = tuple(order)
-        order = list(self.viewer.dims.order)
-        order[-3:] = order[-1], order[-2], order[-3]
-        self.viewer_model2.dims.order = tuple(order)
-        order = list(self.viewer.dims.order)
-        order[-3:] = order[-3], order[-1], order[-2]
-        self.viewer_model3.dims.order = tuple(order)
+        if False: # dynamic order
+            order[-3:] = order[-2],order[-1], order[-3], 
+            self.viewer_model1.dims.order = tuple(order)
+            order = list(self.viewer.dims.order)
+            order[-3:] = order[-1], order[-3], order[-2], 
+            self.viewer_model2.dims.order = tuple(order)
+            order = list(self.viewer.dims.order)
+            order[-3:] = order[-3], order[-2], order[-1]
+            self.viewer_model3.dims.order = tuple(order)
+        else:  # static order
+            self.viewer_model1.dims.order = (0, 1, 2)
+            self.viewer_model2.dims.order = (1, 0, 2)
+            self.viewer_model3.dims.order = (2, 0, 1)
 
     def _layer_added(self, event):
         """add layer to additional viewers and connect all required events"""
