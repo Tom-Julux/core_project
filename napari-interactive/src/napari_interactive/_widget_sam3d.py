@@ -83,12 +83,20 @@ class InteractiveSegmentationWidgetSAM2(QWidget):
         self.preview_label_data = None  # Data Label for the preview layer
         
         self.propagating_lock = threading.Lock()
+        
+        self.prompt_frame_set_view_1 = False
+        self.prompt_frame_set_view_2 = False
+        self.prompt_frame_set_view_3 = False
 
-        self._multi_viwer_widget = None# MultipleViewerWidget(self._viewer)
+        self.prompt_frame_index_view_1 = 0
+        self.prompt_frame_index_view_2 = 0
+        self.prompt_frame_index_view_3 = 0
 
         self.build_gui()
         self.load_model()
 
+        self.update_prompt_type()
+        self.on_image_layer_scale_or_rotate()     
     # GUI
     def build_gui(self):
        
@@ -116,9 +124,8 @@ class InteractiveSegmentationWidgetSAM2(QWidget):
         _container, _layout = setup_vgroupbox(_scroll_layout, "Image Selection:")
         # layer select for image layer
         self.layerselect_a = setup_layerselect(
-            _layout, self._viewer, Image, function=lambda: self.predict()
+            _layout, self._viewer, Image, function=lambda: self.on_image_layer_change()
         )
-
 
         _container, _layout = setup_vgroupbox(_scroll_layout, "Prompt Selection:")
 
@@ -126,10 +133,17 @@ class InteractiveSegmentationWidgetSAM2(QWidget):
             _layout, ["Mask"], "QComboBox", function=lambda: self.update_prompt_type()
         )
 
-
         _container, _layout = setup_vgroupbox(_scroll_layout, "View Control:")
-        self.view_select = setup_hswitch(_layout, ["View A", "View B", "View C"], default=1, function=lambda: self.set_view())
+        self.view_select = setup_hswitch(_layout, ["View A", "View B", "View C"], default=0, function=lambda: self.set_view())
         
+        # check box automatically set the prompt on view change
+        self.auto_set_prompt_ckbx = setup_checkbox(
+            _layout,
+            "Auto Set Prompt",
+            True,
+            tooltips="Automatically set the prompt layer when the view changes.",
+            function=lambda: None
+        )
         # Progress indicatoin
         setup_label(_layout, "Progress:")
         self.progress_indicator_1 = setup_checkbox(_layout,"Contour in view 1", False)
@@ -138,9 +152,17 @@ class InteractiveSegmentationWidgetSAM2(QWidget):
         self.progress_indicator_2.setDisabled(True)
         self.progress_indicator_3 = setup_checkbox(_layout,"Contour in view 3", False)
         self.progress_indicator_3.setDisabled(True)
-        #self.multi_view_checkbox = setup_checkbox(
-        #    _layout, "Use Multi View", False, function=lambda: self.setup_multiple_viewer_widget()
-        #)
+
+        # Button to set the current mask as prompt
+        self.set_prompt_button = setup_iconbutton(
+            _layout,
+            "Set Prompt",
+            "check",
+            self._viewer.theme,
+            function=lambda: self.set_current_view_prompt(),
+            tooltips="Set the current mask as prompt.",
+        )
+
 
         _container, _layout = setup_vgroupbox(_scroll_layout, "Hyperparameters:")
         _ = setup_label(_layout, "Threshold:")
@@ -158,11 +180,13 @@ class InteractiveSegmentationWidgetSAM2(QWidget):
             function=lambda: self.run_predict_in_thread(),
             tooltips="Run the predict step",
         )
+        self.run_button.setEnabled(False)
+
         self.run_ckbx = setup_checkbox(
             _layout,
             "Auto Run Prediction",
             False,
-            tooltips="Run automatically after each interaction",
+            tooltips="Run automatically after each interaction once all three view prompts are set.",
         )
 
         _container, _layout = setup_vgroupbox(_scroll_layout, "Export")
@@ -170,23 +194,19 @@ class InteractiveSegmentationWidgetSAM2(QWidget):
         _ = setup_iconbutton(
             _layout, "Export", "pop_out", self._viewer.theme, self.export_preview
         )
-        self.update_prompt_type()
-    def setup_multiple_viewer_widget(self):
-        return
-        if get_value(self.multi_view_checkbox):
-            self._viewer.window.add_dock_widget(self._multi_viwer_widget, name='Linked Viewer', area='bottom')
-            #self._multi_viwer_widget.show()
-        else:
-            # If multi-view is disabled, hide the multiple viewer widget
-            #self._multi_viwer_widget.hide()
-            # remove the widget from the viewer
-            self._viewer.window.remove_dock_widget(self._multi_viwer_widget)
 
     def set_view(self):
         # Set the current view based on the selected option in the view_select widget
         selected_view = get_value(self.view_select)[1]
 
         print(f"Selected View: {selected_view}")
+
+        current_view = self._viewer.dims.order[0]
+        print(f"Current Order: {current_view}")
+
+        # Update the prompt type based on the current view
+        if get_value(self.auto_set_prompt_ckbx):
+            self.set_current_view_prompt()
         
         if selected_view == 0:
             self._viewer.dims.order = (0, 1, 2)  # Set the order of dimensions to A
@@ -195,6 +215,35 @@ class InteractiveSegmentationWidgetSAM2(QWidget):
         elif selected_view == 2:
             self._viewer.dims.order = (2, 0, 1)
 
+        
+    def set_current_view_prompt(self, view=None, state=True):
+        if view is None:
+            view = get_value(self.view_select)[1]
+
+        print(f"Setting prompt for view: {view}")
+        
+        mask_prompt_layer = self.prompt_layers['mask']
+        prompt_frames = self._viewer.dims.current_step
+        #mask_0 = np.take(mask_prompt_layer.data,prompt_frames[view], axis=view)  # Take the mask along the current view axis
+
+        if view == 0:
+            self.prompt_frame_set_view_1 = True
+            self.prompt_frame_index_view_1 = prompt_frames[0]
+            set_value(self.progress_indicator_1, self.prompt_frame_set_view_1)
+        elif view == 1:
+            self.prompt_frame_set_view_2 = True
+            self.prompt_frame_index_view_2 = prompt_frames[1]
+            set_value(self.progress_indicator_2, self.prompt_frame_set_view_2)
+        elif view == 2:
+            self.prompt_frame_set_view_3 = True
+            self.prompt_frame_index_view_3 = prompt_frames[2]
+            set_value(self.progress_indicator_3, self.prompt_frame_set_view_3)
+
+        if self.prompt_frame_set_view_1 and self.prompt_frame_set_view_2 and self.prompt_frame_set_view_3:
+            show_info("All three view prompts are set. You can now run the prediction.")
+            self.run_button.setEnabled(True)
+            if get_value(self.run_ckbx):
+                self.run_predict_in_thread()
     def load_model(self):
         
         try:
@@ -209,21 +258,41 @@ class InteractiveSegmentationWidgetSAM2(QWidget):
             self.predictor = None
             return
 
-    def prepare_preview_layer(self):
-        img_layer = get_value(self.layerselect_a)[1]
-
-        img_layer_shape = self._viewer.layers[img_layer].data.shape
-        self.preview_label_data = np.zeros(img_layer_shape, dtype=np.uint8)
-        self.preview_layer = Labels(name='Preview Layer', data=self.preview_label_data, opacity=0.5)
-
-        self._viewer.add_layer(self.preview_layer)
-
     def clear_prompt_layers(self):
         # Remove all existing prompt layers
         for layer in self.prompt_layers.values():
             if layer in self._viewer.layers:
                 self._viewer.layers.remove(layer)
         self.prompt_layers.clear()
+    
+    def on_image_layer_change(self, event=None):
+        # This method is called when the image layer is changed
+
+        self.closeEvent()  # Clean up previous layers
+        img_layer = get_value(self.layerselect_a)[1]
+
+        self.update_prompt_type()
+        # connect the image layer's scale and rotation changes to the preview layer
+        img_layer = self._viewer.layers[img_layer]
+        img_layer.events.scale.connect(self.on_image_layer_scale_or_rotate)
+        img_layer.events.rotate.connect(self.on_image_layer_scale_or_rotate)
+        img_layer.events.translate.connect(self.on_image_layer_scale_or_rotate)
+
+        self.on_image_layer_scale_or_rotate()
+
+    def on_image_layer_scale_or_rotate(self, event=None):
+        # This method is called when the image layer is scaled or rotated
+        img_layer = get_value(self.layerselect_a)[1]
+
+        if self.preview_layer is not None:
+            self.preview_layer.scale = self._viewer.layers[img_layer].scale
+            self.preview_layer.rotate = self._viewer.layers[img_layer].rotate
+            self.preview_layer.translate = self._viewer.layers[img_layer].translate
+        if self.prompt_layers:
+            for layer in self.prompt_layers.values():
+                layer.scale = self._viewer.layers[img_layer].scale
+                layer.rotate = self._viewer.layers[img_layer].rotate
+                layer.translate = self._viewer.layers[img_layer].translate
 
     def update_prompt_type(self):
         prompt_type = get_value(self.prompt_type_select)[0]
@@ -231,10 +300,15 @@ class InteractiveSegmentationWidgetSAM2(QWidget):
         self.clear_prompt_layers()
 
         img_layer = get_value(self.layerselect_a)[1]
-        print(f"Image Layer: {img_layer}")
+
         img_layer_shape = self._viewer.layers[img_layer].data.shape
         self.preview_label_data = np.zeros(img_layer_shape, dtype=np.uint8)
         self.preview_layer = Labels(name='Preview Layer', data=self.preview_label_data, opacity=0.5)
+        
+        self.preview_layer.scale = self._viewer.layers[img_layer].scale
+        self.preview_layer.rotate = self._viewer.layers[img_layer].rotate
+        self.preview_layer.translate = self._viewer.layers[img_layer].translate
+
         self._viewer.add_layer(self.preview_layer)
 
         if prompt_type == "Points":
@@ -267,10 +341,6 @@ class InteractiveSegmentationWidgetSAM2(QWidget):
             mask_layer.events.data.connect(self.on_prompt_update_event)
             # set active layer to bbox layer
             self._viewer.layers.selection.active = mask_layer
-   
-    def reset(self):
-        # Reset the predictor state
-        pass
         
     def update_hyperparameters(self):
         if get_value(self.run_ckbx):
@@ -288,7 +358,8 @@ class InteractiveSegmentationWidgetSAM2(QWidget):
     def run_predict_in_thread(self):
         @thread_worker
         def _worker():
-            self.predict()
+            with self.propagating_lock:
+                self.predict()
         _worker().start()
 
     def predict(self):
@@ -299,16 +370,15 @@ class InteractiveSegmentationWidgetSAM2(QWidget):
 
             mask_threshold = get_value(self.threshold_slider)
 
-            prompt_frames = self._viewer.dims.current_step
-
-            img_data =self._viewer.layers[img_layer].data.astype(np.float32)
+            img_data = self._viewer.layers[img_layer].data.astype(np.float32)
             # normalize the image data to 0-255 range if it's not already
             img_data = (img_data - np.min(img_data)) / (np.max(img_data) - np.min(img_data)) * 255
             img_data = img_data.astype(np.uint8)
 
             if prompt_type == "Mask":
                 mask_prompt_layer = self.prompt_layers['mask']
-                prompt_frames = self._viewer.dims.current_step
+                #prompt_frames = self._viewer.dims.current_step
+                prompt_frames = [self.prompt_frame_index_view_1, self.prompt_frame_index_view_2, self.prompt_frame_index_view_3]
                 mask_1 = mask_prompt_layer.data[prompt_frames[0]]
                 mask_2 = mask_prompt_layer.data[:,prompt_frames[1]]
                 mask_3 = mask_prompt_layer.data[:,:,prompt_frames[2]]
@@ -375,15 +445,26 @@ class InteractiveSegmentationWidgetSAM2(QWidget):
             print(f"Error in on_prompt_update_event: {e}")
             print(f"Traceback: {traceback.format_exc()}") 
 
-    def closeEvent(self, event):
+    def closeEvent(self, event=None):
         # Clean up any resources or connections
         for layer in self.prompt_layers.values():
             self._viewer.layers.remove(layer)
         self.prompt_layers.clear()
         if self.preview_layer:
             self._viewer.layers.remove(self.preview_layer)
+        # disconnect the image layer's scale and rotation changes
+        img_layer = get_value(self.layerselect_a)[1]
+        if img_layer in self._viewer.layers:
+            img_layer = self._viewer.layers[img_layer]
+            img_layer.events.scale.disconnect(self.on_image_layer_scale_or_rotate)
+            img_layer.events.rotate.disconnect(self.on_image_layer_scale_or_rotate)
+            img_layer.events.translate.disconnect(self.on_image_layer_scale_or_rotate)
 
-
+        self.prompt_frame_set_view_1 = False
+        self.prompt_frame_set_view_2 = False
+        self.prompt_frame_set_view_3 = False
+        self.run_button.setEnabled(False)
+        
     def export_preview(self):
         # Export the contents of the preview layer to a separate layer
         if self.preview_layer is None:
