@@ -26,6 +26,8 @@ from napari_toolkit.widgets import (
     setup_label,
     setup_layerselect,
     setup_lineedit,
+    setup_fileselect,
+    setup_savefileselect,
     setup_labeledslider,
     setup_pushbutton,
     setup_hswitch,
@@ -72,7 +74,8 @@ layer_to_controls[ScribblePromptLayer] = CustomQtScribbleControls
 layer_to_controls[ContourPromptLayer] = QtShapesControls
 
 from .multiple_viewer_widget import MultipleViewerWidget
-class InteractiveSegmentationWidgetSAM2(QWidget):
+
+class InteractiveSegmentationWidget3DBase(QWidget):
     def __init__(self, viewer: Viewer):
         super().__init__()
         self._viewer = viewer
@@ -83,7 +86,7 @@ class InteractiveSegmentationWidgetSAM2(QWidget):
         self.preview_label_data = None  # Data Label for the preview layer
         
         self.propagating_lock = threading.Lock()
-        
+        self.rerun_after_lock = False
         self.prompt_frame_set_view_1 = False
         self.prompt_frame_set_view_2 = False
         self.prompt_frame_set_view_3 = False
@@ -96,31 +99,32 @@ class InteractiveSegmentationWidgetSAM2(QWidget):
         self.load_model()
 
         self.update_prompt_type()
-        self.on_image_layer_scale_or_rotate()     
+        self.on_image_layer_scale_or_rotate()
+        
+    def load_model(self):
+        pass
+
+    def predict(self):
+        pass 
+    
+    def reset_model(self):
+        pass
+
+    def setup_hyperparameter_gui(self, _layout):
+        pass
+
+    def setup_model_selection_gui(self, _scroll_layout):
+        pass
+
     # GUI
     def build_gui(self):
        
         main_layout = QVBoxLayout(self)
 
         _scroll_widget, _scroll_layout = setup_vscrollarea(main_layout)
-        self._scroll_layout = _scroll_layout
-        # log view
-        _container, _layout = setup_vcollapsiblegroupbox(_scroll_layout, "Setup", True)
 
-        #_container, _layout = setup_vgroupbox(_scroll_layout, "Metric mode:")
-        _ = setup_label(_layout, "Select model:")
+        self.setup_model_selection_gui(_scroll_layout)
         
-        model_options = ["MedSAM2-May2025","SAM2.1 tiny", "SAM2.1 small", "SAM2.1 large"]
-
-        self.model_selection = setup_combobox(
-            _layout, options=model_options, function=lambda: print("Model Selection Changed")
-        )
-      
-        _ = setup_iconbutton(
-            _layout, "Initialize", "new_labels", self._viewer.theme, self.load_model
-        )
-
-
         _container, _layout = setup_vgroupbox(_scroll_layout, "Image Selection:")
         # layer select for image layer
         self.layerselect_a = setup_layerselect(
@@ -137,13 +141,14 @@ class InteractiveSegmentationWidgetSAM2(QWidget):
         self.view_select = setup_hswitch(_layout, ["View A", "View B", "View C"], default=0, function=lambda: self.set_view())
         
         # check box automatically set the prompt on view change
-        self.auto_set_prompt_ckbx = setup_checkbox(
-            _layout,
-            "Auto Set Prompt",
-            True,
-            tooltips="Automatically set the prompt layer when the view changes.",
-            function=lambda: None
-        )
+        #self.auto_set_prompt_ckbx = setup_checkbox(
+        #    _layout,
+        #    "Auto Set Prompt",
+        #    True,
+        #    tooltips="Automatically set the prompt layer when the view changes.",
+        #    function=lambda: None
+        #)
+
         # Progress indicatoin
         setup_label(_layout, "Progress:")
         self.progress_indicator_1 = setup_checkbox(_layout,"Contour in view 1", False)
@@ -163,14 +168,11 @@ class InteractiveSegmentationWidgetSAM2(QWidget):
             tooltips="Set the current mask as prompt.",
         )
 
-
         _container, _layout = setup_vgroupbox(_scroll_layout, "Hyperparameters:")
-        _ = setup_label(_layout, "Threshold:")
-        self.threshold_slider = setup_editdoubleslider(
-            _layout, 2, -3, 3.0, 0.5, function=lambda: self.update_hyperparameters(), include_buttons=False
-        )
+
+        self.setup_hyperparameter_gui(_layout)
         
-        _group_box, _layout = setup_vcollapsiblegroupbox(_scroll_layout, text="Propagation:", collapsed=False)
+        _group_box, _layout = setup_vgroupbox(_scroll_layout, text="Propagation:")
 
         self.run_button = setup_iconbutton(
             _layout,
@@ -189,10 +191,38 @@ class InteractiveSegmentationWidgetSAM2(QWidget):
             tooltips="Run automatically after each interaction once all three view prompts are set.",
         )
 
-        _container, _layout = setup_vgroupbox(_scroll_layout, "Export")
+        _container, _layout = setup_vgroupbox(_scroll_layout, "Export to layer:")
         _ = setup_label(_layout, "Export the contents of the preview layer to a sperate layer.")
+
+        #self.export_to_new_layer_ckbx = setup_checkbox(
+        #    _layout, "Accumulate",True, tooltips="If unchecked, the preview layer will be exported to the currently selected layer.")
+
         _ = setup_iconbutton(
-            _layout, "Export", "pop_out", self._viewer.theme, self.export_preview
+            _layout, "Export to layer", "pop_out", self._viewer.theme, self.export_preview
+        )
+        _container, _layout = setup_vcollapsiblegroupbox(_scroll_layout, "Export to file:", collapsed=True)
+        _ = setup_label(_layout, "Export the contents of the preview layer to a new file.")
+
+        self.export_file_select = setup_savefileselect(
+            _layout,
+            "Export File:",
+            read_only=False,
+            filtering="Images (*.mha)",
+            tooltips="File to export the current preview layer to.",
+            function=lambda: None,
+        )
+
+        _ = setup_iconbutton(
+            _layout, "Export to file", "copy_to_clipboard", self._viewer.theme, self.export_to_file
+        )
+
+        # Reset group
+        _container, _layout = setup_vgroupbox(_scroll_layout, "Reset:")
+        
+        _ = setup_label(_layout, "Reset the widget and clear all prompt and preview layers.")
+
+        _ = setup_iconbutton(
+            _layout, "Reset", "erase", self._viewer.theme, self.on_image_layer_change
         )
 
     def set_view(self):
@@ -205,8 +235,8 @@ class InteractiveSegmentationWidgetSAM2(QWidget):
         print(f"Current Order: {current_view}")
 
         # Update the prompt type based on the current view
-        if get_value(self.auto_set_prompt_ckbx):
-            self.set_current_view_prompt()
+        #if get_value(self.auto_set_prompt_ckbx):
+        #    self.set_current_view_prompt(view=selected_view)
         
         if selected_view == 0:
             self._viewer.dims.order = (0, 1, 2)  # Set the order of dimensions to A
@@ -215,8 +245,7 @@ class InteractiveSegmentationWidgetSAM2(QWidget):
         elif selected_view == 2:
             self._viewer.dims.order = (2, 0, 1)
 
-        
-    def set_current_view_prompt(self, view=None, state=True):
+    def set_current_view_prompt(self, view=None):
         if view is None:
             view = get_value(self.view_select)[1]
 
@@ -224,39 +253,29 @@ class InteractiveSegmentationWidgetSAM2(QWidget):
         
         mask_prompt_layer = self.prompt_layers['mask']
         prompt_frames = self._viewer.dims.current_step
+        #prompt_frames = [self.prompt_frame_index_view_1, self.prompt_frame_index_view_2, self.prompt_frame_index_view_3]
         #mask_0 = np.take(mask_prompt_layer.data,prompt_frames[view], axis=view)  # Take the mask along the current view axis
 
         if view == 0:
             self.prompt_frame_set_view_1 = True
             self.prompt_frame_index_view_1 = prompt_frames[0]
             set_value(self.progress_indicator_1, self.prompt_frame_set_view_1)
+            self.progress_indicator_1.setText(f"Contour in view 1 (slice {self.prompt_frame_index_view_1})")
         elif view == 1:
             self.prompt_frame_set_view_2 = True
             self.prompt_frame_index_view_2 = prompt_frames[1]
             set_value(self.progress_indicator_2, self.prompt_frame_set_view_2)
+            self.progress_indicator_2.setText(f"Contour in view 2 (slice {self.prompt_frame_index_view_2})")
         elif view == 2:
             self.prompt_frame_set_view_3 = True
             self.prompt_frame_index_view_3 = prompt_frames[2]
             set_value(self.progress_indicator_3, self.prompt_frame_set_view_3)
+            self.progress_indicator_3.setText(f"Contour in view 3 (slice {self.prompt_frame_index_view_3})")
 
         if self.prompt_frame_set_view_1 and self.prompt_frame_set_view_2 and self.prompt_frame_set_view_3:
-            show_info("All three view prompts are set. You can now run the prediction.")
             self.run_button.setEnabled(True)
             if get_value(self.run_ckbx):
                 self.run_predict_in_thread()
-    def load_model(self):
-        
-        try:
-            from sam2.build_sam import build_sam2_camera_predictor,build_sam2
-            from sam2.sam2_camera_predictor import SAM2CameraPredictor
-
-            checkpoint = "/app/MedSAM2_latest.pt"
-            model_cfg= "configs/sam2.1_hiera_t512.yaml"
-            self.predictor = build_sam2_camera_predictor(model_cfg, checkpoint, device="cuda")
-            set_value(self.threshold_slider, self.predictor.mask_threshold)
-        except Exception as e:
-            self.predictor = None
-            return
 
     def clear_prompt_layers(self):
         # Remove all existing prompt layers
@@ -358,13 +377,126 @@ class InteractiveSegmentationWidgetSAM2(QWidget):
     def run_predict_in_thread(self):
         @thread_worker
         def _worker():
+            if self.propagating_lock.locked():
+                self.rerun_after_lock = True
+                return
             with self.propagating_lock:
-                self.predict()
+                self.rerun_after_lock = True
+                while self.rerun_after_lock:
+                    self.rerun_after_lock = False
+                    self.predict()
         _worker().start()
+
+    def closeEvent(self, event=None):
+        # Clean up any resources or connections
+        for layer in self.prompt_layers.values():
+            self._viewer.layers.remove(layer)
+        self.prompt_layers.clear()
+        if self.preview_layer:
+            self._viewer.layers.remove(self.preview_layer)
+        # disconnect the image layer's scale and rotation changes
+        img_layer = get_value(self.layerselect_a)[1]
+        if img_layer in self._viewer.layers:
+            img_layer = self._viewer.layers[img_layer]
+            img_layer.events.scale.disconnect(self.on_image_layer_scale_or_rotate)
+            img_layer.events.rotate.disconnect(self.on_image_layer_scale_or_rotate)
+            img_layer.events.translate.disconnect(self.on_image_layer_scale_or_rotate)
+
+        self.prompt_frame_set_view_1 = False
+        self.prompt_frame_set_view_2 = False
+        self.prompt_frame_set_view_3 = False
+        self.run_button.setEnabled(False)
+
+        self.reset_model()
+        
+    def export_preview(self):
+        # Export the contents of the preview layer to a separate layer
+        if self.preview_layer is None:
+            show_warning("No preview layer to export.")
+            return
+        
+        # Create a new Labels layer with the data from the preview layer
+        new_layer = Labels(name='Exported Layer', data=self.preview_layer.data.copy())
+        
+        # Add the new layer to the viewer
+        self._viewer.add_layer(new_layer)
+        
+        show_info("Preview layer exported successfully.")
+    
+    def export_to_file(self):
+        if self.preview_layer is None:
+            show_warning("No preview layer to export.")
+            return
+        
+        file_path = get_value(self.export_file_select)
+        if not file_path:
+            show_warning("Please select a file path to export the preview layer.")
+            return
+        
+        try:
+            import SimpleITK as sitk
+            # Convert the numpy array to a SimpleITK image
+            sitk_image = sitk.GetImageFromArray(self.preview_layer.data.astype(np.uint8))
+            # Save the image to the specified file path
+            sitk.WriteImage(sitk_image, file_path, useCompression=True)
+            show_info(f"Preview layer exported successfully to {file_path}.")
+        except Exception as e:
+            show_error(f"Failed to export preview layer: {e}")
+
+class InteractiveSegmentationWidgetSAM2(InteractiveSegmentationWidget3DBase):
+    def __init__(self, viewer: Viewer):
+        super().__init__(viewer)
+        
+    def setup_hyperparameter_gui(self, _layout):
+        _ = setup_label(_layout, "Threshold:")
+        self.threshold_slider = setup_editdoubleslider(
+            _layout, 2, -3, 3.0, 0.5, function=lambda: self.update_hyperparameters(), include_buttons=False
+        )
+        pass
+
+    def setup_model_selection_gui(self, _scroll_layout):
+        pass
+        # log view
+        _container, _layout = setup_vcollapsiblegroupbox(_scroll_layout, "Setup", True)
+
+        #_container, _layout = setup_vgroupbox(_scroll_layout, "Metric mode:")
+        _ = setup_label(_layout, "Select model:")
+        
+        model_options = ["MedSAM2-May2025","SAM2.1 tiny", "SAM2.1 small", "SAM2.1 large"]
+
+        self.model_selection = setup_combobox(
+            _layout, options=model_options, function=lambda: print("Model Selection Changed")
+        )
+      
+        _ = setup_iconbutton(
+            _layout, "Initialize", "new_labels", self._viewer.theme, lambda: self.on_model_change()
+        )
+
+    def on_model_change(self):
+        self.reset_model()
+        self.load_model()
+
+    def load_model(self):
+        try:
+            from sam2.build_sam import build_sam2_camera_predictor,build_sam2
+            from sam2.sam2_camera_predictor import SAM2CameraPredictor
+
+            checkpoint = "/app/MedSAM2_latest.pt"
+            model_cfg= "configs/sam2.1_hiera_t512.yaml"
+            self.predictor = build_sam2_camera_predictor(model_cfg, checkpoint, device="cuda")
+            set_value(self.threshold_slider, self.predictor.mask_threshold)
+        except Exception as e:
+            self.predictor = None
+
+            show_warning(f"Failed to load model. {e}")
+            show_warning("Empty preditions will be returned.")
+            return
+
+    def reset_model(self):
+        pass
 
     def predict(self):
         try:
-            
             prompt_type = get_value(self.prompt_type_select)[0]
             img_layer = get_value(self.layerselect_a)[1]
 
@@ -444,37 +576,3 @@ class InteractiveSegmentationWidgetSAM2(QWidget):
         except Exception as e:
             print(f"Error in on_prompt_update_event: {e}")
             print(f"Traceback: {traceback.format_exc()}") 
-
-    def closeEvent(self, event=None):
-        # Clean up any resources or connections
-        for layer in self.prompt_layers.values():
-            self._viewer.layers.remove(layer)
-        self.prompt_layers.clear()
-        if self.preview_layer:
-            self._viewer.layers.remove(self.preview_layer)
-        # disconnect the image layer's scale and rotation changes
-        img_layer = get_value(self.layerselect_a)[1]
-        if img_layer in self._viewer.layers:
-            img_layer = self._viewer.layers[img_layer]
-            img_layer.events.scale.disconnect(self.on_image_layer_scale_or_rotate)
-            img_layer.events.rotate.disconnect(self.on_image_layer_scale_or_rotate)
-            img_layer.events.translate.disconnect(self.on_image_layer_scale_or_rotate)
-
-        self.prompt_frame_set_view_1 = False
-        self.prompt_frame_set_view_2 = False
-        self.prompt_frame_set_view_3 = False
-        self.run_button.setEnabled(False)
-        
-    def export_preview(self):
-        # Export the contents of the preview layer to a separate layer
-        if self.preview_layer is None:
-            show_warning("No preview layer to export.")
-            return
-        
-        # Create a new Labels layer with the data from the preview layer
-        new_layer = Labels(name='Exported Layer', data=self.preview_layer.data.copy())
-        
-        # Add the new layer to the viewer
-        self._viewer.add_layer(new_layer)
-        
-        show_info("Preview layer exported successfully.")
