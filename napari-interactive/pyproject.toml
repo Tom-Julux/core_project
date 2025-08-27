@@ -32,7 +32,8 @@ dependencies = [
     "hydra-core",
     "iopath",
     "torchvision",
-    "tqdm"
+    "tqdm",
+    "nninteractive"
 ]
 
 [project.optional-dependencies]

@@ -3,6 +3,8 @@ from pathlib import Path
 
 import threading
 import time
+import torch
+import os
 import cv2
 from magicgui import magicgui
 from napari.layers import Image
@@ -641,15 +643,16 @@ class InteractiveSegmentationWidgetNNI(InteractiveSegmentationWidget3DBase):
             from huggingface_hub import snapshot_download  # Install huggingface_hub if not already installed
             REPO_ID = "nnInteractive/nnInteractive"
             MODEL_NAME = "nnInteractive_v1.0"  # Updated models may be available in the future
-            #DOWNLOAD_DIR = "./code/checkpoints/nnInteractive"  # Specify the download directory
+            DOWNLOAD_DIR = "/nnInteractive"  # Specify the download directory
             download_path = snapshot_download(
                 repo_id=REPO_ID,
                 allow_patterns=[f"{MODEL_NAME}/*"],
-                #local_dir=DOWNLOAD_DIR
+                resume_download=True,
+                local_dir=DOWNLOAD_DIR
             )
             from nnInteractive.inference.inference_session import nnInteractiveInferenceSession
             self.session = nnInteractiveInferenceSession(
-                device=torch.device(device),  # Set inference device
+                device=torch.device("cuda"),  # Set inference device
                 use_torch_compile=False,  # Experimental: Not tested yet
                 verbose=False,
                 torch_n_threads=1,  # Use available CPU cores
@@ -662,7 +665,7 @@ class InteractiveSegmentationWidgetNNI(InteractiveSegmentationWidget3DBase):
             self.session.initialize_from_trained_model_folder(model_path)
 
         except Exception as e:
-            self.predictor = None
+            self.session = None
 
             show_warning(f"Failed to load model. {e}")
             show_warning("Empty preditions will be returned.")
@@ -676,7 +679,7 @@ class InteractiveSegmentationWidgetNNI(InteractiveSegmentationWidget3DBase):
             prompt_type = get_value(self.prompt_type_select)[0]
             img_layer = get_value(self.layerselect_a)[1]
 
-            mask_threshold = get_value(self.threshold_slider)
+            #mask_threshold = get_value(self.threshold_slider)
 
             img_data = self._viewer.layers[img_layer].data.astype(np.float32)
             # normalize the image data to 0-255 range if it's not already
@@ -691,7 +694,7 @@ class InteractiveSegmentationWidgetNNI(InteractiveSegmentationWidget3DBase):
                 mask_2 = mask_prompt_layer.data[:,prompt_frames[1]]
                 mask_3 = mask_prompt_layer.data[:,:,prompt_frames[2]]
                 
-                if self.predictor is None:
+                if self.session is None:
                     # expand the mask to match the shape of the image data
                     mask_1 = np.repeat(mask_1[None,...], img_data.shape[0], axis=0)
                     mask_2 = np.repeat(mask_2[:,None,:], img_data.shape[1], axis=1)
@@ -704,24 +707,25 @@ class InteractiveSegmentationWidgetNNI(InteractiveSegmentationWidget3DBase):
                     out_mask_masks = union_mask.astype(np.uint8)  # Convert to uint8
                 else: 
                     print("USING SAM2")
-                    session.set_image(mr[None])
-                    target_tensor = torch.zeros(mr.shape, dtype=torch.uint8)  # Must be 3D (x, y, z)
-                    session.set_target_buffer(target_tensor)
+                    from skimage.morphology import binary_dilation
+                    self.session.set_image(img_data[None])
+                    target_tensor = torch.zeros(img_data.shape, dtype=torch.uint8)  # Must be 3D (x, y, z)
+                    self.session.set_target_buffer(target_tensor)
                             
                     lasso = np.zeros(target_tensor.shape, dtype=np.uint8)
                     lasso[prompt_frames[0]] = binary_dilation(mask_prompt_layer.data[prompt_frames[0]], iterations=1).astype(np.uint8)
-                    session.add_lasso_interaction(lasso, include_interaction=True)
+                    self.session.add_lasso_interaction(lasso, include_interaction=True)
 
                     lasso = np.zeros(target_tensor.shape, dtype=np.uint8)
                     lasso[:,prompt_frames[1]] = binary_dilation(mask_prompt_layer.data[:,prompt_frames[1]], iterations=1).astype(np.uint8)
-                    session.add_lasso_interaction(lasso, include_interaction=True)
+                    self.session.add_lasso_interaction(lasso, include_interaction=True)
 
                     lasso = np.zeros(target_tensor.shape, dtype=np.uint8)
                     lasso[:,:,prompt_frames[2]] = binary_dilation(mask_prompt_layer.data[:,:,prompt_frames[2]], iterations=1).astype(np.uint8)
-                    session.add_lasso_interaction(lasso, include_interaction=True)
+                    self.session.add_lasso_interaction(lasso, include_interaction=True)
 
-                    results = session.target_buffer.clone()
-                    session.reset_interactions()
+                    results = self.session.target_buffer.clone()
+                    self.session.reset_interactions()
                     pred = results.cpu().numpy()
                     out_mask_masks = pred.astype(np.uint8)  # Convert to uint8
 
@@ -740,3 +744,5 @@ class InteractiveSegmentationWidgetNNI(InteractiveSegmentationWidget3DBase):
         except Exception as e:
             print(f"Error in on_prompt_update_event: {e}")
             print(f"Traceback: {traceback.format_exc()}") 
+
+InteractiveSegmentationWidgetSAM2 = InteractiveSegmentationWidgetNNI
