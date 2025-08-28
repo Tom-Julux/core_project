@@ -13,4 +13,8 @@ from ._widget_sam3d import (
     InteractiveSegmentationWidgetSAM2 as InteractiveSegmentationWidgetSAM2_3D
 )
 
-__all__ = ("InteractiveSegmentationWidget", "InteractiveSegmentationWidgetSAM2", "InteractiveSegmentationWidgetSAM2_t", "InteractiveSegmentationWidgetSAM2_3D")
+from ._widget_nni3d import (
+    InteractiveSegmentationWidgetNNI
+)
+
+__all__ = ("InteractiveSegmentationWidget", "InteractiveSegmentationWidgetSAM2", "InteractiveSegmentationWidgetSAM2_t", "InteractiveSegmentationWidgetSAM2_3D", "InteractiveSegmentationWidgetNNI")

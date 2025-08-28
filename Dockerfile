@@ -9,6 +9,7 @@ RUN pip install opencv-python-headless
 RUN pip install simpleitk
 
 RUN pip install torch torchvision hydra-core iopath
+RUN pip install nninteractive
 
 WORKDIR /app
 
