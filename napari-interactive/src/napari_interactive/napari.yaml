@@ -6,9 +6,6 @@ visibility: hidden
 categories: ["Utilities"]
 contributions:
   commands:
-    - id: "napari-interactive.InteractiveSegmentationWidget"
-      title: "Interactive Segmentation"
-      python_name: "napari_interactive:InteractiveSegmentationWidget"
     - id: "napari-interactive.InteractiveSegmentationWidgetSAM2"
       title: "SAM2 2D"
       python_name: "napari_interactive:InteractiveSegmentationWidgetSAM2"
@@ -24,8 +21,6 @@ contributions:
 
       
   widgets:
-    - command: "napari-interactive.InteractiveSegmentationWidget"
-      display_name: Interactive Segmentation
     - command: "napari-interactive.InteractiveSegmentationWidgetSAM2"
       display_name: SAM2 2D
     - command: "napari-interactive.InteractiveSegmentationWidgetSAM2_t"

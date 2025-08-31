@@ -47,9 +47,7 @@ from qtpy.QtWidgets import (
 )
 import traceback
 
-
-
-from napari_interactive._widget_sam3d import InteractiveSegmentationWidget3DBase
+from .base_widget import InteractiveSegmentationWidget3DBase
 
 class InteractiveSegmentationWidgetNNI(InteractiveSegmentationWidget3DBase):
     def __init__(self, viewer: Viewer):
