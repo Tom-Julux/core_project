@@ -52,7 +52,8 @@ from .base_widget import InteractiveSegmentationWidget3DBase
 class InteractiveSegmentationWidgetNNI(InteractiveSegmentationWidget3DBase):
     def __init__(self, viewer: Viewer):
         super().__init__(viewer)
-        self.session = None
+        self.run_button.setEnabled(True)
+
         
     def setup_hyperparameter_gui(self, _layout):
         pass
@@ -129,11 +130,19 @@ class InteractiveSegmentationWidgetNNI(InteractiveSegmentationWidget3DBase):
             print(self.session)
             if prompt_type == "Mask":
                 mask_prompt_layer = self.prompt_layers['mask']
-                #prompt_frames = self._viewer.dims.current_step
+                #prompt_frames = self._viewer.dims.current_step                
                 prompt_frames = [self.prompt_frame_index_view_1, self.prompt_frame_index_view_2, self.prompt_frame_index_view_3]
+                scale_factors = self._viewer.layers[img_layer].scale
+                # invert prompt frames where scale factor is negative to shape - frame
+                #for i in range(3):
+                #    if scale_factors[i] < 0:
+                #        prompt_frames[i] = img_data.shape[i] - 1 - prompt_frames[i]
+                # in a single line
+                prompt_frames = [img_data.shape[i] - 1 - prompt_frames[i] if scale_factors[i] < 0 else prompt_frames[i] for i in range(3)]
                 mask_1 = mask_prompt_layer.data[prompt_frames[0]]
                 mask_2 = mask_prompt_layer.data[:,prompt_frames[1]]
                 mask_3 = mask_prompt_layer.data[:,:,prompt_frames[2]]
+                
                 
                 if False:
                     # expand the mask to match the shape of the image data
@@ -147,23 +156,23 @@ class InteractiveSegmentationWidgetNNI(InteractiveSegmentationWidget3DBase):
                     print(mask_1.shape, mask_2.shape, mask_3.shape, union_mask.shape)
                     out_mask_masks = union_mask.astype(np.uint8)  # Convert to uint8
                 else: 
-                    print("USING SAM2")
-                    from skimage.morphology import binary_dilation
+                    print("USING NNI")
+                    from scipy.ndimage import binary_dilation
                     self.session.set_image(img_data[None])
                     target_tensor = torch.zeros(img_data.shape, dtype=torch.uint8)  # Must be 3D (x, y, z)
                     self.session.set_target_buffer(target_tensor)
-                            
-                    lasso = np.zeros(target_tensor.shape, dtype=np.uint8)
-                    lasso[prompt_frames[0]] = binary_dilation(mask_prompt_layer.data[prompt_frames[0]], iterations=1).astype(np.uint8)
-                    self.session.add_lasso_interaction(lasso, include_interaction=True)
-
-                    lasso = np.zeros(target_tensor.shape, dtype=np.uint8)
-                    lasso[:,prompt_frames[1]] = binary_dilation(mask_prompt_layer.data[:,prompt_frames[1]], iterations=1).astype(np.uint8)
-                    self.session.add_lasso_interaction(lasso, include_interaction=True)
-
-                    lasso = np.zeros(target_tensor.shape, dtype=np.uint8)
-                    lasso[:,:,prompt_frames[2]] = binary_dilation(mask_prompt_layer.data[:,:,prompt_frames[2]], iterations=1).astype(np.uint8)
-                    self.session.add_lasso_interaction(lasso, include_interaction=True)
+                    if self.prompt_frame_index_view_1 != 0:
+                        lasso = np.zeros(target_tensor.shape, dtype=np.uint8)
+                        lasso[prompt_frames[0]] = binary_dilation(mask_prompt_layer.data[prompt_frames[0]], iterations=1).astype(np.uint8)
+                        self.session.add_lasso_interaction(lasso, include_interaction=True)
+                    if self.prompt_frame_index_view_2 != 0:
+                        lasso = np.zeros(target_tensor.shape, dtype=np.uint8)
+                        lasso[:,prompt_frames[1]] = binary_dilation(mask_prompt_layer.data[:,prompt_frames[1]], iterations=1).astype(np.uint8)
+                        self.session.add_lasso_interaction(lasso, include_interaction=True)
+                    if self.prompt_frame_index_view_3 != 0:
+                        lasso = np.zeros(target_tensor.shape, dtype=np.uint8)
+                        lasso[:,:,prompt_frames[2]] = binary_dilation(mask_prompt_layer.data[:,:,prompt_frames[2]], iterations=1).astype(np.uint8)
+                        self.session.add_lasso_interaction(lasso, include_interaction=True)
 
                     results = self.session.target_buffer.clone()
                     self.session.reset_interactions()

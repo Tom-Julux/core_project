@@ -10,11 +10,18 @@ viewer = Viewer()
 example_img = sitk.GetArrayFromImage(sitk.ReadImage(input_image))
 image_layer = viewer.add_image(example_img, name='Example Image', colormap='gray')
 image_layer.scale = (-2,1,1)
-from napari_interactive import InteractiveSegmentationWidget
+#from napari_interactive import InteractiveSegmentationWidget
+import napari_interactive
+from napari_interactive import InteractiveSegmentationWidgetSAM2_3D
 
 #viewer.window.add_plugin_dock_widget(
 #    "napari-interactive",
 #    "Interactive Segmentation",
 #)
+
+viewer.window.add_plugin_dock_widget(
+    "napari-interactive",
+    "NNI 3D",
+)
 #viewer.dims.order = (2,0,1)
 napari.run()

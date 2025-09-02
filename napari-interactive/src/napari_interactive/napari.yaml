@@ -16,7 +16,7 @@ contributions:
       title: "SAM2 3D"
       python_name: "napari_interactive:InteractiveSegmentationWidgetSAM2_3D"
     - id: "napari-interactive.InteractiveSegmentationWidgetNNI"
-      title: "SAM2 3D"
+      title: "NNI 3D"
       python_name: "napari_interactive:InteractiveSegmentationWidgetNNI"
 
       
@@ -28,4 +28,4 @@ contributions:
     - command: "napari-interactive.InteractiveSegmentationWidgetSAM2_3D"
       display_name: SAM2 3D
     - command: "napari-interactive.InteractiveSegmentationWidgetNNI"
-      display_name: nnInteractive 3D
+      display_name: NNI 3D
