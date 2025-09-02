@@ -260,17 +260,17 @@ class InteractiveSegmentationWidget3DBase(QWidget):
 
         if view == 0:
             self.prompt_frame_set_view_1 = True
-            self.prompt_frame_index_view_1 = prompt_frames[0]
+            self.prompt_frame_index_view_1 = prompt_frames[0] -1
             set_value(self.progress_indicator_1, self.prompt_frame_set_view_1)
             self.progress_indicator_1.setText(f"Contour in view 1 (slice {self.prompt_frame_index_view_1})")
         elif view == 1:
             self.prompt_frame_set_view_2 = True
-            self.prompt_frame_index_view_2 = prompt_frames[1]
+            self.prompt_frame_index_view_2 = prompt_frames[1] -1
             set_value(self.progress_indicator_2, self.prompt_frame_set_view_2)
             self.progress_indicator_2.setText(f"Contour in view 2 (slice {self.prompt_frame_index_view_2})")
         elif view == 2:
             self.prompt_frame_set_view_3 = True
-            self.prompt_frame_index_view_3 = prompt_frames[2]
+            self.prompt_frame_index_view_3 = prompt_frames[2] -1
             set_value(self.progress_indicator_3, self.prompt_frame_set_view_3)
             self.progress_indicator_3.setText(f"Contour in view 3 (slice {self.prompt_frame_index_view_3})")
 
