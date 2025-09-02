@@ -118,12 +118,25 @@ class InteractiveSegmentationWidgetSAM2(InteractiveSegmentationWidget3DBase):
             if prompt_type == "Mask":
                 mask_prompt_layer = self.prompt_layers['mask']
                 prompt_frames = self._viewer.dims.current_step
-                print(prompt_frames)
                 print(self.prompt_frame_index_view_1, self.prompt_frame_index_view_2, self.prompt_frame_index_view_3)
                 prompt_frames = [self.prompt_frame_index_view_1, self.prompt_frame_index_view_2, self.prompt_frame_index_view_3]
-                mask_1 = mask_prompt_layer.data[prompt_frames[0]]
-                mask_2 = mask_prompt_layer.data[:,prompt_frames[1]]
-                mask_3 = mask_prompt_layer.data[:,:,prompt_frames[2]]
+                scale_factors = self._viewer.layers[img_layer].scale
+                # invert prompt frames where scale factor is negative to shape - frame
+                #for i in range(3):
+                #    if scale_factors[i] < 0:
+                #        prompt_frames[i] = img_data.shape[i] - 1 - prompt_frames[i]
+                # in a single line
+                prompt_frames = [img_data.shape[i] - 1 - prompt_frames[i] if scale_factors[i] < 0 else prompt_frames[i] for i in range(3)]
+                
+                def save_preview(img, mask, filename):
+                    img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
+                    contour, _ = cv2.findContours(mask.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                    cv2.drawContours(img, contour, -1, (0,255,0), 2)
+                    cv2.imwrite("filename", img)
+                    
+                save_preview(img_data[prompt_frames[0]], mask_prompt_layer.data[prompt_frames[0]], "view1.png")
+                save_preview(img_data[:,prompt_frames[1]], mask_prompt_layer.data[:,prompt_frames[1]], "view2.png")
+                save_preview(img_data[:,:,prompt_frames[2]], mask_prompt_layer.data[:,:,prompt_frames[2]], "view3.png")
                 
                 if self.predictor is None:
                     # expand the mask to match the shape of the image data
