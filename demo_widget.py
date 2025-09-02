@@ -1,3 +1,4 @@
+import os
 import numpy as np
 from napari.utils.notifications import show_info, show_warning
 from napari import Viewer
@@ -44,16 +45,20 @@ class DemoWidget(QWidget):
     def load_demo(self, demo_id=None):
         if demo_id is None:
             demo_id = get_value(self.demo_select)[0]
-            
+
         show_info(f"Loading demo: {demo_id}")
 
         self.reset_viewer()
 
         if demo_id == "Mask":
-            img = sitk.ReadImage(
-                #'/Users/tomjulius/Developer/napari-plugins/example_data/A_005_frames_8bit.mha'
-                '/Users/tomjulius/Developer/core_project/example_data/3d mrlinac/aumc_lung_patient026__GTV.mha'
-            )
+            if os.path.exists("/app/example_data/3d mrlinac/aumc_lung_patient031__GTV.mha"):
+                img = sitk.ReadImage(
+                    "/app/example_data/3d mrlinac/aumc_lung_patient031__GTV.mha"
+                )
+            else:
+                 img = sitk.ReadImage(
+                    '/Users/tomjulius/Developer/core_project/example_data/3d mrlinac/aumc_lung_patient026__GTV.mha'
+                )
 
             img = sitk.GetArrayFromImage(img)
 
@@ -66,10 +71,10 @@ class DemoWidget(QWidget):
             image_layer.translate = np.array(image_layer.data.shape) * (image_layer.scale * (image_layer.scale !=1))
             self._viewer.dims.current_step = (img.shape[0]//2, img.shape[1]//2, img.shape[2]//2)
 
-            from napari_interactive import InteractiveSegmentationWidgetSAM2_3D
-            widget = InteractiveSegmentationWidgetSAM2_3D(self._viewer)
+            from napari_interactive._widget_nni3d import InteractiveSegmentationWidgetNNI
+            widget = InteractiveSegmentationWidgetNNI(self._viewer)
             self._viewer.window.add_dock_widget(
-                widget, name="SAM2 3D", area="right"
+                widget, name="Interactive Segmentation", area="right"
             )
             show_info("Demo loaded. Please select the image layer and set the prompt layer in the widget.")
         else:
