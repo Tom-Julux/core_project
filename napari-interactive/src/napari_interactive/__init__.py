@@ -1,17 +1,12 @@
 __version__ = "0.0.1"
 
-from ._widget_sam2d import (
-    InteractiveSegmentationWidgetSAM2
-)
-from ._widget_sam2d_t import (
-    InteractiveSegmentationWidgetSAM2_2D_T as InteractiveSegmentationWidgetSAM2_t
-)
-from ._widget_sam3d import (
-    InteractiveSegmentationWidgetSAM2 as InteractiveSegmentationWidgetSAM2_3D
-)
+from ._widget_2d_sam import InteractiveSegmentationWidget2DSAM
+from ._widget_3d_sam import InteractiveSegmentationWidget3DSAM
+from ._widget_3d_nni import InteractiveSegmentationWidget3DNNI
+from ._widget_3d_noregistration import InteractiveSegmentationWidget3DNoRegistration
 
-from ._widget_nni3d import (
-    InteractiveSegmentationWidgetNNI
-)
+__all__ = ("InteractiveSegmentationWidget2DSAM",
+           "InteractiveSegmentationWidget3DSAM",
+           "InteractiveSegmentationWidget3DNNI",
+           "InteractiveSegmentationWidget3DNoRegistration")
 
-__all__ = ( "InteractiveSegmentationWidgetSAM2", "InteractiveSegmentationWidgetSAM2_t", "InteractiveSegmentationWidgetSAM2_3D", "InteractiveSegmentationWidgetNNI")

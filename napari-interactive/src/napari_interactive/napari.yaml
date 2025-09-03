@@ -6,26 +6,38 @@ visibility: hidden
 categories: ["Utilities"]
 contributions:
   commands:
-    - id: "napari-interactive.InteractiveSegmentationWidgetSAM2"
+    #- id: "napari-interactive.InteractiveSegmentationWidgetSAM2_t"
+    #  title: "SAM2 2D+t"
+    #  python_name: "napari_interactive:InteractiveSegmentationWidgetSAM2_t"
+    - id: "napari-interactive.InteractiveSegmentationWidget2DSAM"
       title: "SAM2 2D"
-      python_name: "napari_interactive:InteractiveSegmentationWidgetSAM2"
-    - id: "napari-interactive.InteractiveSegmentationWidgetSAM2_t"
-      title: "SAM2 2D+t"
-      python_name: "napari_interactive:InteractiveSegmentationWidgetSAM2_t"
-    - id: "napari-interactive.InteractiveSegmentationWidgetSAM2_3D"
+      python_name: "napari_interactive:InteractiveSegmentationWidget2DSAM"
+    - id: "napari-interactive.InteractiveSegmentationWidget3DSAM"
       title: "SAM2 3D"
-      python_name: "napari_interactive:InteractiveSegmentationWidgetSAM2_3D"
-    - id: "napari-interactive.InteractiveSegmentationWidgetNNI"
+      python_name: "napari_interactive:InteractiveSegmentationWidget3DSAM"
+    - id: "napari-interactive.InteractiveSegmentationWidget3DNNI"
       title: "NNI 3D"
-      python_name: "napari_interactive:InteractiveSegmentationWidgetNNI"
+      python_name: "napari_interactive:InteractiveSegmentationWidget3DNNI"
+    - id: "napari-interactive.InteractiveSegmentationWidget3DNoRegistration"
+      title: "No Registration 3D"
+      python_name: "napari_interactive:InteractiveSegmentationWidget3DNoRegistration"
+
+    - id: "napari-interactive.InteractiveSegmentationWidget2DNoRegistration"
+      title: "No Registration 2D"
+      python_name: "napari_interactive:InteractiveSegmentationWidget2DNoRegistration"
 
       
   widgets:
-    - command: "napari-interactive.InteractiveSegmentationWidgetSAM2"
+    #- command: "napari-interactive.InteractiveSegmentationWidgetSAM2_t"
+    #  display_name: SAM2 2D+t
+    
+    - command: "napari-interactive.InteractiveSegmentationWidget2DSAM"
       display_name: SAM2 2D
-    - command: "napari-interactive.InteractiveSegmentationWidgetSAM2_t"
-      display_name: SAM2 2D+t
-    - command: "napari-interactive.InteractiveSegmentationWidgetSAM2_3D"
+    - command: "napari-interactive.InteractiveSegmentationWidget3DSAM"
       display_name: SAM2 3D
-    - command: "napari-interactive.InteractiveSegmentationWidgetNNI"
+    - command: "napari-interactive.InteractiveSegmentationWidget3DNNI"
       display_name: NNI 3D
+    - command: "napari-interactive.InteractiveSegmentationWidget3DNoRegistration"
+      display_name: No Registration 3D
+    - command: "napari-interactive.InteractiveSegmentationWidget2DNoRegistration"
+      display_name: No Registration 2D

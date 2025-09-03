@@ -8,20 +8,29 @@ from napari_toolkit.widgets import setup_combobox, setup_iconbutton, setup_label
 from qtpy.QtWidgets import QVBoxLayout, QWidget
 import SimpleITK as sitk
 
-class DemoWidget(QWidget):
+class DemoWidget(QWidget):    
     def __init__(self, viewer: Viewer):
         super().__init__()
         self._viewer = viewer  # type: Viewer
         
+        self.DEMOS = [
+            "Select a demo...",
+            "Mask 2D NoPredictor",
+            "Mask 2D SAM",
+            "Mask 3D NNI",
+            "Mask 3D NoPredictor",
+        ]
+
         main_layout = QVBoxLayout(self)
 
         _scroll_layout = main_layout#setup_vscrollarea(main_layout)
 
         setup_label(_scroll_layout, "Select a demo to load:")
 
+        
         # layer select for image layer
         self.demo_select = setup_combobox(#, "Points", "BBox"],\
-            _scroll_layout, ["Mask"], "QComboBox", function=lambda: None
+            _scroll_layout, self.DEMOS, "QComboBox", function=lambda: None
         )
 
         self.run_button = setup_iconbutton(
@@ -29,7 +38,7 @@ class DemoWidget(QWidget):
             "Load",
             "right_arrow",
             self._viewer.theme,
-            function=self.load_demo,
+            function=lambda: self.load_demo()
         )
 
         self.reset_button = setup_iconbutton(
@@ -37,7 +46,7 @@ class DemoWidget(QWidget):
             "Reset",
             "erase",
             self._viewer.theme,
-            function=self.reset_viewer,
+            function=lambda: self.reset_viewer()
         )
         hstack(_scroll_layout, [self.run_button, self.reset_button])
         self.reset_viewer()
@@ -50,7 +59,7 @@ class DemoWidget(QWidget):
 
         self.reset_viewer()
 
-        if demo_id == "Mask":
+        if demo_id == "Mask 3D NNI":
             if os.path.exists("/app/example_data/3d mrlinac/aumc_lung_patient031__GTV.mha"):
                 img = sitk.ReadImage(
                     "/app/example_data/3d mrlinac/aumc_lung_patient031__GTV.mha"
@@ -71,12 +80,86 @@ class DemoWidget(QWidget):
             image_layer.translate = np.array(image_layer.data.shape) * (image_layer.scale * (image_layer.scale !=1))
             self._viewer.dims.current_step = (img.shape[0]//2, img.shape[1]//2, img.shape[2]//2)
 
-            from napari_interactive._widget_nni3d import InteractiveSegmentationWidgetNNI
-            widget = InteractiveSegmentationWidgetNNI(self._viewer)
+            from napari_interactive._widget_3d_nni import InteractiveSegmentationWidget3DNNI
+            widget = InteractiveSegmentationWidget3DNNI(self._viewer)
             self._viewer.window.add_dock_widget(
                 widget, name="Interactive Segmentation", area="right"
             )
-            show_info("Demo loaded. Please select the image layer and set the prompt layer in the widget.")
+        elif demo_id == "Mask 3D NoPredictor":
+            if os.path.exists("/app/example_data/3d mrlinac/aumc_lung_patient031__GTV.mha"):
+                img = sitk.ReadImage(
+                    "/app/example_data/3d mrlinac/aumc_lung_patient031__GTV.mha"
+                )
+            else:
+                 img = sitk.ReadImage(
+                    '/Users/tomjulius/Developer/core_project/example_data/3d mrlinac/aumc_lung_patient026__GTV.mha'
+                )
+
+            img = sitk.GetArrayFromImage(img)
+
+            image_layer = self._viewer.add_image(
+                img,
+                name='Example Image',
+                colormap='gray'
+            )
+            image_layer.scale = [-2, 1, 1]
+            image_layer.translate = np.array(image_layer.data.shape) * (image_layer.scale * (image_layer.scale !=1))
+            self._viewer.dims.current_step = (img.shape[0]//2, img.shape[1]//2, img.shape[2]//2)
+
+            from napari_interactive._widget_3d_noregistration import InteractiveSegmentationWidget3DNoRegistration
+            widget = InteractiveSegmentationWidget3DNoRegistration(self._viewer)
+            self._viewer.window.add_dock_widget(
+                widget, name="Interactive Segmentation", area="right"
+            )
+        elif demo_id == "Mask 2D NoPredictor":
+            if os.path.exists("/app/example_data/3d mrlinac/aumc_lung_patient031__GTV.mha"):
+                img = sitk.ReadImage(
+                    "/app/example_data/3d mrlinac/aumc_lung_patient031__GTV.mha"
+                )
+            else:
+                 img = sitk.ReadImage(
+                    '/Users/tomjulius/Developer/core_project/example_data/3d mrlinac/aumc_lung_patient026__GTV.mha'
+                )
+
+            img = sitk.GetArrayFromImage(img)
+            img = img[img.shape[0]//2]
+            image_layer = self._viewer.add_image(
+                img,
+                name='Example Image',
+                colormap='gray'
+            )
+
+            from napari_interactive._widget_2d_noregistration import InteractiveSegmentationWidget2DNoRegistration
+            widget = InteractiveSegmentationWidget2DNoRegistration(self._viewer)
+            self._viewer.window.add_dock_widget(
+                widget, name="Interactive Segmentation", area="right"
+            )
+
+        elif demo_id == "Mask 2D SAM":
+            if os.path.exists("/app/example_data/3d mrlinac/aumc_lung_patient031__GTV.mha"):
+                img = sitk.ReadImage(
+                    "/app/example_data/3d mrlinac/aumc_lung_patient031__GTV.mha"
+                )
+            else:
+                 img = sitk.ReadImage(
+                    '/Users/tomjulius/Developer/core_project/example_data/3d mrlinac/aumc_lung_patient026__GTV.mha'
+                )
+
+            img = sitk.GetArrayFromImage(img)
+            img = img[img.shape[0]//2]
+            image_layer = self._viewer.add_image(
+                img,
+                name='Example Image',
+                colormap='gray'
+            )
+
+            from napari_interactive._widget_2d_sam import InteractiveSegmentationWidget2DSAM
+            widget = InteractiveSegmentationWidget2DSAM(self._viewer)
+            self._viewer.window.add_dock_widget(
+                widget, name="Interactive Segmentation", area="right"
+            )
+        elif demo_id == "Select a demo...":
+            pass
         else:
             show_warning(f"Demo '{demo_id}' not found.")
 
