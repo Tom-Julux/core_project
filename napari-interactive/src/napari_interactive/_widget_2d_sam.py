@@ -36,6 +36,7 @@ from napari_toolkit.widgets import (
     setup_dirselect,
     setup_spinbox,
 )
+import traceback
 from napari.qt.threading import thread_worker
 from qtpy.QtWidgets import (
     QFileDialog,
@@ -89,9 +90,8 @@ class InteractiveSegmentationWidget2DSAM(InteractiveSegmentationWidget2DBase):
             img_layer = get_value(self.layerselect_a)[1]
             self.predictor.mask_threshold = get_value(self.threshold_slider)
 
-            current_frame_idx = self._viewer.dims.current_step[self._viewer.dims.order[0]]
-            
-            frame = np.transpose(self._viewer.layers[img_layer].data, self._viewer.dims.order)[current_frame_idx]
+            #current_frame_idx = self._viewer.dims.current_step[self._viewer.dims.order[0]]
+            frame = np.transpose(self._viewer.layers[img_layer].data, self._viewer.dims.order)#[current_frame_idx]
             frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2RGB)
 
             #self.predictor.reset_state()
@@ -142,10 +142,14 @@ class InteractiveSegmentationWidget2DSAM(InteractiveSegmentationWidget2DBase):
             #        out_mask[labels_im == largest_label] = 1
 
             target_size = frame.shape[:2]
-            
             out_mask = cv2.resize(out_mask.astype(np.uint8), target_size[::-1], interpolation=cv2.INTER_NEAREST)
-
-            np.transpose(self.preview_layer.data, self._viewer.dims.order)[current_frame_idx] = out_mask
+            out_mask = out_mask.astype(np.uint8)
+            print(out_mask.shape)
+            print(self._viewer.dims.order)
+            print(np.transpose(self.preview_layer.data, self._viewer.dims.order).shape)
+            #np.transpose(self.preview_layer.data, self._viewer.dims.order)[current_frame_idx] = out_mask[:,0]
+            np.transpose(self.preview_layer.data, self._viewer.dims.order)[:] = out_mask
             self.preview_layer.refresh()   
         except Exception as e:
             print(f"Error in on_prompt_update_event: {e}")
+            print(traceback.format_exc())
