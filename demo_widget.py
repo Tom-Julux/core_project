@@ -58,7 +58,7 @@ class DemoWidget(QWidget):
         show_info(f"Loading demo: {demo_id}")
 
         self.reset_viewer()
-
+        base_path = os.path.dirname(os.path.abspath(__file__))
         if demo_id == "Mask 3D NNI":
             if os.path.exists("/app/example_data/3d mrlinac/aumc_lung_patient031__GTV.mha"):
                 img = sitk.ReadImage(
@@ -66,7 +66,7 @@ class DemoWidget(QWidget):
                 )
             else:
                  img = sitk.ReadImage(
-                    '/Users/tomjulius/Developer/core_project/example_data/3d mrlinac/aumc_lung_patient026__GTV.mha'
+                    f'{base_path}example_data/3d mrlinac/aumc_lung_patient026__GTV.mha'
                 )
 
             img = sitk.GetArrayFromImage(img)
@@ -92,7 +92,7 @@ class DemoWidget(QWidget):
                 )
             else:
                  img = sitk.ReadImage(
-                    '/Users/tomjulius/Developer/core_project/example_data/3d mrlinac/aumc_lung_patient026__GTV.mha'
+                    f'{base_path}example_data/3d mrlinac/aumc_lung_patient026__GTV.mha'
                 )
 
             img = sitk.GetArrayFromImage(img)
@@ -118,7 +118,7 @@ class DemoWidget(QWidget):
                 )
             else:
                  img = sitk.ReadImage(
-                    '/Users/tomjulius/Developer/core_project/example_data/3d mrlinac/aumc_lung_patient026__GTV.mha'
+                    f'{base_path}/example_data/3d mrlinac/aumc_lung_patient026__GTV.mha'
                 )
 
             img = sitk.GetArrayFromImage(img)
@@ -142,7 +142,7 @@ class DemoWidget(QWidget):
                 )
             else:
                  img = sitk.ReadImage(
-                    '/Users/tomjulius/Developer/core_project/example_data/3d mrlinac/aumc_lung_patient026__GTV.mha'
+                    f'{base_path}example_data/3d mrlinac/aumc_lung_patient026__GTV.mha'
                 )
 
             img = sitk.GetArrayFromImage(img)
