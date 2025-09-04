@@ -90,7 +90,7 @@ class InteractiveSegmentationWidget3DNNI(InteractiveSegmentationWidget3DBase):
             )
             from nnInteractive.inference.inference_session import nnInteractiveInferenceSession
             self.session = nnInteractiveInferenceSession(
-                device=torch.device("cuda"),  # Set inference device
+                device=torch.device("cpu"),  # Set inference device
                 use_torch_compile=False,  # Experimental: Not tested yet
                 verbose=False,
                 torch_n_threads=2,  # Use available CPU cores

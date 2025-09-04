@@ -504,6 +504,7 @@ class InteractiveSegmentationWidget3DBase(InteractiveSegmentationWidgetBase):
 class InteractiveSegmentationWidget2DBase(InteractiveSegmentationWidgetBase):
     def __init__(self, viewer: Viewer):
         super().__init__(viewer)
+
         
     @property
     def supported_prompt_types(self):
@@ -526,6 +527,8 @@ class InteractiveSegmentationWidget2DBase(InteractiveSegmentationWidgetBase):
 
     def update_prompt_type(self):
         super().update_prompt_type()
+        self.run_button.setEnabled(True)
+
         
     # GUI
     def setup_view_control_gui(self, _scroll_layout):
