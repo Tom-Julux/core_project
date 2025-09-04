@@ -66,7 +66,7 @@ class DemoWidget(QWidget):
                 )
             else:
                  img = sitk.ReadImage(
-                    f'{base_path}example_data/3d mrlinac/aumc_lung_patient026__GTV.mha'
+                    f'{base_path}/example_data/3d mrlinac/aumc_lung_patient026__GTV.mha'
                 )
 
             img = sitk.GetArrayFromImage(img)
@@ -92,7 +92,7 @@ class DemoWidget(QWidget):
                 )
             else:
                  img = sitk.ReadImage(
-                    f'{base_path}example_data/3d mrlinac/aumc_lung_patient026__GTV.mha'
+                    f'{base_path}/example_data/3d mrlinac/aumc_lung_patient026__GTV.mha'
                 )
 
             img = sitk.GetArrayFromImage(img)
@@ -142,7 +142,7 @@ class DemoWidget(QWidget):
                 )
             else:
                  img = sitk.ReadImage(
-                    f'{base_path}example_data/3d mrlinac/aumc_lung_patient026__GTV.mha'
+                    f'{base_path}/example_data/3d mrlinac/aumc_lung_patient026__GTV.mha'
                 )
 
             img = sitk.GetArrayFromImage(img)
