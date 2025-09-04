@@ -69,7 +69,7 @@ class InteractiveSegmentationWidget2DSAM(InteractiveSegmentationWidget2DBase):
 
         checkpoint = "/app/MedSAM2_latest.pt"
         if not os.path.exists("/app/MedSAM2_latest.pt"):
-            base_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+            base_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
             checkpoint = os.path.join(base_path, "MedSAM2_latest.pt")
 
         model_cfg= "configs/sam2.1_hiera_t512.yaml"
