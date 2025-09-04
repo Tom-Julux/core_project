@@ -112,7 +112,7 @@ class InteractiveSegmentationWidget2DSAM(InteractiveSegmentationWidget2DBase):
                 point_labels = np.concatenate((np.ones(len(pos_points)), np.zeros(len(neg_points))), axis=0)
 
                 #_, out_obj_ids, out_mask_logits = self.predictor.add_new_points(frame_idx=0, obj_id=0, points=point_prompts, labels=point_labels)
-                out_mask_masks, out_mask_scores, out_mask_logits = self.predictor.predict(point_coords=point_prompts, point_labels=point_labels, multimask_output=get_value(self.multi_mask_ckbx))  # Use the multi-mask option if checked
+                out_mask_masks, out_mask_scores, out_mask_logits = self.predictor.predict(point_coords=point_prompts, point_labels=point_labels)#, multimask_output=get_value(self.multi_mask_ckbx))  # Use the multi-mask option if checked
 
 
             elif prompt_type == "BBox":
