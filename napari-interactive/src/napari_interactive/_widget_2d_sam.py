@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-
+import os
 import threading
 import time
 import torch
@@ -68,6 +68,10 @@ class InteractiveSegmentationWidget2DSAM(InteractiveSegmentationWidget2DBase):
         from sam2.sam2_image_predictor import SAM2ImagePredictor
 
         checkpoint = "/app/MedSAM2_latest.pt"
+        if not os.path.exists("/app/MedSAM2_latest.pt"):
+            base_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+            checkpoint = os.path.join(base_path, "MedSAM2_latest.pt")
+
         model_cfg= "configs/sam2.1_hiera_t512.yaml"
         self.predictor = SAM2ImagePredictor(build_sam2(model_cfg, checkpoint, device="cuda" if torch.cuda.is_available() else "cpu"))
         set_value(self.threshold_slider, self.predictor.mask_threshold)
