@@ -62,7 +62,7 @@ class InteractiveSegmentationWidget2DSAM(InteractiveSegmentationWidget2DBase):
 
     @property
     def supported_prompt_types(self):
-        return ["Points", "BBox", "Mask"]
+        return ["Points"]#, "BBox", "Mask"]
 
     def load_model(self):
         from sam2.build_sam import build_sam2_camera_predictor,build_sam2
@@ -92,6 +92,11 @@ class InteractiveSegmentationWidget2DSAM(InteractiveSegmentationWidget2DBase):
 
             #current_frame_idx = self._viewer.dims.current_step[self._viewer.dims.order[0]]
             frame = np.transpose(self._viewer.layers[img_layer].data, self._viewer.dims.order)#[current_frame_idx]
+
+            # normalize to 0-255 and convert to uint8
+            frame = cv2.normalize(frame, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX)
+            frame = frame.astype(np.uint8)
+
             frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2RGB)
 
             #self.predictor.reset_state()
@@ -119,7 +124,9 @@ class InteractiveSegmentationWidget2DSAM(InteractiveSegmentationWidget2DBase):
                 bbox_layer = self.prompt_layers['bbox']
                 if len(bbox_layer.data) == 0:
                     return
-                bbox_data = bbox_layer.data[-1][:, self._viewer.dims.order][:,1:]
+                print(bbox_layer.data)
+                print(bbox_layer.data[-1][:, self._viewer.dims.order])
+                bbox_data = bbox_layer.data[-1][:, self._viewer.dims.order][:,-2:]
 
                 bbox_prompt = np.array([
                     np.min(bbox_data[:, 1]), np.min(bbox_data[:, 0]),
@@ -131,8 +138,10 @@ class InteractiveSegmentationWidget2DSAM(InteractiveSegmentationWidget2DBase):
             #    # If multi-mask and scoring are enabled, we will have multiple masks
             #    out_mask = out_mask_masks[np.argmax(out_mask_scores)]  # Select the mask with the highest score
             #else:
-            
-            out_mask = out_mask_masks[-1]
+            print(out_mask_masks.shape)
+            print(out_mask_masks.sum())
+            print(out_mask_scores)
+            out_mask = out_mask_masks[-1] > 0
             # Apply connected component analysis to the mask
             #if get_value(self.connected_component_ckbx):
             #    num_labels, labels_im = cv2.connectedComponents(out_mask.astype(np.uint8), connectivity=8)
@@ -142,11 +151,15 @@ class InteractiveSegmentationWidget2DSAM(InteractiveSegmentationWidget2DBase):
             #        out_mask[labels_im == largest_label] = 1
 
             target_size = frame.shape[:2]
-            out_mask = cv2.resize(out_mask.astype(np.uint8), target_size[::-1], interpolation=cv2.INTER_NEAREST)
+            #out_mask = cv2.resize(out_mask.astype(np.uint8), target_size[::-1], interpolation=cv2.INTER_NEAREST)
             out_mask = out_mask.astype(np.uint8)
             print(out_mask.shape)
             print(self._viewer.dims.order)
             print(np.transpose(self.preview_layer.data, self._viewer.dims.order).shape)
+
+            # save mask as png
+            cv2.imwrite("debug_sam_mask.png", out_mask*255)
+
             #np.transpose(self.preview_layer.data, self._viewer.dims.order)[current_frame_idx] = out_mask[:,0]
             np.transpose(self.preview_layer.data, self._viewer.dims.order)[:] = out_mask
             self.preview_layer.refresh()   
