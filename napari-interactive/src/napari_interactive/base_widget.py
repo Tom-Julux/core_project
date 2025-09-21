@@ -93,9 +93,12 @@ class InteractiveSegmentationWidgetBase(QWidget):
         self.build_gui()
         self.load_model()
 
-        self.update_prompt_type()
-        self.on_image_layer_scale_or_rotate()
-    
+        if get_value(self.layerselect_a)[0] is not None:
+            self.setup_preview_layer()
+            self.update_prompt_type()
+            self.connect_image_layer_events()
+            self.on_image_layer_scale_or_rotate()
+
     @property
     def supported_prompt_types(self):
         return ["Mask"] #["Points", "BBox", "Mask"]
@@ -118,7 +121,7 @@ class InteractiveSegmentationWidgetBase(QWidget):
     def setup_view_control_gui(self, _scroll_layout):
         pass
 
-    # GUI
+    # region GUI
     def build_gui(self):
        
         main_layout = QVBoxLayout(self)
@@ -164,8 +167,29 @@ class InteractiveSegmentationWidgetBase(QWidget):
             tooltips="Run automatically after each interaction once all three view prompts are set.",
         )
 
+        _container, _layout = setup_vcollapsiblegroupbox(_scroll_layout, "Multi Mode:", collapsed=True)
+        _ = setup_label(_layout, "Create multiple (non-overlapping) predictions.")
+
+        self.overwrite_existing_mm_ckbx = setup_checkbox(
+            _layout,
+            "Overwrite existing",
+            False,
+            tooltips="By default, new predictions will only be added to empty regions of the preview layer. If checked, new predictions will overwrite existing labels in the preview layer.",
+            function=lambda: self.run_predict_in_thread()
+        )
+        
+        _label = setup_label(None, "Current ObjectID:")
+        self.object_id_spinbox = setup_spinbox(None, 1, 255, 1, function=lambda: self.run_predict_in_thread())
+
+        _ = hstack(_layout, [_label, self.object_id_spinbox], stretch=[0,1])
+
+
+        _ = setup_iconbutton(
+            _layout, "Next Object", "right_arrow", self._viewer.theme, self.increment_object_id
+        )
+
         _container, _layout = setup_vgroupbox(_scroll_layout, "Export to layer:")
-        _ = setup_label(_layout, "Export the contents of the preview layer to a sperate layer.")
+        _ = setup_label(_layout, "Export the contents of the preview layer to a separate layer.")
 
         #self.export_to_new_layer_ckbx = setup_checkbox(
         #    _layout, "Accumulate",True, tooltips="If unchecked, the preview layer will be exported to the currently selected layer.")
@@ -174,7 +198,7 @@ class InteractiveSegmentationWidgetBase(QWidget):
             _layout, "Export to layer", "pop_out", self._viewer.theme, self.export_preview
         )
         _container, _layout = setup_vcollapsiblegroupbox(_scroll_layout, "Export to file:", collapsed=True)
-        _ = setup_label(_layout, "Export the contents of the preview layer to a new file.")
+        _ = setup_label(_layout, "Export the contents of the exported layer (or the preview) to a new file.")
 
         self.export_file_select = setup_savefileselect(
             _layout,
@@ -198,34 +222,49 @@ class InteractiveSegmentationWidgetBase(QWidget):
             _layout, "Reset", "erase", self._viewer.theme, self.on_image_layer_change
         )
     
-    def clear_prompt_layers(self):
-        # Remove all existing prompt layers
-        for layer in self.prompt_layers.values():
-            if layer in self._viewer.layers:
-                self._viewer.layers.remove(layer)
-        self.prompt_layers.clear()
+    def closeEvent(self, event=None):
+        # Clean up any resources or connections
+        self.clear_prompt_layers()
+        self.clear_preview_layer()
+        self.disconnect_image_layer_events()
+        self.reset_model()
+    # endregion
+    # region Image Layer Management
     
     def on_image_layer_change(self, event=None):
         # This method is called when the image layer is changed
 
-        self.closeEvent()  # Clean up previous layers
-        img_layer = get_value(self.layerselect_a)[1]
+        self.clear_prompt_layers()
+        self.clear_preview_layer()
+        self.disconnect_image_layer_events()
+        self.reset_model()
 
+        img_layer = get_value(self.layerselect_a)[0]
         if img_layer is None or img_layer not in self._viewer.layers:
             show_warning("Please select a valid image layer.")
             self.run_button.setEnabled(False)
             return
 
-
+        self.setup_preview_layer()
         self.update_prompt_type()
+        self.connect_image_layer_events()
+        self.on_image_layer_scale_or_rotate()
+
+    def connect_image_layer_events(self):
         # connect the image layer's scale and rotation changes to the preview layer
         img_layer = self._viewer.layers[img_layer]
         img_layer.events.scale.connect(self.on_image_layer_scale_or_rotate)
         img_layer.events.rotate.connect(self.on_image_layer_scale_or_rotate)
         img_layer.events.translate.connect(self.on_image_layer_scale_or_rotate)
 
-        self.on_image_layer_scale_or_rotate()
-
+    def disconnect_image_layer_events(self):
+        img_layer = get_value(self.layerselect_a)[1]
+        if img_layer is not None and img_layer in self._viewer.layers:
+            img_layer = self._viewer.layers[img_layer]
+            img_layer.events.scale.disconnect(self.on_image_layer_scale_or_rotate)
+            img_layer.events.rotate.disconnect(self.on_image_layer_scale_or_rotate)
+            img_layer.events.translate.disconnect(self.on_image_layer_scale_or_rotate)
+        
     def on_image_layer_scale_or_rotate(self, event=None):
         # This method is called when the image layer is scaled or rotated
         img_layer = get_value(self.layerselect_a)[1]
@@ -234,12 +273,36 @@ class InteractiveSegmentationWidgetBase(QWidget):
             self.preview_layer.scale = self._viewer.layers[img_layer].scale
             self.preview_layer.rotate = self._viewer.layers[img_layer].rotate
             self.preview_layer.translate = self._viewer.layers[img_layer].translate
-        if self.prompt_layers:
-            for layer in self.prompt_layers.values():
-                layer.scale = self._viewer.layers[img_layer].scale
-                layer.rotate = self._viewer.layers[img_layer].rotate
-                layer.translate = self._viewer.layers[img_layer].translate
 
+        for layer in self.prompt_layers.values():
+            layer.scale = self._viewer.layers[img_layer].scale
+            layer.rotate = self._viewer.layers[img_layer].rotate
+            layer.translate = self._viewer.layers[img_layer].translate
+    # endregion
+
+    # region Preview Layer Management
+    def setup_preview_layer(self):
+        img_layer = get_value(self.layerselect_a)[1]
+
+        img_layer_shape = self._viewer.layers[img_layer].data.shape
+
+        self.preview_label_data = np.zeros(img_layer_shape, dtype=np.uint8)
+        self.preview_layer = Labels(name='Preview Layer', data=self.preview_label_data.copy(), opacity=0.5)
+        self.preview_layer.contour = 1
+        self.preview_layer.scale = self._viewer.layers[img_layer].scale
+        self.preview_layer.rotate = self._viewer.layers[img_layer].rotate
+        self.preview_layer.translate = self._viewer.layers[img_layer].translate
+
+        self._viewer.add_layer(self.preview_layer)
+        
+    def clear_preview_layer(self):
+        if self.preview_layer and self.preview_layer in self._viewer.layers:
+            self._viewer.layers.remove(self.preview_layer)
+            self.preview_label_data = None
+            self.preview_layer = None
+    # endregion
+    
+    # region Prompt Layer Management
     def update_prompt_type(self):
         prompt_type = get_value(self.prompt_type_select)[0]
         
@@ -251,16 +314,6 @@ class InteractiveSegmentationWidgetBase(QWidget):
         #    return
 
         img_layer_shape = self._viewer.layers[img_layer].data.shape
-
-        if self.preview_label_data is None or self.preview_layer is None and self.preview_layer not in self._viewer.layers:
-            self.preview_label_data = np.zeros(img_layer_shape, dtype=np.uint8)
-            self.preview_layer = Labels(name='Preview Layer', data=self.preview_label_data, opacity=0.5)
-            self.preview_layer.contour = 1
-            self.preview_layer.scale = self._viewer.layers[img_layer].scale
-            self.preview_layer.rotate = self._viewer.layers[img_layer].rotate
-            self.preview_layer.translate = self._viewer.layers[img_layer].translate
-
-            self._viewer.add_layer(self.preview_layer)
 
         if prompt_type == "Points":
             point_layer_positive = PointPromptLayer(name='Point Point Layer (Positive)', ndim=len(img_layer_shape))
@@ -294,7 +347,25 @@ class InteractiveSegmentationWidgetBase(QWidget):
             mask_layer.events.data.connect(self.on_prompt_update_event)
             # set active layer to bbox layer
             self._viewer.layers.selection.active = mask_layer
-        
+
+    def clear_prompt_layer_content(self):
+        # Remove all existing prompt layers
+        for layer in self.prompt_layers.values():
+            if isinstance(layer, Labels):
+                layer.data = np.zeros_like(layer.data, dtype=np.uint8)
+            elif isinstance(layer, (Points, Shapes, BoxPromptLayer, PointPromptLayer, ContourPromptLayer)):
+                layer.data = np.empty((0, layer.ndim))
+            layer.refresh()
+    
+    def clear_prompt_layers(self):
+        # Remove all existing prompt layers
+        for layer in self.prompt_layers.values():
+            if layer in self._viewer.layers:
+                self._viewer.layers.remove(layer)
+        self.prompt_layers.clear()
+    # endregion
+
+
     def update_hyperparameters(self):
         if get_value(self.run_ckbx):
             self.run_predict_in_thread()
@@ -320,27 +391,51 @@ class InteractiveSegmentationWidgetBase(QWidget):
                     self.rerun_after_lock = False
                     self.predict()
         _worker().start()
+    
+    def add_prediction_to_preview(self, new_mask, indices=None):
+        if self.preview_layer is None:
+            show_warning("No preview layer to add prediction to.")
+            return
 
-    def closeEvent(self, event=None):
-        # Clean up any resources or connections
-        for layer in self.prompt_layers.values():
-            if layer in self._viewer.layers:
-                self._viewer.layers.remove(layer)
-        self.prompt_layers.clear()
+        # update new_mask to object id
+        object_id = get_value(self.object_id_spinbox)
+        new_mask = np.where(new_mask > 0, object_id, 0).astype(np.uint8)
         
-        if self.preview_layer and self.preview_layer in self._viewer.layers:
-            self._viewer.layers.remove(self.preview_layer)
+        # set preview layer data to preview label data with overwrites from the new mask at the indices
+        out_mask = self.preview_label_data.copy()
+        transposed_out_mask = np.transpose(out_mask, self._viewer.dims.order)
 
-        # disconnect the image layer's scale and rotation changes
-        img_layer = get_value(self.layerselect_a)[1]
-        if img_layer is not None and img_layer in self._viewer.layers:
-            img_layer = self._viewer.layers[img_layer]
-            img_layer.events.scale.disconnect(self.on_image_layer_scale_or_rotate)
-            img_layer.events.rotate.disconnect(self.on_image_layer_scale_or_rotate)
-            img_layer.events.translate.disconnect(self.on_image_layer_scale_or_rotate)
-        
-        self.reset_model()
-        
+        if indices is None:
+            indices = np.s_[:]
+
+        if get_value(self.overwrite_existing_mm_ckbx):
+        # overwrite current preview_label_data at indices with new_mask where new_mask > 0
+            np.copyto(transposed_out_mask[indices], new_mask, where=(new_mask > 0))
+        else:
+            np.copyto(transposed_out_mask[indices], new_mask, where=(new_mask > 0) & (transposed_out_mask[indices] == 0))
+
+        self.preview_layer.data = out_mask
+        self.preview_layer.refresh()   
+
+    def increment_object_id(self):
+        # copy current preview label data to preview layer data
+        if get_value(self.overwrite_existing_mm_ckbx):
+            self.preview_label_data = self.preview_layer.data.copy()
+        else:
+            self.preview_label_data = np.where(self.preview_label_data == 0, self.preview_layer.data, self.preview_label_data).astype(np.uint8)
+
+        current_id = get_value(self.object_id_spinbox)
+        if current_id < 255:
+            set_value(self.object_id_spinbox, current_id + 1)
+        else:
+            show_warning("Object ID cannot be greater than 255.")
+            return
+
+        # reset prompts
+        self.clear_prompt_layer_content()
+    
+
+    # region Export
     def export_preview(self):
         # Export the contents of the preview layer to a separate layer
         if self.preview_layer is None:
@@ -356,7 +451,6 @@ class InteractiveSegmentationWidgetBase(QWidget):
         new_layer.contour = 1
         # Add the new layer to the viewer
         self._viewer.add_layer(new_layer)
-        
         show_info("Preview layer exported successfully.")
     
     def export_to_file(self):
@@ -378,7 +472,7 @@ class InteractiveSegmentationWidgetBase(QWidget):
             show_info(f"Preview layer exported successfully to {file_path}.")
         except Exception as e:
             show_error(f"Failed to export preview layer: {e}")
-
+    # endregion
 
 class InteractiveSegmentationWidget3DBase(InteractiveSegmentationWidgetBase):
     def __init__(self, viewer: Viewer):

@@ -90,6 +90,9 @@ class DemoWidget(QWidget):
                 img = sitk.ReadImage(
                     "/app/example_data/3d mrlinac/aumc_lung_patient031__GTV.mha"
                 )
+                mask = sitk.ReadImage(
+                    "/app/example_data/3d mrlinac/aumc_lung_patient031__GTV.mha"
+                )
             else:
                  img = sitk.ReadImage(
                     f'{base_path}/example_data/3d mrlinac/aumc_lung_patient026__GTV.mha'
@@ -146,7 +149,7 @@ class DemoWidget(QWidget):
                 )
 
             img = sitk.GetArrayFromImage(img)
-            img = img[img.shape[0]//2]
+            img = img[img.shape[0]//2:img.shape[0]//2+16]
             image_layer = self._viewer.add_image(
                 img,
                 name='Example Image',

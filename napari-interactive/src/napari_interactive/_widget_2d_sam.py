@@ -93,6 +93,14 @@ class InteractiveSegmentationWidget2DSAM(InteractiveSegmentationWidget2DBase):
             #current_frame_idx = self._viewer.dims.current_step[self._viewer.dims.order[0]]
             frame = np.transpose(self._viewer.layers[img_layer].data, self._viewer.dims.order)#[current_frame_idx]
 
+            if len(frame.shape) == 1:
+                show_warning("The selected image layer is not at least 2D.")
+                return
+            if len(frame.shape) == 3:
+                frame = frame[self._viewer.dims.current_step[self._viewer.dims.order[0]]]
+            if len(frame.shape) == 4:
+                frame = frame[self._viewer.dims.current_step[self._viewer.dims.order[0]],self._viewer.dims.current_step[self._viewer.dims.order[1]]]
+
             # normalize to 0-255 and convert to uint8
             frame = cv2.normalize(frame, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX)
             frame = frame.astype(np.uint8)
@@ -116,9 +124,7 @@ class InteractiveSegmentationWidget2DSAM(InteractiveSegmentationWidget2DBase):
                 point_prompts = np.concatenate((pos_points, neg_points), axis=0)  # Use only the first two dimensions (x, y)
                 point_labels = np.concatenate((np.ones(len(pos_points)), np.zeros(len(neg_points))), axis=0)
 
-                #_, out_obj_ids, out_mask_logits = self.predictor.add_new_points(frame_idx=0, obj_id=0, points=point_prompts, labels=point_labels)
-                out_mask_masks, out_mask_scores, out_mask_logits = self.predictor.predict(point_coords=point_prompts, point_labels=point_labels)#, multimask_output=get_value(self.multi_mask_ckbx))  # Use the multi-mask option if checked
-
+                out_mask_masks, out_mask_scores, out_mask_logits = self.predictor.predict(point_coords=point_prompts, point_labels=point_labels)
 
             elif prompt_type == "BBox":
                 bbox_layer = self.prompt_layers['bbox']
@@ -134,35 +140,14 @@ class InteractiveSegmentationWidget2DSAM(InteractiveSegmentationWidget2DBase):
                 ])
                 out_mask_masks, out_mask_scores, out_mask_logits = self.predictor.predict(box=bbox_prompt) # XYXY format
      
-            #if get_value(self.multi_mask_ckbx) and get_value(self.scoring_ckbx):
-            #    # If multi-mask and scoring are enabled, we will have multiple masks
-            #    out_mask = out_mask_masks[np.argmax(out_mask_scores)]  # Select the mask with the highest score
-            #else:
-            print(out_mask_masks.shape)
-            print(out_mask_masks.sum())
             print(out_mask_scores)
             out_mask = out_mask_masks[-1] > 0
-            # Apply connected component analysis to the mask
-            #if get_value(self.connected_component_ckbx):
-            #    num_labels, labels_im = cv2.connectedComponents(out_mask.astype(np.uint8), connectivity=8)
-            #    out_mask = np.zeros_like(out_mask, dtype=np.uint8)
-            #    if num_labels > 1:
-            #        largest_label = np.argmax(np.bincount(labels_im.flat)[1:]) + 1  # Skip the background label (0)
-            #        out_mask[labels_im == largest_label] = 1
-
+          
             target_size = frame.shape[:2]
-            #out_mask = cv2.resize(out_mask.astype(np.uint8), target_size[::-1], interpolation=cv2.INTER_NEAREST)
             out_mask = out_mask.astype(np.uint8)
-            print(out_mask.shape)
-            print(self._viewer.dims.order)
-            print(np.transpose(self.preview_layer.data, self._viewer.dims.order).shape)
 
-            # save mask as png
-            cv2.imwrite("debug_sam_mask.png", out_mask*255)
+            self.add_prediction_to_preview(out_mask, np.s_[self._viewer.dims.current_step[self._viewer.dims.order[0]]])
 
-            #np.transpose(self.preview_layer.data, self._viewer.dims.order)[current_frame_idx] = out_mask[:,0]
-            np.transpose(self.preview_layer.data, self._viewer.dims.order)[:] = out_mask
-            self.preview_layer.refresh()   
         except Exception as e:
             print(f"Error in on_prompt_update_event: {e}")
             print(traceback.format_exc())

@@ -19,6 +19,6 @@ class InteractiveSegmentationWidget2DNoRegistration(InteractiveSegmentationWidge
         pass
 
     def predict(self):
-        show_info("Registration model used. Empty preview mask")
+        show_info("NoRegistration model used. Empty preview mask")
         pass
     
