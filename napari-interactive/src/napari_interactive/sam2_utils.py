@@ -17,6 +17,9 @@ def propagate_along_path(slices, predictor, threshold=0.5, reset_state=True, kee
     results = {
         "masks": [],
     }
+    if slices.shape[0] == 0:
+        return None
+
     if keep_logits:
         results["logits"] = []
     with torch.inference_mode():#, torch.autocast("cuda", dtype=torch.bfloat16):
@@ -93,6 +96,11 @@ def propagate_along_path(slices, predictor, threshold=0.5, reset_state=True, kee
 
 def merge_results(results_rev, results_fw):
     results = {}
+    if results_rev is None:
+        return results_fw
+    if results_fw is None:
+        return results_rev
+
     for key in results_rev.keys():
         results[key] = np.concatenate([results_rev[key][1:][::-1], results_fw[key]])
     return results

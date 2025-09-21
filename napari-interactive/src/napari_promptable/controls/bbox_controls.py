@@ -13,12 +13,12 @@ class CustomQtBBoxControls(QtShapesControls):
         super().__init__(layer)
 
         # We don't need this Fields -> Hide them
-        fields_to_hide = [self.faceColorEdit, self.edgeColorEdit]
-        for field in fields_to_hide:
-            label_item = self.layout().labelForField(field)
-            field.hide()
-            label_item.hide()
-            field.setDisabled(True)
+        #fields_to_hide = [self.faceColorEdit, self.edgeColorEdit]
+        #for field in fields_to_hide:
+        #    label_item = self.layout().labelForField(field)
+        #    field.hide()
+        #    label_item.hide()
+        #    field.setDisabled(True)
 
         # We don't need all these button -> hide and disable tem + remove key binding
         buttons_to_hide = [

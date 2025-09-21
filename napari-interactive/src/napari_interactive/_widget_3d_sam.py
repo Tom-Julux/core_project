@@ -54,6 +54,7 @@ from .base_widget import InteractiveSegmentationWidget3DBase
 class InteractiveSegmentationWidget3DSAM(InteractiveSegmentationWidget3DBase):
     def __init__(self, viewer: Viewer):
         super().__init__(viewer)
+        self.run_ckbx.setChecked(False)
         
     def setup_hyperparameter_gui(self, _layout):
         _ = setup_label(_layout, "Threshold:")
@@ -87,12 +88,17 @@ class InteractiveSegmentationWidget3DSAM(InteractiveSegmentationWidget3DBase):
     def load_model(self):
         try:
             from sam2.build_sam import build_sam2_camera_predictor,build_sam2
-            from sam2.sam2_camera_predictor import SAM2CameraPredictor
+            from sam2.sam2_image_predictor import SAM2ImagePredictor
 
             checkpoint = "/app/MedSAM2_latest.pt"
+            if not os.path.exists("/app/MedSAM2_latest.pt"):
+                base_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+                checkpoint = os.path.join(base_path, "MedSAM2_latest.pt")
+
             model_cfg= "configs/sam2.1_hiera_t512.yaml"
-            self.predictor = build_sam2_camera_predictor(model_cfg, checkpoint, device="cuda")
+            self.predictor = build_sam2_camera_predictor(model_cfg, checkpoint, device="cuda" if torch.cuda.is_available() else "cpu")
             set_value(self.threshold_slider, self.predictor.mask_threshold)
+        
         except Exception as e:
             self.predictor = None
 
@@ -108,7 +114,8 @@ class InteractiveSegmentationWidget3DSAM(InteractiveSegmentationWidget3DBase):
             prompt_type = get_value(self.prompt_type_select)[0]
             img_layer = get_value(self.layerselect_a)[1]
 
-            mask_threshold = get_value(self.threshold_slider)
+            self.predictor.mask_threshold = get_value(self.threshold_slider)
+
 
             img_data = self._viewer.layers[img_layer].data.astype(np.float32)
             # normalize the image data to 0-255 range if it's not already
@@ -178,9 +185,9 @@ class InteractiveSegmentationWidget3DSAM(InteractiveSegmentationWidget3DBase):
                 #union = np.sum([m1, m2, m3], axis=0) >= (m_threshold-1 if m_threshold>1 else 1)
                 out_mask_masks = union.astype(np.uint8)  # Convert to uint8
 
-            self.preview_layer.data = out_mask_masks
-
-            self.preview_layer.refresh()   
+            # Merge the predicted mask into the preview using the base class
+            # helper so overwrite/indices/object-id logic is respected.
+            self.add_prediction_to_preview(out_mask_masks, transposed=True)
         except Exception as e:
             print(f"Error in on_prompt_update_event: {e}")
             print(f"Traceback: {traceback.format_exc()}") 

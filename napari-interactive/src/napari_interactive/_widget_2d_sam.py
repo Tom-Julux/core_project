@@ -62,7 +62,7 @@ class InteractiveSegmentationWidget2DSAM(InteractiveSegmentationWidget2DBase):
 
     @property
     def supported_prompt_types(self):
-        return ["Points"]#, "BBox", "Mask"]
+        return ["Points", "BBox"]#, "Mask"]
 
     def load_model(self):
         from sam2.build_sam import build_sam2_camera_predictor,build_sam2
@@ -132,8 +132,12 @@ class InteractiveSegmentationWidget2DSAM(InteractiveSegmentationWidget2DBase):
                     return
                 print(bbox_layer.data)
                 print(bbox_layer.data[-1][:, self._viewer.dims.order])
-                bbox_data = bbox_layer.data[-1][:, self._viewer.dims.order][:,-2:]
+                bbox_data = bbox_layer.data[-1][:, self._viewer.dims.order][:,-2:].copy()
 
+                # Remove all but the last bbox
+                with self.no_autopredict():
+                    bbox_layer.data = bbox_layer.data[-1:]
+                bbox_layer.refresh()
                 bbox_prompt = np.array([
                     np.min(bbox_data[:, 1]), np.min(bbox_data[:, 0]),
                     np.max(bbox_data[:, 1]), np.max(bbox_data[:, 0])

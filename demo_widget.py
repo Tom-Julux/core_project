@@ -17,9 +17,12 @@ class DemoWidget(QWidget):
             "Select a demo...",
             "Mask 2D NoPredictor",
             "Mask 2D SAM",
+            "Mask 3D SAM",
             "Mask 3D NNI",
             "Mask 3D NoPredictor",
         ]
+
+        self.active_widget = None
 
         main_layout = QVBoxLayout(self)
 
@@ -85,6 +88,7 @@ class DemoWidget(QWidget):
             self._viewer.window.add_dock_widget(
                 widget, name="Interactive Segmentation", area="right"
             )
+            self.active_widget = widget
         elif demo_id == "Mask 3D NoPredictor":
             if os.path.exists("/app/example_data/3d mrlinac/aumc_lung_patient031__GTV.mha"):
                 img = sitk.ReadImage(
@@ -114,6 +118,7 @@ class DemoWidget(QWidget):
             self._viewer.window.add_dock_widget(
                 widget, name="Interactive Segmentation", area="right"
             )
+            self.active_widget = widget
         elif demo_id == "Mask 2D NoPredictor":
             if os.path.exists("/app/example_data/3d mrlinac/aumc_lung_patient031__GTV.mha"):
                 img = sitk.ReadImage(
@@ -137,7 +142,7 @@ class DemoWidget(QWidget):
             self._viewer.window.add_dock_widget(
                 widget, name="Interactive Segmentation", area="right"
             )
-
+            self.active_widget = widget
         elif demo_id == "Mask 2D SAM":
             if os.path.exists("/app/example_data/3d mrlinac/aumc_lung_patient031__GTV.mha"):
                 img = sitk.ReadImage(
@@ -161,6 +166,31 @@ class DemoWidget(QWidget):
             self._viewer.window.add_dock_widget(
                 widget, name="Interactive Segmentation", area="right"
             )
+            self.active_widget = widget
+        elif demo_id == "Mask 3D SAM":
+            if os.path.exists("/app/example_data/3d mrlinac/aumc_lung_patient031__GTV.mha"):
+                img = sitk.ReadImage(
+                    "/app/example_data/3d mrlinac/aumc_lung_patient031__GTV.mha"
+                )
+            else:
+                 img = sitk.ReadImage(
+                    f'{base_path}/example_data/3d mrlinac/aumc_lung_patient026__GTV.mha'
+                )
+
+            img = sitk.GetArrayFromImage(img)
+            img = img[img.shape[0]//2:img.shape[0]//2+16]
+            image_layer = self._viewer.add_image(
+                img,
+                name='Example Image',
+                colormap='gray'
+            )
+
+            from napari_interactive._widget_3d_sam import InteractiveSegmentationWidget3DSAM
+            widget = InteractiveSegmentationWidget3DSAM(self._viewer)
+            self._viewer.window.add_dock_widget(
+                widget, name="Interactive Segmentation", area="right"
+            )
+            self.active_widget = widget
         elif demo_id == "Select a demo...":
             pass
         else:
@@ -174,6 +204,14 @@ class DemoWidget(QWidget):
                 self._viewer.layers.remove(layer)
             except:
                 pass
+        if self.active_widget is not None:
+            try:
+                self._viewer.window.remove_dock_widget(self.active_widget)
+                self.active_widget.close()
+                self.active_widget.closeEvent()
+            except:
+                pass
+            self.active_widget = None
         # unload all dock widgets except this one
         for name, widget in list(self._viewer.window._dock_widgets.items()):
             try:
