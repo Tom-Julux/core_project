@@ -63,7 +63,7 @@ class InteractiveSegmentationWidget2DSAM(InteractiveSegmentationWidget2DBase):
 
     @property
     def supported_prompt_types(self):
-        return ["Points", "BBox", "Mask"]
+        return ["Points", "BBox", "Mask", "Manual"]
 
     def load_model(self):
         from sam2.build_sam import build_sam2_camera_predictor, build_sam2
@@ -76,8 +76,8 @@ class InteractiveSegmentationWidget2DSAM(InteractiveSegmentationWidget2DBase):
             checkpoint = os.path.join(base_path, "MedSAM2_latest.pt")
 
         model_cfg = "configs/sam2.1_hiera_t512.yaml"
-        self.predictor = SAM2ImagePredictor(build_sam2(
-            model_cfg, checkpoint, device="cuda" if torch.cuda.is_available() else "cpu"))
+        self.predictor = build_sam2_camera_predictor(
+            model_cfg, checkpoint, device="cuda" if torch.cuda.is_available() else "cpu")
         set_value(self.threshold_slider, self.predictor.mask_threshold)
 
     def setup_hyperparameter_gui(self, _layout):
@@ -88,96 +88,133 @@ class InteractiveSegmentationWidget2DSAM(InteractiveSegmentationWidget2DBase):
         pass
 
     def predict(self):
+        prompt_type = get_value(self.prompt_type_select)[0]
+        img_layer = get_value(self.layerselect_a)[1]
+        self.predictor.mask_threshold = get_value(self.threshold_slider)
+
+        # current_frame_idx = self._viewer.dims.current_step[self._viewer.dims.order[0]]
+        # [current_frame_idx]
+        frame = np.transpose(
+            self._viewer.layers[img_layer].data, self._viewer.dims.order)
+
+        if len(frame.shape) == 1:
+            show_warning("The selected image layer is not at least 2D.")
+            return
+        if len(frame.shape) == 3:
+            frame = frame[self._viewer.dims.current_step[self._viewer.dims.order[0]]]
+        if len(frame.shape) == 4:
+            frame = frame[self._viewer.dims.current_step[self._viewer.dims.order[0]],
+                          self._viewer.dims.current_step[self._viewer.dims.order[1]]]
+
+        # normalize to 0-255 and convert to uint8
+        frame = cv2.normalize(frame, None, alpha=0,
+                              beta=255, norm_type=cv2.NORM_MINMAX)
+        frame = frame.astype(np.uint8)
+
+        frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2RGB)
+
         try:
-            prompt_type = get_value(self.prompt_type_select)[0]
-            img_layer = get_value(self.layerselect_a)[1]
-            self.predictor.mask_threshold = get_value(self.threshold_slider)
+            self.predictor.reset_state()
+        except:
+            pass
+        self.predictor.load_first_frame(frame)
 
-            # current_frame_idx = self._viewer.dims.current_step[self._viewer.dims.order[0]]
-            # [current_frame_idx]
-            frame = np.transpose(
-                self._viewer.layers[img_layer].data, self._viewer.dims.order)
+        if prompt_type == "Points":
+            # Get the positive and negative point layers
+            point_layer_positive = self.prompt_layers['point_positive']
+            point_layer_negative = self.prompt_layers['point_negative']
 
-            if len(frame.shape) == 1:
-                show_warning("The selected image layer is not at least 2D.")
+            if len(point_layer_positive.data) == 0:
                 return
+            # Get the data from the positive and negative point layers
+            pos_points = point_layer_positive.data[:,
+                                                   self._viewer.dims.order[::-1]]
+            neg_points = point_layer_negative.data[:,
+                                                   self._viewer.dims.order[::-1]]
             if len(frame.shape) == 3:
-                frame = frame[self._viewer.dims.current_step[self._viewer.dims.order[0]]]
+                pos_points = pos_points[pos_points[:, 2] ==
+                                        self._viewer.dims.current_step[self._viewer.dims.order[0]]]
+                neg_points = neg_points[neg_points[:, 2] ==
+                                        self._viewer.dims.current_step[self._viewer.dims.order[0]]]
             if len(frame.shape) == 4:
-                frame = frame[self._viewer.dims.current_step[self._viewer.dims.order[0]],
-                              self._viewer.dims.current_step[self._viewer.dims.order[1]]]
+                pos_points = pos_points[pos_points[:, 3] ==
+                                        self._viewer.dims.current_step[self._viewer.dims.order[1]]]
+                neg_points = neg_points[neg_points[:, 3] ==
+                                        self._viewer.dims.current_step[self._viewer.dims.order[1]]]
 
-            # normalize to 0-255 and convert to uint8
-            frame = cv2.normalize(frame, None, alpha=0,
-                                  beta=255, norm_type=cv2.NORM_MINMAX)
-            frame = frame.astype(np.uint8)
+            # Use only the first two dimensions (x, y)
+            pos_points = pos_points[:, :2]
+            neg_points = neg_points[:, :2]
 
-            frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2RGB)
+            # combine
+            point_prompts = np.concatenate(
+                (pos_points, neg_points), axis=0)
+            point_labels = np.concatenate(
+                (np.ones(len(pos_points)), np.zeros(len(neg_points))), axis=0)
 
-            # self.predictor.reset_state()
-            self.predictor.set_image(frame)
+            _, out_obj_ids, out_mask_logits = self.predictor.add_new_prompt(
+                frame_idx=0, obj_id=0,
+                points=point_prompts, labels=point_labels)
+            out_mask_masks = (out_mask_logits > self.predictor.mask_threshold)
+            out_mask_masks = out_mask_masks[0,
+                                            0].cpu().numpy().astype(np.uint8)
+            # out_mask_masks, out_mask_scores, out_mask_logits = self.predictor.predict(
+            #    point_coords=point_prompts, point_labels=point_labels)
 
-            if prompt_type == "Points":
-                # Get the positive and negative point layers
-                point_layer_positive = self.prompt_layers['point_positive']
-                point_layer_negative = self.prompt_layers['point_negative']
+        elif prompt_type == "BBox":
+            bbox_layer = self.prompt_layers['bbox']
+            if len(bbox_layer.data) == 0:
+                return
 
-                if len(point_layer_positive.data) == 0:
-                    return
-                # Get the data from the positive and negative point layers
-                pos_points = point_layer_positive.data[:,
-                                                       self._viewer.dims.order[::-1]][:, :2]
-                neg_points = point_layer_negative.data[:,
-                                                       self._viewer.dims.order[::-1]][:, :2]
+            # Remove all but the last bbox
+            with self.no_autopredict():
+                bbox_layer.data = bbox_layer.data[-1:]
+                bbox_layer.refresh()
 
-                # Use only the first two dimensions (x, y)
-                point_prompts = np.concatenate(
-                    (pos_points, neg_points), axis=0)
-                point_labels = np.concatenate(
-                    (np.ones(len(pos_points)), np.zeros(len(neg_points))), axis=0)
+            print(bbox_layer.data[-1])
+            print(bbox_layer.data[-1][:,self._viewer.dims.order[::-1]])
+            bbox_data = bbox_layer.data[-1][:,self._viewer.dims.order[::-1]]
+            #bbox_data = bbox_layer.data[-1][:,self._viewer.dims.order][:, -2:].copy()
 
-                out_mask_masks, out_mask_scores, out_mask_logits = self.predictor.predict(
-                    point_coords=point_prompts, point_labels=point_labels)
+            bbox_prompt = np.array([
+                np.min(bbox_data[:, 0]), np.min(bbox_data[:, 1]),
+                np.max(bbox_data[:, 0]), np.max(bbox_data[:, 1])
+            ])
+            print(frame.shape)
+            bbox_prompt[0] = np.maximum(bbox_prompt[0], 0)
+            bbox_prompt[1] = np.maximum(bbox_prompt[1], 0)
+            bbox_prompt[2] = np.minimum(bbox_prompt[2], frame.shape[1])
+            bbox_prompt[3] = np.minimum(bbox_prompt[3], frame.shape[0])
 
-            elif prompt_type == "BBox":
-                bbox_layer = self.prompt_layers['bbox']
-                if len(bbox_layer.data) == 0:
-                    return
-                print(bbox_layer.data)
-                print(bbox_layer.data[-1][:, self._viewer.dims.order])
-                bbox_data = bbox_layer.data[-1][:,
-                                                self._viewer.dims.order][:, -2:].copy()
+            print(bbox_prompt)
 
-                # Remove all but the last bbox
-                with self.no_autopredict():
-                    bbox_layer.data = bbox_layer.data[-1:]
-                    bbox_layer.refresh()
+            _, out_obj_ids, out_mask_logits = self.predictor.add_new_prompt(
+                frame_idx=0, obj_id=0,
+                bbox=bbox_prompt)
 
-                bbox_prompt = np.array([
-                    np.min(bbox_data[:, 1]), np.min(bbox_data[:, 0]),
-                    np.max(bbox_data[:, 1]), np.max(bbox_data[:, 0])
-                ])
+            out_mask_masks = (out_mask_logits > self.predictor.mask_threshold)
+            print(out_mask_masks.sum())
+            out_mask_masks = out_mask_masks[0,
+                                            0].cpu().numpy().astype(np.uint8)
 
-                out_mask_masks, out_mask_scores, out_mask_logits = self.predictor.predict(
-                    box=bbox_prompt)  # XYXY format
-            elif prompt_type == "Mask":
-                show_warning("Mask prompt does not make much sense for 2D.")
-                # use mask prompt as initialization
-                mask_prompt_layer = self.prompt_layers['mask']
-                if len(mask_prompt_layer.data) == 0:
-                    return
-                prompt_frame = self._viewer.dims.current_step[self._viewer.dims.order[0]]
-                mask_prompt = mask_prompt_layer.data[prompt_frame]
-                out_mask_masks = [mask_prompt]
+            # out_mask_masks, out_mask_scores, out_mask_logits = self.predictor.predict(
+            #    box=bbox_prompt)  # XYXY format
+        elif prompt_type == "Mask":
+            show_warning("Mask prompt does not make much sense for 2D.")
+            # use mask prompt as initialization
+            mask_prompt_layer = self.prompt_layers['mask']
+            if len(mask_prompt_layer.data) == 0:
+                return
 
-            out_mask = out_mask_masks[-1] > 0
+            prompt_frame = self._viewer.dims.current_step[self._viewer.dims.order[0]]
+            mask_prompt = mask_prompt_layer.data[prompt_frame]
+            out_mask_masks = mask_prompt
+        else:
+            return
+        out_mask = out_mask_masks > 0
 
-            target_size = frame.shape[:2]
-            out_mask = out_mask.astype(np.uint8)
+        target_size = frame.shape[:2]
+        out_mask = out_mask.astype(np.uint8)
 
-            self.add_prediction_to_preview(
-                out_mask, np.s_[self._viewer.dims.current_step[self._viewer.dims.order[0]]])
-
-        except Exception as e:
-            print(f"Error in on_prompt_update_event: {e}")
-            print(traceback.format_exc())
+        self.add_prediction_to_preview(
+            out_mask, np.s_[self._viewer.dims.current_step[self._viewer.dims.order[0]]])

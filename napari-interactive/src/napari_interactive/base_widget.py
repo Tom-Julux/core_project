@@ -122,7 +122,7 @@ class InteractiveSegmentationWidgetBase(QWidget):
         Returns:
             list[str]: list of supported prompt type strings.
         """
-        return ["Mask"]  # ["Points", "BBox", "Mask"]
+        return ["Mask", "Manual"]  # ["Points", "BBox", "Mask"]
 
     def load_model(self):
         """
@@ -195,6 +195,18 @@ class InteractiveSegmentationWidgetBase(QWidget):
         """
         pass
 
+    def setup_second_propagation_gui(self, _scroll_layout):
+        """
+        Add view-selection and view-control widgets to the GUI.
+
+        Args:
+            _scroll_layout: layout provided by build_gui where view controls
+                (for example multi-view switches, set-prompt buttons) should
+                be added. Subclasses implementing 2D/3D behavior should
+                override this to provide appropriate controls.
+        """
+        pass
+
     # region GUI
     def build_gui(self):
         """
@@ -233,7 +245,7 @@ class InteractiveSegmentationWidgetBase(QWidget):
         self.setup_hyperparameter_gui(_layout)
 
         _group_box, _layout = setup_vgroupbox(
-            _scroll_layout, text="Propagation:")
+            _scroll_layout, text="Predict:")
 
         self.run_button = setup_iconbutton(
             _layout,
@@ -257,6 +269,8 @@ class InteractiveSegmentationWidgetBase(QWidget):
             tooltips="Run automatically after each interaction once all three view prompts are set.",
         )
 
+        self.setup_second_propagation_gui(_scroll_layout)
+
         _container, _layout = setup_vcollapsiblegroupbox(
             _scroll_layout, "Multi Mode:", collapsed=False)
         _ = setup_label(
@@ -271,8 +285,13 @@ class InteractiveSegmentationWidgetBase(QWidget):
         )
 
         _label = setup_label(None, "Current Object:")
+        def on_spin_box_change():
+            if self.preview_layer is not None:
+                self.preview_layer.selected_label = get_value(self.object_id_spinbox)
+
+            self.run_predict_in_thread()
         self.object_id_spinbox = setup_spinbox(
-            None, 1, 255, 1, function=lambda: self.run_predict_in_thread())
+            None, 1, 255, 1, function=on_spin_box_change)
 
         _ = hstack(_layout, [_label, self.object_id_spinbox], stretch=[0, 1])
 
@@ -359,7 +378,6 @@ class InteractiveSegmentationWidgetBase(QWidget):
         and connects image transform events so prompts and preview follow the
         image when scaled/rotated/translated.
         """
-        print("on_image_layer_change")
         self.clear_prompt_layers()
         self.clear_preview_layer()
         self.disconnect_image_layer_events()
@@ -448,6 +466,13 @@ class InteractiveSegmentationWidgetBase(QWidget):
         self.preview_layer.translate = self._viewer.layers[img_layer].translate
 
         self._viewer.add_layer(self.preview_layer)
+        self.preview_layer.translate = self._viewer.layers[img_layer].translate
+
+        def on_label_change():
+            if self.preview_layer.selected_label != 0:
+                set_value(self.object_id_spinbox, self.preview_layer.selected_label)
+
+        self.preview_layer.events.selected_label.connect(on_label_change)
 
     def clear_preview_layer(self):
         """
@@ -457,8 +482,9 @@ class InteractiveSegmentationWidgetBase(QWidget):
             self._viewer.layers.remove(self.preview_layer)
             self.preview_label_data = None
             self.preview_layer = None
+        set_value(self.object_id_spinbox, 1)
     # endregion
-
+    
     # region Prompt Layer Management
     def update_prompt_type(self):
         """
@@ -472,6 +498,10 @@ class InteractiveSegmentationWidgetBase(QWidget):
         prompt_type = get_value(self.prompt_type_select)[0]
 
         self.clear_prompt_layers()
+
+        # If not multi object mode clear the preview on prompt type change
+        if not self.is_multi_object and not prompt_type == "Manual":
+            self.preview_layer.data = np.zeros_like(self.preview_layer.data)
 
         img_layer = get_value(self.layerselect_a)[1]
 
@@ -515,8 +545,8 @@ class InteractiveSegmentationWidgetBase(QWidget):
                 name='Mask Prompt Layer', data=data)
             mask_layer.contour = 1
 
-            color_dict = {None: [0, 0, 0, 0], 0: [0, 0, 0, 255], 1: [255, 255, 255, 255]}
-            mask_layer.colormap = DirectColorMap(color_dict = color_dict)
+            color_dict = {None: [0, 0, 0, 0], 0: [0, 0, 0, 0], 1: [255, 255, 255, 255]}
+            mask_layer.colormap = DirectLabelColormap(color_dict = color_dict)
 
             self._viewer.add_layer(mask_layer)
             self.prompt_layers['mask'] = mask_layer
@@ -527,6 +557,9 @@ class InteractiveSegmentationWidgetBase(QWidget):
 
             # set active layer to bbox layer
             self._viewer.layers.selection.active = mask_layer
+
+        elif prompt_type == "Manual":
+            self._viewer.layers.selection.active = self.preview_layer
 
     def clear_prompt_layer_content(self):
         """
@@ -560,7 +593,7 @@ class InteractiveSegmentationWidgetBase(QWidget):
         If "Auto Run Prediction" is enabled this will start a background
         prediction run so the preview updates after parameter changes.
         """
-        if get_value(self.autorun_ckbx):
+        if get_value(self.autorun_ckbx) and self.run_button.isEnabled():
             self.run_predict_in_thread()
 
     def on_prompt_update_event(self, event):
@@ -577,7 +610,7 @@ class InteractiveSegmentationWidgetBase(QWidget):
         
         if self.prevent_auto_run_on_change:
             return
-        if get_value(self.autorun_ckbx):
+        if get_value(self.autorun_ckbx) and self.run_button.isEnabled():
             self.run_predict_in_thread()
 
     @contextmanager
@@ -614,6 +647,10 @@ class InteractiveSegmentationWidgetBase(QWidget):
             self.status_label.setText("Status: Running (Re-run scheduled)")
             return
 
+        # No need to start for manual prompting
+        if get_value(self.prompt_type_select)[0] == "Manual":
+            return
+
         @thread_worker
         def _worker():
             # Acquire the lock and run predictions; the loop allows a single
@@ -623,7 +660,11 @@ class InteractiveSegmentationWidgetBase(QWidget):
                 self.rerun_after_lock = True
                 while self.rerun_after_lock:
                     self.rerun_after_lock = False
-                    self.predict()
+                    try:  
+                        self.predict()
+                    except Exception as e:
+                        print(f"Error in on_prompt_update_event: {e}")
+                        print(f"Traceback: {traceback.format_exc()}")
 
         worker = _worker()
 
@@ -668,7 +709,7 @@ class InteractiveSegmentationWidgetBase(QWidget):
         new_mask = np.where(new_mask > 0, object_id, 0).astype(np.uint8)
 
         # set preview layer data to preview label data with overwrites from the new mask at the indices
-        out_mask = self.preview_label_data.copy()
+        out_mask = self.preview_label_data.copy() if self.is_multi_object else self.preview_layer.data.copy()
 
         if indices is None:
             indices = np.s_[:]
@@ -678,14 +719,22 @@ class InteractiveSegmentationWidgetBase(QWidget):
 
         if get_value(self.overwrite_existing_mm_ckbx):
             # overwrite current preview_label_data at indices with new_mask where new_mask > 0
-            np.copyto(transposed_out_mask[indices],
+            if self.is_multi_object:
+                np.copyto(transposed_out_mask[indices],
                       new_mask, where=(new_mask > 0))
+            else:
+                np.copyto(transposed_out_mask[indices], new_mask)
         else:
             np.copyto(transposed_out_mask[indices], new_mask, where=(
                 new_mask > 0) & (transposed_out_mask[indices] == 0))
 
         self.preview_layer.data = out_mask
         self.preview_layer.refresh()
+
+    @property
+    def is_multi_object(self):
+        object_ids = np.unique(self.preview_layer.data)
+        return len(object_ids) > 2
 
     def increment_object_id(self):
         """
@@ -796,6 +845,9 @@ class InteractiveSegmentationWidget3DBase(InteractiveSegmentationWidgetBase):
         pass
 
     def setup_hyperparameter_gui(self, _layout):
+        pass
+
+    def setup_model_selection_gui(self, _scroll_layout):
         pass
 
     def setup_model_selection_gui(self, _scroll_layout):

@@ -17,6 +17,7 @@ class DemoWidget(QWidget):
             "Select a demo...",
             "Mask 2D NoPredictor",
             "Mask 2D SAM",
+            "Mask 2D+t SAM",
             "Mask 3D SAM",
             "Mask 3D NNI",
             "Mask 3D NoPredictor",
@@ -167,6 +168,32 @@ class DemoWidget(QWidget):
                 widget, name="Interactive Segmentation", area="right"
             )
             self.active_widget = widget
+
+        elif demo_id == "Mask 2D+t SAM":
+            if os.path.exists("/app/example_data/3d mrlinac/aumc_lung_patient031__GTV.mha"):
+                img = sitk.ReadImage(
+                    "/app/example_data/3d mrlinac/aumc_lung_patient031__GTV.mha"
+                )
+            else:
+                 img = sitk.ReadImage(
+                    f'{base_path}/example_data/3d mrlinac/aumc_lung_patient026__GTV.mha'
+                )
+
+            img = sitk.GetArrayFromImage(img)
+            img = img[img.shape[0]//2:img.shape[0]//2+16]
+            image_layer = self._viewer.add_image(
+                img,
+                name='Example Image',
+                colormap='gray'
+            )
+
+            from napari_interactive._widget_2dt_sam import InteractiveSegmentationWidget2DTSAM
+            widget = InteractiveSegmentationWidget2DTSAM(self._viewer)
+            self._viewer.window.add_dock_widget(
+                widget, name="Interactive Segmentation", area="right"
+            )
+            self.active_widget = widget
+            
         elif demo_id == "Mask 3D SAM":
             if os.path.exists("/app/example_data/3d mrlinac/aumc_lung_patient031__GTV.mha"):
                 img = sitk.ReadImage(

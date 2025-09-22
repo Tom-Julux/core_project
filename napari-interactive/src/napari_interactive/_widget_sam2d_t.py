@@ -127,7 +127,7 @@ class InteractiveSegmentationWidgetSAM2_2D_T(QWidget):
         _container, _layout = setup_vgroupbox(_scroll_layout, "Hyperparameters:")
         _ = setup_label(_layout, "Threshold:")
         self.threshold_slider = setup_editdoubleslider(
-            _layout, 2, -3, 3.0, 0.5, function=lambda: self.update_hyperparameters(), include_buttons=False
+            _layout, 2, -3, 3.0, 0.5, function=lambda: self.on_hyperparameter_update(), include_buttons=False
         )
         
         #self.scoring_ckbx = setup_checkbox(_layout, "Use Scoring", True, function=lambda: self.predict())
@@ -143,7 +143,7 @@ class InteractiveSegmentationWidgetSAM2_2D_T(QWidget):
             function=lambda: self.run_predict_in_thread(),
             tooltips="Run the predict step",
         )
-        self.run_ckbx = setup_checkbox(
+        self.autorun_ckbx = setup_checkbox(
             _layout,
             "Auto Run Prediction",
             False,
@@ -164,7 +164,7 @@ class InteractiveSegmentationWidgetSAM2_2D_T(QWidget):
             self._viewer.theme,
             function=lambda: self.reset()
         )
-        #self.run_ckbx = setup_checkbox(
+        #self.autorun_ckbx = setup_checkbox(
         #    _layout,
         #    "Auto Run Prediction",
         #    False,
@@ -246,15 +246,15 @@ class InteractiveSegmentationWidgetSAM2_2D_T(QWidget):
         self.threshold_slider.setDisabled(False)
         self.prompt_type_select.setDisabled(False)
         
-    def update_hyperparameters(self):
-        if get_value(self.run_ckbx):
+    def on_hyperparameter_update(self):
+        if get_value(self.autorun_ckbx):
             self.run_predict_in_thread()
     def on_prompt_update_event(self, event):
         # Ignore in progress events like adding, removing, changing
         if hasattr(event, 'action') and event.action in ['adding', 'removing', 'changing']:
             return
 
-        if get_value(self.run_ckbx):
+        if get_value(self.autorun_ckbx):
             self.run_predict_in_thread()
 
     def run_predict_in_thread(self, *args, **kwargs):
