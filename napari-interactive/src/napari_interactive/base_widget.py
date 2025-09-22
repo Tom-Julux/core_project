@@ -852,7 +852,7 @@ class InteractiveSegmentationWidget3DBase(InteractiveSegmentationWidgetBase):
 
     def setup_model_selection_gui(self, _scroll_layout):
         pass
-
+    
     # GUI
     def setup_view_control_gui(self, _scroll_layout):
         _container, _layout = setup_vgroupbox(_scroll_layout, "View Control:")
@@ -901,6 +901,21 @@ class InteractiveSegmentationWidget3DBase(InteractiveSegmentationWidgetBase):
             self._viewer.dims.order = (1, 0, 2)
         elif selected_view == 2:
             self._viewer.dims.order = (2, 0, 1)
+
+
+    def increment_object_id(self):
+        self.reset_orthogonal_prompting()
+        super().increment_object_id()
+        
+    def reset_orthogonal_prompting(self):
+        self.prompt_frame_set_view_1 = False
+        self.prompt_frame_set_view_2 = False
+        self.prompt_frame_set_view_3 = False
+
+        self.prompt_frame_index_view_1 = 0
+        self.prompt_frame_index_view_2 = 0
+        self.prompt_frame_index_view_3 = 0
+        self.run_button.setEnabled(False)
 
     def set_current_view_prompt(self, view=None):
         if view is None:
