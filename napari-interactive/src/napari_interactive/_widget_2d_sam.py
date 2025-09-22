@@ -27,7 +27,7 @@ from napari_toolkit.widgets import (
     setup_iconbutton,
     setup_label,
     setup_layerselect,
-    
+
     setup_lineedit,
     setup_labeledslider,
     setup_pushbutton,
@@ -55,32 +55,35 @@ from napari.layers import Shapes, Points, Labels
 
 from .base_widget import InteractiveSegmentationWidget2DBase
 
+
 class InteractiveSegmentationWidget2DSAM(InteractiveSegmentationWidget2DBase):
     def __init__(self, viewer: Viewer):
         super().__init__(viewer)
-        set_value(self.run_ckbx, True) 
+        set_value(self.autorun_ckbx, True)
 
     @property
     def supported_prompt_types(self):
-        return ["Points", "BBox"]#, "Mask"]
+        return ["Points", "BBox", "Mask"]
 
     def load_model(self):
-        from sam2.build_sam import build_sam2_camera_predictor,build_sam2
+        from sam2.build_sam import build_sam2_camera_predictor, build_sam2
         from sam2.sam2_image_predictor import SAM2ImagePredictor
 
         checkpoint = "/app/MedSAM2_latest.pt"
         if not os.path.exists("/app/MedSAM2_latest.pt"):
-            base_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+            base_path = os.path.dirname(os.path.dirname(
+                os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
             checkpoint = os.path.join(base_path, "MedSAM2_latest.pt")
 
-        model_cfg= "configs/sam2.1_hiera_t512.yaml"
-        self.predictor = SAM2ImagePredictor(build_sam2(model_cfg, checkpoint, device="cuda" if torch.cuda.is_available() else "cpu"))
+        model_cfg = "configs/sam2.1_hiera_t512.yaml"
+        self.predictor = SAM2ImagePredictor(build_sam2(
+            model_cfg, checkpoint, device="cuda" if torch.cuda.is_available() else "cpu"))
         set_value(self.threshold_slider, self.predictor.mask_threshold)
-        
+
     def setup_hyperparameter_gui(self, _layout):
         _ = setup_label(_layout, "Threshold:")
         self.threshold_slider = setup_editdoubleslider(
-            _layout, 2, -3, 3.0, 0.5, function=lambda: self.update_hyperparameters(), include_buttons=False
+            _layout, 2, -3, 3.0, 0.5, function=lambda: self.on_hyperparameter_update(), include_buttons=False
         )
         pass
 
@@ -90,8 +93,10 @@ class InteractiveSegmentationWidget2DSAM(InteractiveSegmentationWidget2DBase):
             img_layer = get_value(self.layerselect_a)[1]
             self.predictor.mask_threshold = get_value(self.threshold_slider)
 
-            #current_frame_idx = self._viewer.dims.current_step[self._viewer.dims.order[0]]
-            frame = np.transpose(self._viewer.layers[img_layer].data, self._viewer.dims.order)#[current_frame_idx]
+            # current_frame_idx = self._viewer.dims.current_step[self._viewer.dims.order[0]]
+            # [current_frame_idx]
+            frame = np.transpose(
+                self._viewer.layers[img_layer].data, self._viewer.dims.order)
 
             if len(frame.shape) == 1:
                 show_warning("The selected image layer is not at least 2D.")
@@ -99,15 +104,17 @@ class InteractiveSegmentationWidget2DSAM(InteractiveSegmentationWidget2DBase):
             if len(frame.shape) == 3:
                 frame = frame[self._viewer.dims.current_step[self._viewer.dims.order[0]]]
             if len(frame.shape) == 4:
-                frame = frame[self._viewer.dims.current_step[self._viewer.dims.order[0]],self._viewer.dims.current_step[self._viewer.dims.order[1]]]
+                frame = frame[self._viewer.dims.current_step[self._viewer.dims.order[0]],
+                              self._viewer.dims.current_step[self._viewer.dims.order[1]]]
 
             # normalize to 0-255 and convert to uint8
-            frame = cv2.normalize(frame, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX)
+            frame = cv2.normalize(frame, None, alpha=0,
+                                  beta=255, norm_type=cv2.NORM_MINMAX)
             frame = frame.astype(np.uint8)
 
             frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2RGB)
 
-            #self.predictor.reset_state()
+            # self.predictor.reset_state()
             self.predictor.set_image(frame)
 
             if prompt_type == "Points":
@@ -118,13 +125,19 @@ class InteractiveSegmentationWidget2DSAM(InteractiveSegmentationWidget2DBase):
                 if len(point_layer_positive.data) == 0:
                     return
                 # Get the data from the positive and negative point layers
-                pos_points = point_layer_positive.data[:, self._viewer.dims.order[::-1]][:, :2]
-                neg_points = point_layer_negative.data[:, self._viewer.dims.order[::-1]][:, :2]
+                pos_points = point_layer_positive.data[:,
+                                                       self._viewer.dims.order[::-1]][:, :2]
+                neg_points = point_layer_negative.data[:,
+                                                       self._viewer.dims.order[::-1]][:, :2]
 
-                point_prompts = np.concatenate((pos_points, neg_points), axis=0)  # Use only the first two dimensions (x, y)
-                point_labels = np.concatenate((np.ones(len(pos_points)), np.zeros(len(neg_points))), axis=0)
+                # Use only the first two dimensions (x, y)
+                point_prompts = np.concatenate(
+                    (pos_points, neg_points), axis=0)
+                point_labels = np.concatenate(
+                    (np.ones(len(pos_points)), np.zeros(len(neg_points))), axis=0)
 
-                out_mask_masks, out_mask_scores, out_mask_logits = self.predictor.predict(point_coords=point_prompts, point_labels=point_labels)
+                out_mask_masks, out_mask_scores, out_mask_logits = self.predictor.predict(
+                    point_coords=point_prompts, point_labels=point_labels)
 
             elif prompt_type == "BBox":
                 bbox_layer = self.prompt_layers['bbox']
@@ -132,25 +145,38 @@ class InteractiveSegmentationWidget2DSAM(InteractiveSegmentationWidget2DBase):
                     return
                 print(bbox_layer.data)
                 print(bbox_layer.data[-1][:, self._viewer.dims.order])
-                bbox_data = bbox_layer.data[-1][:, self._viewer.dims.order][:,-2:].copy()
+                bbox_data = bbox_layer.data[-1][:,
+                                                self._viewer.dims.order][:, -2:].copy()
 
                 # Remove all but the last bbox
                 with self.no_autopredict():
                     bbox_layer.data = bbox_layer.data[-1:]
-                bbox_layer.refresh()
+                    bbox_layer.refresh()
+
                 bbox_prompt = np.array([
                     np.min(bbox_data[:, 1]), np.min(bbox_data[:, 0]),
                     np.max(bbox_data[:, 1]), np.max(bbox_data[:, 0])
                 ])
-                out_mask_masks, out_mask_scores, out_mask_logits = self.predictor.predict(box=bbox_prompt) # XYXY format
-     
-            print(out_mask_scores)
+
+                out_mask_masks, out_mask_scores, out_mask_logits = self.predictor.predict(
+                    box=bbox_prompt)  # XYXY format
+            elif prompt_type == "Mask":
+                show_warning("Mask prompt does not make much sense for 2D.")
+                # use mask prompt as initialization
+                mask_prompt_layer = self.prompt_layers['mask']
+                if len(mask_prompt_layer.data) == 0:
+                    return
+                prompt_frame = self._viewer.dims.current_step[self._viewer.dims.order[0]]
+                mask_prompt = mask_prompt_layer.data[prompt_frame]
+                out_mask_masks = [mask_prompt]
+
             out_mask = out_mask_masks[-1] > 0
-          
+
             target_size = frame.shape[:2]
             out_mask = out_mask.astype(np.uint8)
 
-            self.add_prediction_to_preview(out_mask, np.s_[self._viewer.dims.current_step[self._viewer.dims.order[0]]])
+            self.add_prediction_to_preview(
+                out_mask, np.s_[self._viewer.dims.current_step[self._viewer.dims.order[0]]])
 
         except Exception as e:
             print(f"Error in on_prompt_update_event: {e}")

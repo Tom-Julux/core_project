@@ -11,6 +11,7 @@ from napari.layers import Image
 from typing import TYPE_CHECKING
 from functools import partial
 import numpy as np
+from napari.utils.colormaps import CyclicLabelColormap, DirectLabelColormap, label_colormap
 from napari.utils.notifications import show_info, show_warning, show_error, show_console_notification
 from napari import Viewer
 from napari.layers import Labels, Shapes, Points, Image, Layer
@@ -57,6 +58,7 @@ from napari._qt.layer_controls.qt_shapes_controls import QtShapesControls
 
 from napari.layers import Shapes, Points, Labels
 from contextlib import contextmanager
+
 
 class BoxPromptLayer(Shapes):
     def __init__(self, *args, **kwargs):
@@ -165,7 +167,7 @@ class InteractiveSegmentationWidgetBase(QWidget):
             _layout: a layout/container provided by the GUI builder where widgets
                 for model hyperparameters (thresholds, sliders, checkboxes)
                 should be added. Subclasses should add widgets and connect
-                their change callbacks to update_hyperparameters().
+                their change callbacks to on_hyperparameter_update().
         """
         pass
 
@@ -243,7 +245,12 @@ class InteractiveSegmentationWidgetBase(QWidget):
         )
         self.run_button.setEnabled(False)
 
-        self.run_ckbx = setup_checkbox(
+        # Status label shown under the predict button. Updated when a
+        # prediction worker is running, finished, or when a re-run is
+        # scheduled while a run is active.
+        self.status_label = setup_label(_layout, "Status: Ready")
+
+        self.autorun_ckbx = setup_checkbox(
             _layout,
             "Auto Run Prediction",
             False,
@@ -251,7 +258,7 @@ class InteractiveSegmentationWidgetBase(QWidget):
         )
 
         _container, _layout = setup_vcollapsiblegroupbox(
-            _scroll_layout, "Multi Mode:", collapsed=True)
+            _scroll_layout, "Multi Mode:", collapsed=False)
         _ = setup_label(
             _layout, "Create multiple (non-overlapping) predictions.")
 
@@ -263,7 +270,7 @@ class InteractiveSegmentationWidgetBase(QWidget):
             function=lambda: self.run_predict_in_thread()
         )
 
-        _label = setup_label(None, "Current ObjectID:")
+        _label = setup_label(None, "Current Object:")
         self.object_id_spinbox = setup_spinbox(
             None, 1, 255, 1, function=lambda: self.run_predict_in_thread())
 
@@ -369,7 +376,6 @@ class InteractiveSegmentationWidgetBase(QWidget):
         self.connect_image_layer_events()
         self.on_image_layer_scale_or_rotate()
         self.run_button.setEnabled(True)
-
 
     def connect_image_layer_events(self):
         """
@@ -481,6 +487,9 @@ class InteractiveSegmentationWidgetBase(QWidget):
             self.prompt_layers['point_positive'] = point_layer_positive
             self.prompt_layers['point_negative'] = point_layer_negative
 
+            point_layer_positive.size = 5
+            point_layer_negative.size = 5
+
             point_layer_positive.events.data.connect(
                 self.on_prompt_update_event)
             point_layer_negative.events.data.connect(
@@ -490,9 +499,12 @@ class InteractiveSegmentationWidgetBase(QWidget):
             self._viewer.layers.selection.active = point_layer_positive
         elif prompt_type == "BBox":
             bbox_layer = BoxPromptLayer(
-                name='BBox Prompt Layer', ndim=len(img_layer_shape))
+                name='BBox Prompt Layer', ndim=len(img_layer_shape),
+                face_color = "#ffffff00",edge_color = "#ffffffff",opacity = 0.7)
+
             self._viewer.add_layer(bbox_layer)
             self.prompt_layers['bbox'] = bbox_layer
+
 
             bbox_layer.events.data.connect(self.on_prompt_update_event)
             # set active layer to bbox layer
@@ -503,10 +515,16 @@ class InteractiveSegmentationWidgetBase(QWidget):
                 name='Mask Prompt Layer', data=data)
             mask_layer.contour = 1
 
+            color_dict = {None: [0, 0, 0, 0], 0: [0, 0, 0, 255], 1: [255, 255, 255, 255]}
+            mask_layer.colormap = DirectColorMap(color_dict = color_dict)
+
             self._viewer.add_layer(mask_layer)
             self.prompt_layers['mask'] = mask_layer
 
-            mask_layer.events.data.connect(self.on_prompt_update_event)
+            #mask_layer.events.data.connect(self.on_prompt_update_event)
+            # For the Labels layer, use the paint event to catch changes after they occured
+            mask_layer.events.paint.connect(self.on_prompt_update_event)
+
             # set active layer to bbox layer
             self._viewer.layers.selection.active = mask_layer
 
@@ -535,14 +553,14 @@ class InteractiveSegmentationWidgetBase(QWidget):
         self.prompt_layers.clear()
     # endregion
 
-    def update_hyperparameters(self):
+    def on_hyperparameter_update(self):
         """
         Called when hyperparameters change to optionally trigger a prediction.
 
         If "Auto Run Prediction" is enabled this will start a background
         prediction run so the preview updates after parameter changes.
         """
-        if get_value(self.run_ckbx):
+        if get_value(self.autorun_ckbx):
             self.run_predict_in_thread()
 
     def on_prompt_update_event(self, event):
@@ -556,12 +574,13 @@ class InteractiveSegmentationWidgetBase(QWidget):
         # Ignore in progress events like adding, removing, changing
         if hasattr(event, 'action') and event.action in ['adding', 'removing', 'changing']:
             return
+        
         if self.prevent_auto_run_on_change:
             return
-        if get_value(self.run_ckbx):
+        if get_value(self.autorun_ckbx):
             self.run_predict_in_thread()
 
-    @contextmanager        
+    @contextmanager
     def no_autopredict(self):
         """
         Context manager that temporarily suppresses automatic predictions.
@@ -579,24 +598,50 @@ class InteractiveSegmentationWidgetBase(QWidget):
         self.prevent_auto_run_on_change = False
 
     def run_predict_in_thread(self):
-        """
-        Start a background worker that runs predict() safely with a lock.
+        """Start a background worker that runs predict() safely with a lock.
 
         Ensures only one prediction runs at a time. If multiple triggers occur
-        while a prediction is running, the worker will perform a single
-        additional rerun once the current run completes.
+        while a prediction is running, a single additional rerun will be
+        scheduled and reflected in the status label as "Re-run scheduled".
         """
+        print("run_predict_in_thread")
+
+        # If a prediction is currently running, schedule a rerun and update
+        # the status immediately.
+        if self.propagating_lock.locked():
+            self.rerun_after_lock = True
+            self.run_button.setEnabled(False)
+            self.status_label.setText("Status: Running (Re-run scheduled)")
+            return
+
         @thread_worker
         def _worker():
-            if self.propagating_lock.locked():
-                self.rerun_after_lock = True
-                return
+            # Acquire the lock and run predictions; the loop allows a single
+            # additional run if self.rerun_after_lock becomes True while
+            # executing.
             with self.propagating_lock:
                 self.rerun_after_lock = True
                 while self.rerun_after_lock:
                     self.rerun_after_lock = False
                     self.predict()
-        _worker().start()
+
+        worker = _worker()
+
+        # Update UI when worker starts
+        def _on_started():
+            self.run_button.setEnabled(False)
+            self.status_label.setText("Status: Running...")
+        # Update UI when worker finishes or errors
+
+        def _on_done(*args, **kwargs):
+            self.status_label.setText("Status: Ready")
+            self.run_button.setEnabled(True)
+        # Connect signals (thread_worker exposes started, finished, errored)
+        worker.started.connect(_on_started)
+        worker.finished.connect(_on_done)
+        worker.errored.connect(_on_done)
+
+        worker.start()
 
     def add_prediction_to_preview(self, new_mask, indices=None, transposed=False):
         """
@@ -614,7 +659,8 @@ class InteractiveSegmentationWidgetBase(QWidget):
               existing labels. Otherwise only writes into empty (0) pixels.
         """
         if self.preview_layer is None:
-            show_warning("No preview layer to add prediction to.")
+            setup_warning("No preview layer to add prediction to.")
+            self.setup_preview_layer()
             return
 
         # update new_mask to object id
@@ -627,7 +673,8 @@ class InteractiveSegmentationWidgetBase(QWidget):
         if indices is None:
             indices = np.s_[:]
 
-        transposed_out_mask = np.transpose(out_mask, self._viewer.dims.order) if not transposed else out_mask
+        transposed_out_mask = np.transpose(
+            out_mask, self._viewer.dims.order) if not transposed else out_mask
 
         if get_value(self.overwrite_existing_mm_ckbx):
             # overwrite current preview_label_data at indices with new_mask where new_mask > 0
@@ -835,7 +882,7 @@ class InteractiveSegmentationWidget3DBase(InteractiveSegmentationWidgetBase):
 
         if self.prompt_frame_set_view_1 and self.prompt_frame_set_view_2 and self.prompt_frame_set_view_3:
             self.run_button.setEnabled(True)
-            if get_value(self.run_ckbx):
+            if get_value(self.autorun_ckbx):
                 self.run_predict_in_thread()
 
     def update_prompt_type(self):
