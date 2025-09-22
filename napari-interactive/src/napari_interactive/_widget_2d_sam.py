@@ -45,16 +45,8 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from napari._qt.layer_controls.qt_layer_controls_container import layer_to_controls
-
-from napari_promptable.controls.bbox_controls import CustomQtBBoxControls
-from napari_promptable.controls.lasso_controls import CustomQtLassoControls
-from napari_promptable.controls.point_controls import CustomQtPointsControls
-from napari_promptable.controls.scribble_controls import CustomQtScribbleControls
 from napari.layers import Shapes, Points, Labels
-
 from .base_widget import InteractiveSegmentationWidget2DBase
-
 
 class InteractiveSegmentationWidget2DSAM(InteractiveSegmentationWidget2DBase):
     def __init__(self, viewer: Viewer):
@@ -158,8 +150,6 @@ class InteractiveSegmentationWidget2DSAM(InteractiveSegmentationWidget2DBase):
             out_mask_masks = (out_mask_logits > self.predictor.mask_threshold)
             out_mask_masks = out_mask_masks[0,
                                             0].cpu().numpy().astype(np.uint8)
-            # out_mask_masks, out_mask_scores, out_mask_logits = self.predictor.predict(
-            #    point_coords=point_prompts, point_labels=point_labels)
 
         elif prompt_type == "BBox":
             bbox_layer = self.prompt_layers['bbox']
@@ -171,31 +161,25 @@ class InteractiveSegmentationWidget2DSAM(InteractiveSegmentationWidget2DBase):
                 bbox_layer.data = bbox_layer.data[-1:]
                 bbox_layer.refresh()
 
-            print(bbox_layer.data[-1])
-            print(bbox_layer.data[-1][:,self._viewer.dims.order[::-1]])
-            bbox_data = bbox_layer.data[-1][:,self._viewer.dims.order[::-1]]
-            #bbox_data = bbox_layer.data[-1][:,self._viewer.dims.order][:, -2:].copy()
+            bbox_data = bbox_layer.data[-1][:, self._viewer.dims.order[::-1]]
 
             bbox_prompt = np.array([
                 np.min(bbox_data[:, 0]), np.min(bbox_data[:, 1]),
                 np.max(bbox_data[:, 0]), np.max(bbox_data[:, 1])
             ])
-            print(frame.shape)
+
             bbox_prompt[0] = np.maximum(bbox_prompt[0], 0)
             bbox_prompt[1] = np.maximum(bbox_prompt[1], 0)
             bbox_prompt[2] = np.minimum(bbox_prompt[2], frame.shape[1])
             bbox_prompt[3] = np.minimum(bbox_prompt[3], frame.shape[0])
-
-            print(bbox_prompt)
 
             _, out_obj_ids, out_mask_logits = self.predictor.add_new_prompt(
                 frame_idx=0, obj_id=0,
                 bbox=bbox_prompt)
 
             out_mask_masks = (out_mask_logits > self.predictor.mask_threshold)
-            print(out_mask_masks.sum())
-            out_mask_masks = out_mask_masks[0,
-                                            0].cpu().numpy().astype(np.uint8)
+
+            out_mask_masks = out_mask_masks[0,0].cpu().numpy().astype(np.uint8)
 
             # out_mask_masks, out_mask_scores, out_mask_logits = self.predictor.predict(
             #    box=bbox_prompt)  # XYXY format
@@ -210,6 +194,7 @@ class InteractiveSegmentationWidget2DSAM(InteractiveSegmentationWidget2DBase):
             mask_prompt = mask_prompt_layer.data[prompt_frame]
             out_mask_masks = mask_prompt
         else:
+            # Manual Prompt 
             return
         out_mask = out_mask_masks > 0
 

@@ -54,14 +54,14 @@ from ._widget_2d_sam import InteractiveSegmentationWidget2DSAM
 class InteractiveSegmentationWidget2DTSAM(InteractiveSegmentationWidget2DSAM):
     def __init__(self, viewer: Viewer):
         super().__init__(viewer)
-        if get_value(self.layerselect_a)[0] is not None:
+        if get_value(self.layerselect_a)[1] != -1:
             img_layer = get_value(self.layerselect_a)[0]
             N_dim = len(self._viewer.layers[img_layer].data.shape)
             self.propagation_dim_spinbox.setMaximum(N_dim-2)
 
     def on_image_layer_change(self):
         super().on_image_layer_change()
-        if get_value(self.layerselect_a)[0] is not None:
+        if get_value(self.layerselect_a)[1] != -1:
             img_layer = get_value(self.layerselect_a)[0]
             N_dim = len(self._viewer.layers[img_layer].data.shape)
             self.propagation_dim_spinbox.setMaximum(N_dim-2)

@@ -147,7 +147,7 @@ class DemoWidget(QWidget):
         elif demo_id == "Mask 2D SAM":
             if os.path.exists("/app/example_data/3d mrlinac/aumc_lung_patient031__GTV.mha"):
                 img = sitk.ReadImage(
-                    "/app/example_data/3d mrlinac/aumc_lung_patient031__GTV.mha"
+                    "/app//Users/tomjulius/Developer/core_project/example_data/2d+t_trackrad/A_003_frames_8bit.mha"
                 )
             else:
                  img = sitk.ReadImage(
@@ -169,7 +169,7 @@ class DemoWidget(QWidget):
             )
             self.active_widget = widget
 
-        elif demo_id == "Mask 2D+t SAM":
+        elif demo_id == "Mask 2D+t SAM (3D)":
             if os.path.exists("/app/example_data/3d mrlinac/aumc_lung_patient031__GTV.mha"):
                 img = sitk.ReadImage(
                     "/app/example_data/3d mrlinac/aumc_lung_patient031__GTV.mha"
@@ -181,6 +181,30 @@ class DemoWidget(QWidget):
 
             img = sitk.GetArrayFromImage(img)
             img = img[img.shape[0]//2:img.shape[0]//2+16]
+            image_layer = self._viewer.add_image(
+                img,
+                name='Example Image',
+                colormap='gray'
+            )
+
+            from napari_interactive._widget_2dt_sam import InteractiveSegmentationWidget2DTSAM
+            widget = InteractiveSegmentationWidget2DTSAM(self._viewer)
+            self._viewer.window.add_dock_widget(
+                widget, name="Interactive Segmentation", area="right"
+            )
+            self.active_widget = widget
+            
+        elif demo_id == "Mask 2D+t SAM":
+            if os.path.exists("/app/example_data/2d+t_trackrad/A_003_frames_8bit.mha"):
+                img = sitk.ReadImage(
+                    "/app/example_data/2d+t_trackrad/A_003_frames_8bit.mha"
+                )
+            else:
+                 img = sitk.ReadImage(
+                    f'{base_path}/example_data/2d+t_trackrad/A_003_frames_8bit.mha'
+                )
+
+            img = sitk.GetArrayFromImage(img)
             image_layer = self._viewer.add_image(
                 img,
                 name='Example Image',

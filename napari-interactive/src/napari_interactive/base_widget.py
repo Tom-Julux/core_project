@@ -103,7 +103,7 @@ class InteractiveSegmentationWidgetBase(QWidget):
         self.build_gui()
         self.load_model()
         print("InteractiveSegmentationWidgetBase initialized")
-        if get_value(self.layerselect_a)[0] is not None:
+        if get_value(self.layerselect_a)[1] != -1:
             self.setup_preview_layer()
             self.update_prompt_type()
             self.connect_image_layer_events()
@@ -383,8 +383,9 @@ class InteractiveSegmentationWidgetBase(QWidget):
         self.disconnect_image_layer_events()
         self.reset_model()
 
-        img_layer = get_value(self.layerselect_a)[0]
-        if img_layer is None or img_layer not in self._viewer.layers:
+        img_layer, img_layer_idx = get_value(self.layerselect_a)
+
+        if img_layer_idx == -1 or img_layer not in self._viewer.layers:
             show_warning("Please select a valid image layer.")
             self.run_button.setEnabled(False)
             return
@@ -402,25 +403,29 @@ class InteractiveSegmentationWidgetBase(QWidget):
         transformations.
         """
         # connect the image layer's scale and rotation changes to the preview layer
-        img_layer = get_value(self.layerselect_a)[1]
+        img_layer, img_layer_idx = get_value(self.layerselect_a)
+
         img_layer = self._viewer.layers[img_layer]
         img_layer.events.scale.connect(self.on_image_layer_scale_or_rotate)
         img_layer.events.rotate.connect(self.on_image_layer_scale_or_rotate)
         img_layer.events.translate.connect(self.on_image_layer_scale_or_rotate)
+        img_layer.events.affine.connect(self.on_image_layer_scale_or_rotate)
 
     def disconnect_image_layer_events(self):
         """
         Disconnect transform event handlers from the currently selected
         image layer if present. Safe to call repeatedly.
         """
-        img_layer = get_value(self.layerselect_a)[1]
-        if img_layer is not None and img_layer in self._viewer.layers:
+        img_layer, img_layer_idx = get_value(self.layerselect_a)
+        if img_layer_idx != -1 and img_layer in self._viewer.layers:
             img_layer = self._viewer.layers[img_layer]
             img_layer.events.scale.disconnect(
                 self.on_image_layer_scale_or_rotate)
             img_layer.events.rotate.disconnect(
                 self.on_image_layer_scale_or_rotate)
             img_layer.events.translate.disconnect(
+                self.on_image_layer_scale_or_rotate)
+            img_layer.events.affine.disconnect(
                 self.on_image_layer_scale_or_rotate)
 
     def on_image_layer_scale_or_rotate(self, event=None):
@@ -431,17 +436,19 @@ class InteractiveSegmentationWidgetBase(QWidget):
         This keeps prompts aligned with the image when the user zooms,
         rotates or translates the image layer.
         """
-        img_layer = get_value(self.layerselect_a)[1]
+        img_layer, img_layer_idx = get_value(self.layerselect_a)
 
         if self.preview_layer is not None:
             self.preview_layer.scale = self._viewer.layers[img_layer].scale
             self.preview_layer.rotate = self._viewer.layers[img_layer].rotate
             self.preview_layer.translate = self._viewer.layers[img_layer].translate
+            self.preview_layer.affine.affine_matrix = self._viewer.layers[img_layer].affine.affine_matrix
 
         for layer in self.prompt_layers.values():
             layer.scale = self._viewer.layers[img_layer].scale
             layer.rotate = self._viewer.layers[img_layer].rotate
             layer.translate = self._viewer.layers[img_layer].translate
+            layer.affine.affine_matrix = self._viewer.layers[img_layer].affine.affine_matrix
     # endregion
 
     # region Preview Layer Management
@@ -453,7 +460,7 @@ class InteractiveSegmentationWidgetBase(QWidget):
         image layer's shape and transforms. The created Labels layer is stored
         in self.preview_layer and its backing array in self.preview_label_data.
         """
-        img_layer = get_value(self.layerselect_a)[1]
+        img_layer, img_layer_idx = get_value(self.layerselect_a)
 
         img_layer_shape = self._viewer.layers[img_layer].data.shape
 
@@ -461,18 +468,15 @@ class InteractiveSegmentationWidgetBase(QWidget):
         self.preview_layer = Labels(
             name='Preview Layer', data=self.preview_label_data.copy(), opacity=0.5)
         self.preview_layer.contour = 1
-        self.preview_layer.scale = self._viewer.layers[img_layer].scale
-        self.preview_layer.rotate = self._viewer.layers[img_layer].rotate
-        self.preview_layer.translate = self._viewer.layers[img_layer].translate
-
+        
         self._viewer.add_layer(self.preview_layer)
-        self.preview_layer.translate = self._viewer.layers[img_layer].translate
 
         def on_label_change():
             if self.preview_layer.selected_label != 0:
                 set_value(self.object_id_spinbox, self.preview_layer.selected_label)
 
         self.preview_layer.events.selected_label.connect(on_label_change)
+        self.on_image_layer_scale_or_rotate()
 
     def clear_preview_layer(self):
         """
@@ -512,6 +516,7 @@ class InteractiveSegmentationWidgetBase(QWidget):
                 name='Point Point Layer (Positive)', ndim=len(img_layer_shape))
             point_layer_negative = PointPromptLayer(
                 name='Point Point Layer (Negative)', ndim=len(img_layer_shape))
+
             self._viewer.add_layer(point_layer_positive)
             self._viewer.add_layer(point_layer_negative)
             self.prompt_layers['point_positive'] = point_layer_positive
@@ -560,6 +565,8 @@ class InteractiveSegmentationWidgetBase(QWidget):
 
         elif prompt_type == "Manual":
             self._viewer.layers.selection.active = self.preview_layer
+        
+        self.on_image_layer_scale_or_rotate()
 
     def clear_prompt_layer_content(self):
         """
@@ -783,6 +790,7 @@ class InteractiveSegmentationWidgetBase(QWidget):
         new_layer.scale = self.preview_layer.scale
         new_layer.rotate = self.preview_layer.rotate
         new_layer.translate = self.preview_layer.translate
+        new_layer.affine = self.preview_layer.affine
         new_layer.opacity = 1.0
         new_layer.contour = 1
         # Add the new layer to the viewer
@@ -821,7 +829,24 @@ class InteractiveSegmentationWidgetBase(QWidget):
 
 
 class InteractiveSegmentationWidget3DBase(InteractiveSegmentationWidgetBase):
+    """Base class for 3D interactive segmentation widgets.
+
+    This class extends the generic InteractiveSegmentationWidgetBase with
+    helpers for orthogonal (three-view) prompting. It tracks whether a
+    prompt (contour/mask) has been set for each orthogonal view and the
+    associated slice/index for each view. Subclasses should implement
+    model-specific methods like ``load_model``, ``predict`` and
+    ``reset_model``.
+    """
+
     def __init__(self, viewer: Viewer):
+        """Initialize 3D prompt-tracking state.
+
+        The constructor initializes boolean flags that indicate whether a
+        prompt has been set for each of the three orthogonal views and
+        stores the index (slice) for each view. These are used to control
+        when prediction is allowed to run in multi-view workflows.
+        """
         super().__init__(viewer)
         self.prompt_frame_set_view_1 = False
         self.prompt_frame_set_view_2 = False
@@ -855,6 +880,13 @@ class InteractiveSegmentationWidget3DBase(InteractiveSegmentationWidgetBase):
     
     # GUI
     def setup_view_control_gui(self, _scroll_layout):
+        """Build the view control section of the GUI.
+
+        Adds a switch to choose the active orthogonal view, three progress
+        indicators showing whether a prompt has been set for each view, and
+        a button that copies the current mask into the prompt set for the
+        selected view.
+        """
         _container, _layout = setup_vgroupbox(_scroll_layout, "View Control:")
         self.view_select = setup_hswitch(
             _layout, ["View A", "View B", "View C"], default=0, function=lambda: self.set_view())
@@ -882,6 +914,13 @@ class InteractiveSegmentationWidget3DBase(InteractiveSegmentationWidgetBase):
         )
 
     def set_view(self):
+        """Switch the viewer dimension ordering based on the selected view.
+
+        This method updates ``self._viewer.dims.order`` so that the napari
+        display presents the chosen orthogonal slice ordering. If a caller
+        wants to automatically set prompts on view change, they can call
+        ``set_current_view_prompt`` (optionally controlled by a checkbox).
+        """
         # Set the current view based on the selected option in the view_select widget
         selected_view = get_value(self.view_select)[1]
 
@@ -904,10 +943,22 @@ class InteractiveSegmentationWidget3DBase(InteractiveSegmentationWidgetBase):
 
 
     def increment_object_id(self):
+        """Increment the current object id and reset orthogonal prompting.
+
+        When the active object changes in a multi-object workflow, any
+        previously-set orthogonal prompts are cleared so that the new
+        object can be defined from scratch.
+        """
         self.reset_orthogonal_prompting()
         super().increment_object_id()
         
     def reset_orthogonal_prompting(self):
+        """Clear all orthogonal prompt flags and reset indices.
+
+        This helper returns the widget to a state where no view prompts are
+        considered set and disables the Predict button until new prompts are
+        provided.
+        """
         self.prompt_frame_set_view_1 = False
         self.prompt_frame_set_view_2 = False
         self.prompt_frame_set_view_3 = False
@@ -918,6 +969,18 @@ class InteractiveSegmentationWidget3DBase(InteractiveSegmentationWidgetBase):
         self.run_button.setEnabled(False)
 
     def set_current_view_prompt(self, view=None):
+        """Set the current mask as the prompt for the chosen orthogonal view.
+
+        Args:
+            view: optional int 0/1/2 indicating which orthogonal view to set.
+                  If None, the currently selected view in the GUI is used.
+
+        This method records that a prompt (mask/contour) exists for the
+        selected view, stores the corresponding slice index, updates the
+        progress indicator text and, if all three view prompts are present,
+        enables the Predict button and optionally triggers an automatic run
+        if autorun is enabled.
+        """
         if view is None:
             view = get_value(self.view_select)[1]
 
@@ -951,12 +1014,6 @@ class InteractiveSegmentationWidget3DBase(InteractiveSegmentationWidgetBase):
             self.run_button.setEnabled(True)
             if get_value(self.autorun_ckbx):
                 self.run_predict_in_thread()
-
-    def update_prompt_type(self):
-        super().update_prompt_type()
-
-    def run_predict_in_thread(self):
-        super().run_predict_in_thread()
 
     def closeEvent(self, event=None):
         super().closeEvent(event=event)
@@ -999,23 +1056,3 @@ class InteractiveSegmentationWidget2DBase(InteractiveSegmentationWidgetBase):
 
     def closeEvent(self, event=None):
         super().closeEvent(event=event)
-
-
-class InteractiveSegmentationWidgetINSTANCE(InteractiveSegmentationWidget3DBase):
-    def __init__(self, viewer: Viewer):
-        super().__init__(viewer)
-
-    def setup_hyperparameter_gui(self, _layout):
-        pass
-
-    def setup_model_selection_gui(self, _scroll_layout):
-        pass
-
-    def load_model(self):
-        pass
-
-    def reset_model(self):
-        pass
-
-    def predict(self):
-        pass
