@@ -58,6 +58,8 @@ class InteractiveSegmentationWidget2DTSAM(InteractiveSegmentationWidget2DSAM):
             img_layer = get_value(self.layerselect_a)[0]
             N_dim = len(self._viewer.layers[img_layer].data.shape)
             self.propagation_dim_spinbox.setMaximum(N_dim-3)
+        
+        self.stop_propagation_after_frame = False
 
     def on_image_layer_change(self):
         super().on_image_layer_change()
@@ -163,6 +165,7 @@ class InteractiveSegmentationWidget2DTSAM(InteractiveSegmentationWidget2DSAM):
     def run_propagate_in_thread_until_end(self):
         # If a prediction is currently running
         if self.propagating_lock.locked():
+            self.stop_propagation_after_frame = True
             return
 
         @thread_worker
@@ -173,9 +176,10 @@ class InteractiveSegmentationWidget2DTSAM(InteractiveSegmentationWidget2DSAM):
             with self.propagating_lock:
                 try:
                     # change button_text to "Stop"
-                    propagated_successfully = True
-                    while propagated_successfully:
-                        propagated_successfully = self.propagate()
+                    propagated_successfully = self.propagate(initialize=True)
+                    self.stop_propagation_after_frame = False
+                    while propagated_successfully and not self.stop_propagation_after_frame:
+                        propagated_successfully = self.propagate(initialize=False)
                 except Exception as e:
                     print(f"Error in on_prompt_update_event: {e}")
                     print(f"Traceback: {traceback.format_exc()}")
@@ -184,15 +188,15 @@ class InteractiveSegmentationWidget2DTSAM(InteractiveSegmentationWidget2DSAM):
 
         # Update UI when worker starts
         def _on_started():
-            self.propagate_status_label.setText("Status: Running continously...")
+            self.propagate_status_label.setText("Status: Running until stopped...")
             self.propagate_button_continuos.setText("Stop")
-            self.propagate_button.setEnabled(False)
+            #self.propagate_button.setEnabled(False)
         # Update UI when worker finishes or errors
 
         def _on_done(*args, **kwargs):
             self.propagate_status_label.setText("Status: Ready")
             self.propagate_button_continuos.setText("Run")
-            self.propagate_button.setEnabled(True)
+            #self.propagate_button.setEnabled(True)
         # Connect signals (thread_worker exposes started, finished, errored)
         worker.started.connect(_on_started)
         worker.finished.connect(_on_done)
@@ -200,7 +204,7 @@ class InteractiveSegmentationWidget2DTSAM(InteractiveSegmentationWidget2DSAM):
 
         worker.start()
 
-    def propagate(self):
+    def propagate(self, initialize=True):
         """
         Propagate the masks from the current preview to the next frame.
 
@@ -256,17 +260,19 @@ class InteractiveSegmentationWidget2DTSAM(InteractiveSegmentationWidget2DSAM):
         current_frame = cv2.normalize(current_frame, None, alpha=0,
                                       beta=255, norm_type=cv2.NORM_MINMAX).astype(np.uint8)
         current_frame = cv2.cvtColor(current_frame, cv2.COLOR_GRAY2RGB)
+        
         next_frame = frames[next_frame_selector]
         next_frame = cv2.normalize(next_frame, None, alpha=0,
                                    beta=255, norm_type=cv2.NORM_MINMAX).astype(np.uint8)
         next_frame = cv2.cvtColor(next_frame, cv2.COLOR_GRAY2RGB)
 
-        try:
-            self.predictor.reset_state()
-        except:
-            pass
+        if initialize:
+            try:
+                self.predictor.reset_state()
+            except:
+                pass
 
-        self.predictor.load_first_frame(current_frame)
+            self.predictor.load_first_frame(current_frame)
 
         if self.preview_layer is None:
             show_warning(
@@ -292,10 +298,11 @@ class InteractiveSegmentationWidget2DTSAM(InteractiveSegmentationWidget2DSAM):
                 "No object found in the current frame of the preview layer. Please run prediction first.")
             return False
 
-        for object_id in visibile_object_ids:
-            obj_mask = (current_mask == object_id).astype(np.uint8)
-            _, out_obj_ids, out_mask_logits = self.predictor.add_new_mask(
-                frame_idx=0, obj_id=object_id, mask=obj_mask)
+        if initialize:
+            for object_id in visibile_object_ids:
+                obj_mask = (current_mask == object_id).astype(np.uint8)
+                _, out_obj_ids, out_mask_logits = self.predictor.add_new_mask(
+                    frame_idx=0, obj_id=object_id, mask=obj_mask)
 
         out_obj_ids, out_mask_logits = self.predictor.track(next_frame)
 
