@@ -46,7 +46,9 @@ from .base_widget import InteractiveSegmentationWidget3DBase
 class InteractiveSegmentationWidget3DNNI(InteractiveSegmentationWidget3DBase):
     def __init__(self, viewer: Viewer):
         super().__init__(viewer)
-        self.run_button.setEnabled(True)
+        self.autorun_ckbx.setChecked(False)
+        self.run_button.setEnabled(False)
+        self.session = None
 
     def setup_hyperparameter_gui(self, _layout):
         pass
@@ -57,10 +59,8 @@ class InteractiveSegmentationWidget3DNNI(InteractiveSegmentationWidget3DBase):
         _container, _layout = setup_vcollapsiblegroupbox(
             _scroll_layout, "Setup", True)
 
-        # _container, _layout = setup_vgroupbox(_scroll_layout, "Metric mode:")
         _ = setup_label(_layout, "Select model:")
 
-        # ,"SAM2.1 tiny", "SAM2.1 small", "SAM2.1 large"]
         model_options = ["nnInteractive_v1.0"]
 
         self.model_selection = setup_combobox(
@@ -101,7 +101,6 @@ class InteractiveSegmentationWidget3DNNI(InteractiveSegmentationWidget3DBase):
             # Load the trained model
             model_path = os.path.join(DOWNLOAD_DIR, MODEL_NAME)
             self.session.initialize_from_trained_model_folder(model_path)
-            print(self.session)
         except Exception as e:
             self.session = None
             print(f"Failed to load model. {e}")
@@ -113,75 +112,101 @@ class InteractiveSegmentationWidget3DNNI(InteractiveSegmentationWidget3DBase):
     def reset_model(self):
         self.session.reset_interactions()
 
+    def closeEvent(self, event=None):
+        super().closeEvent()
+        self.session.reset_interactions()
+        del self.session
+        self.session = None
+        
     def predict(self):
-        try:
-            prompt_type = get_value(self.prompt_type_select)[0]
-            img_layer = get_value(self.layerselect_a)[1]
+        prompt_type = get_value(self.prompt_type_select)[0]
+        img_layer = get_value(self.layerselect_a)[1]
 
-            # mask_threshold = get_value(self.threshold_slider)
+        img_data = self._viewer.layers[img_layer].data.astype(np.float32)
+        # normalize the image data to 0-255 range if it's not already
+        img_data = (img_data - np.min(img_data)) / \
+            (np.max(img_data) - np.min(img_data)) * 255
+        
+        N = len(img_data.shape)
+        if N != 3:
+            show_warning(
+                f"Input image must be 3D. Current dimension is {N}D.")
+            return
+        
+        if prompt_type == "Mask":
+            mask_prompt_layer = self.prompt_layers['mask']
+            prompt_frames = self._viewer.dims.current_step
+            print(self.prompt_frame_index_view_1,
+                    self.prompt_frame_index_view_2, self.prompt_frame_index_view_3)
+            prompt_frames = [self.prompt_frame_index_view_1,
+                                self.prompt_frame_index_view_2, self.prompt_frame_index_view_3]
+            scale_factors = self._viewer.layers[img_layer].scale
+            # invert prompt frames where scale factor is negative to shape - frame
+            # for i in range(3):
+            #    if scale_factors[i] < 0:
+            #        prompt_frames[i] = img_data.shape[i] - 1 - prompt_frames[i]
+            # in a single line
+            prompt_frames = [img_data.shape[i] - 1 - prompt_frames[i]
+                                if scale_factors[i] < 0 else prompt_frames[i] for i in range(3)]
 
-            img_data = self._viewer.layers[img_layer].data.astype(np.float32)
-            # normalize the image data to 0-255 range if it's not already
-            img_data = (img_data - np.min(img_data)) / \
-                (np.max(img_data) - np.min(img_data)) * 255
-            # img_data = img_data.astype(np.uint8)
-            print(self.session)
-            if prompt_type == "Mask":
-                mask_prompt_layer = self.prompt_layers['mask']
-                # prompt_frames = self._viewer.dims.current_step
-                prompt_frames = [self.prompt_frame_index_view_1,
-                                 self.prompt_frame_index_view_2, self.prompt_frame_index_view_3]
-                scale_factors = self._viewer.layers[img_layer].scale
-                # invert prompt frames where scale factor is negative to shape - frame
-                # for i in range(3):
-                #    if scale_factors[i] < 0:
-                #        prompt_frames[i] = img_data.shape[i] - 1 - prompt_frames[i]
-                # in a single line
-                prompt_frames = [img_data.shape[i] - 1 - prompt_frames[i]
-                                 if scale_factors[i] < 0 else prompt_frames[i] for i in range(3)]
-                mask_1 = mask_prompt_layer.data[prompt_frames[0]]
-                mask_2 = mask_prompt_layer.data[:, prompt_frames[1]]
-                mask_3 = mask_prompt_layer.data[:, :, prompt_frames[2]]
+            def save_preview(img, mask, filename):
+                img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
+                contour, _ = cv2.findContours(mask.astype(
+                    np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                cv2.drawContours(img, contour, -1, (0, 255, 0), 2)
+                cv2.imwrite(filename, img)
 
-                print("USING NNI")
-                from scipy.ndimage import binary_dilation
-                self.session.set_image(img_data[None])
-                target_tensor = torch.zeros(
-                    img_data.shape, dtype=torch.uint8)  # Must be 3D (x, y, z)
-                self.session.set_target_buffer(target_tensor)
-                if self.prompt_frame_index_view_1 != 0:
-                    lasso = np.zeros(target_tensor.shape, dtype=np.uint8)
-                    lasso[prompt_frames[0]] = binary_dilation(
-                        mask_prompt_layer.data[prompt_frames[0]], iterations=1).astype(np.uint8)
-                    self.session.add_lasso_interaction(
-                        lasso, include_interaction=True)
-                if self.prompt_frame_index_view_2 != 0:
-                    lasso = np.zeros(target_tensor.shape, dtype=np.uint8)
-                    lasso[:, prompt_frames[1]] = binary_dilation(
-                        mask_prompt_layer.data[:, prompt_frames[1]], iterations=1).astype(np.uint8)
-                    self.session.add_lasso_interaction(
-                        lasso, include_interaction=True)
-                if self.prompt_frame_index_view_3 != 0:
-                    lasso = np.zeros(target_tensor.shape, dtype=np.uint8)
-                    lasso[:, :, prompt_frames[2]] = binary_dilation(
-                        mask_prompt_layer.data[:, :, prompt_frames[2]], iterations=1).astype(np.uint8)
-                    self.session.add_lasso_interaction(
-                        lasso, include_interaction=True)
+            mask_1 = mask_prompt_layer.data[prompt_frames[0]]
+            mask_2 = mask_prompt_layer.data[:, prompt_frames[1]]
+            mask_3 = mask_prompt_layer.data[:, :, prompt_frames[2]]
 
-                results = self.session.target_buffer.clone()
-                self.session.reset_interactions()
-                pred = results.cpu().numpy()
-                out_mask_masks = pred.astype(np.uint8)  # Convert to uint8
+            save_preview(
+                img_data[prompt_frames[0]], mask_prompt_layer.data[prompt_frames[0]], "view1.png")
+            save_preview(img_data[:, prompt_frames[1]],
+                            mask_prompt_layer.data[:, prompt_frames[1]], "view2.png")
+            save_preview(img_data[:, :, prompt_frames[2]],
+                            mask_prompt_layer.data[:, :, prompt_frames[2]], "view3.png")
 
-            # if get_value(self.multi_mask_ckbx) and get_value(self.scoring_ckbx):
-            #    # If multi-mask and scoring are enabled, we will have multiple masks
-            #    out_mask = out_mask_masks[np.argmax(out_mask_scores)]  # Select the mask with the highest score
-            # else:
+            print("USING NNI")
 
-            # np.zeros_like(self.preview_layer.data, dtype=np.uint8)
-            self.preview_layer.data = out_mask_masks
+            if self.session = None
+                self.load_model()
+            
+            from scipy.ndimage import binary_dilation
+            self.session.set_image(img_data[None])
+            target_tensor = torch.zeros(
+                img_data.shape, dtype=torch.uint8)  # Must be 3D (x, y, z)
+            self.session.set_target_buffer(target_tensor)
 
-            self.preview_layer.refresh()
-        except Exception as e:
-            print(f"Error in on_prompt_update_event: {e}")
-            print(f"Traceback: {traceback.format_exc()}")
+            if self.prompt_frame_index_view_1 != 0:
+                lasso = np.zeros(target_tensor.shape, dtype=np.uint8)
+                lasso[prompt_frames[0]] = binary_dilation(
+                    mask_prompt_layer.data[prompt_frames[0]], iterations=1).astype(np.uint8)
+                self.session.add_lasso_interaction(
+                    lasso, include_interaction=True)
+            
+            if self.prompt_frame_index_view_2 != 0:
+                lasso = np.zeros(target_tensor.shape, dtype=np.uint8)
+                lasso[:, prompt_frames[1]] = binary_dilation(
+                    mask_prompt_layer.data[:, prompt_frames[1]], iterations=1).astype(np.uint8)
+                self.session.add_lasso_interaction(
+                    lasso, include_interaction=True)
+            
+            if self.prompt_frame_index_view_3 != 0:
+                lasso = np.zeros(target_tensor.shape, dtype=np.uint8)
+                lasso[:, :, prompt_frames[2]] = binary_dilation(
+                    mask_prompt_layer.data[:, :, prompt_frames[2]], iterations=1).astype(np.uint8)
+                self.session.add_lasso_interaction(
+                    lasso, include_interaction=True)
+
+            results = self.session.target_buffer.clone()
+            self.session.reset_interactions()
+            pred = results.cpu().numpy()
+            out_mask_masks = pred.astype(np.uint8)  # Convert to uint8
+
+        # if get_value(self.multi_mask_ckbx) and get_value(self.scoring_ckbx):
+        #    # If multi-mask and scoring are enabled, we will have multiple masks
+        #    out_mask = out_mask_masks[np.argmax(out_mask_scores)]  # Select the mask with the highest score
+        # else:
+
+        self.add_prediction_to_preview(out_mask_masks, transposed=True)

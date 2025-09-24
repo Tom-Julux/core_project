@@ -71,10 +71,8 @@ class InteractiveSegmentationWidget3DSAM(InteractiveSegmentationWidget3DBase):
         _container, _layout = setup_vcollapsiblegroupbox(
             _scroll_layout, "Setup", True)
 
-        # _container, _layout = setup_vgroupbox(_scroll_layout, "Metric mode:")
         _ = setup_label(_layout, "Select model:")
 
-        # ,"SAM2.1 tiny", "SAM2.1 small", "SAM2.1 large"]
         model_options = ["MedSAM2-May2025"]
 
         self.model_selection = setup_combobox(
@@ -127,6 +125,12 @@ class InteractiveSegmentationWidget3DSAM(InteractiveSegmentationWidget3DBase):
         img_data = (img_data - np.min(img_data)) / \
             (np.max(img_data) - np.min(img_data)) * 255
         img_data = img_data.astype(np.uint8)
+
+        N = len(img_data.shape)
+        if N != 3:
+            show_warning(
+                f"Input image must be 3D. Current dimension is {N}D.")
+            return
 
         if prompt_type == "Mask":
             mask_prompt_layer = self.prompt_layers['mask']
