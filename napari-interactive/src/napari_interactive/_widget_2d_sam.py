@@ -88,16 +88,19 @@ class InteractiveSegmentationWidget2DSAM(InteractiveSegmentationWidget2DBase):
         # [current_frame_idx]
         frame = np.transpose(
             self._viewer.layers[img_layer].data, self._viewer.dims.order)
-
-        if len(frame.shape) == 1:
+        N = len(frame.shape)
+        if N == 1:
             show_warning("The selected image layer is not at least 2D.")
             return
-        if len(frame.shape) == 3:
+        if N == 3:
             frame = frame[self._viewer.dims.current_step[self._viewer.dims.order[0]]]
-        if len(frame.shape) == 4:
+        if N == 4:
             frame = frame[self._viewer.dims.current_step[self._viewer.dims.order[0]],
                           self._viewer.dims.current_step[self._viewer.dims.order[1]]]
-
+        if N >= 5:
+            show_warning("The selected image layer has too many dimensions. Currently only 4D (or 3D+t) is supported.")
+            return
+        
         # normalize to 0-255 and convert to uint8
         frame = cv2.normalize(frame, None, alpha=0,
                               beta=255, norm_type=cv2.NORM_MINMAX)
@@ -118,25 +121,40 @@ class InteractiveSegmentationWidget2DSAM(InteractiveSegmentationWidget2DBase):
 
             if len(point_layer_positive.data) == 0:
                 return
+            
             # Get the data from the positive and negative point layers
             pos_points = point_layer_positive.data[:,
                                                    self._viewer.dims.order[::-1]]
             neg_points = point_layer_negative.data[:,
                                                    self._viewer.dims.order[::-1]]
-            if len(frame.shape) == 3:
+            if N == 3:
                 pos_points = pos_points[pos_points[:, 2] ==
                                         self._viewer.dims.current_step[self._viewer.dims.order[0]]]
                 neg_points = neg_points[neg_points[:, 2] ==
                                         self._viewer.dims.current_step[self._viewer.dims.order[0]]]
-            if len(frame.shape) == 4:
+            if N == 4:
+                print(frame.shape)
+                print("Positive points:", pos_points)
+                print(self._viewer.dims.current_step[self._viewer.dims.order[1]])
+                print("Current step:", self._viewer.dims.current_step)
+                print("Order:", self._viewer.dims.order)
+                pos_points = pos_points[pos_points[:, 2] ==
+                                        self._viewer.dims.current_step[self._viewer.dims.order[1]]]
+                neg_points = neg_points[neg_points[:, 2] ==
+                                        self._viewer.dims.current_step[self._viewer.dims.order[1]]]
                 pos_points = pos_points[pos_points[:, 3] ==
-                                        self._viewer.dims.current_step[self._viewer.dims.order[1]]]
+                                        self._viewer.dims.current_step[self._viewer.dims.order[0]]]
                 neg_points = neg_points[neg_points[:, 3] ==
-                                        self._viewer.dims.current_step[self._viewer.dims.order[1]]]
+                                        self._viewer.dims.current_step[self._viewer.dims.order[0]]]
+
 
             # Use only the first two dimensions (x, y)
             pos_points = pos_points[:, :2]
             neg_points = neg_points[:, :2]
+
+            print("Positive points:", pos_points)
+            if len(point_layer_positive.data) == 0:
+                return
 
             # combine
             point_prompts = np.concatenate(
@@ -201,5 +219,9 @@ class InteractiveSegmentationWidget2DSAM(InteractiveSegmentationWidget2DBase):
         target_size = frame.shape[:2]
         out_mask = out_mask.astype(np.uint8)
 
+        selector = np.s_[self._viewer.dims.current_step[self._viewer.dims.order[0]]]
+        if N == 4:
+            selector = np.s_[self._viewer.dims.current_step[self._viewer.dims.order[0]],
+                            self._viewer.dims.current_step[self._viewer.dims.order[1]]]
         self.add_prediction_to_preview(
-            out_mask, np.s_[self._viewer.dims.current_step[self._viewer.dims.order[0]]])
+            out_mask, selector)

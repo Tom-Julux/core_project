@@ -57,14 +57,14 @@ class InteractiveSegmentationWidget2DTSAM(InteractiveSegmentationWidget2DSAM):
         if get_value(self.layerselect_a)[1] != -1:
             img_layer = get_value(self.layerselect_a)[0]
             N_dim = len(self._viewer.layers[img_layer].data.shape)
-            self.propagation_dim_spinbox.setMaximum(N_dim-2)
+            self.propagation_dim_spinbox.setMaximum(N_dim-3)
 
     def on_image_layer_change(self):
         super().on_image_layer_change()
         if get_value(self.layerselect_a)[1] != -1:
             img_layer = get_value(self.layerselect_a)[0]
             N_dim = len(self._viewer.layers[img_layer].data.shape)
-            self.propagation_dim_spinbox.setMaximum(N_dim-2)
+            self.propagation_dim_spinbox.setMaximum(N_dim-3)
 
     def setup_second_propagation_gui(self, _scroll_layout):
         _group_box, _layout = setup_vcollapsiblegroupbox(
@@ -73,29 +73,30 @@ class InteractiveSegmentationWidget2DTSAM(InteractiveSegmentationWidget2DSAM):
         _ = setup_label(
             _layout, "Propagate the masks from the current preview to the next frame.")
 
-        self.repropagate_button = setup_iconbutton(
-            None,
-            "Rerun",
-            "left_arrow",
-            self._viewer.theme,
-            function=lambda: self.run_propagate_in_thread(),
-        )
-
         self.propagate_button = setup_iconbutton(
             None,
             "Step",
             "right_arrow",
             self._viewer.theme,
+            tooltips="Run propagation to the next frame.",
             function=lambda: self.run_propagate_in_thread(),
         )
-        _ = hstack(_layout, [self.repropagate_button,
-                   self.propagate_button], stretch=[1, 1, 1])
+        self.propagate_button_continuos = setup_iconbutton(
+            None,
+            "Run",
+            "right_arrow",
+            self._viewer.theme,
+            tooltips="Run propagation until the end or until 'Stop' is pressed.",
+            function=lambda: self.run_propagate_in_thread_until_end(),
+        )
+        _ = hstack(_layout, [self.propagate_button,
+                   self.propagate_button_continuos], stretch=[1, 1, 1])
 
         self.propagate_status_label = setup_label(_layout, "Status: Ready")
 
-        _label = setup_label(None, "Propagation Dim:")
+        _label = setup_label(None, "Propagation Dimension:")
         self.propagation_dim_spinbox = setup_spinbox(
-            None, 1, 4, 1)
+            None, 0, 0, 1, tooltips="Dimension to propagate over.")
 
         _ = hstack(
             _layout, [_label, self.propagation_dim_spinbox], stretch=[0, 1])
@@ -124,7 +125,6 @@ class InteractiveSegmentationWidget2DTSAM(InteractiveSegmentationWidget2DSAM):
         while a prediction is running, a single additional rerun will be
         scheduled and reflected in the status label as "Re-run scheduled".
         """
-        print("run_propagate_in_thread")
 
         # If a prediction is currently running, schedule a rerun and update
         # the status immediately.
@@ -160,8 +160,52 @@ class InteractiveSegmentationWidget2DTSAM(InteractiveSegmentationWidget2DSAM):
 
         worker.start()
 
-    def propagate(self):
+    def run_propagate_in_thread_until_end(self):
+        # If a prediction is currently running
+        if self.propagating_lock.locked():
+            return
 
+        @thread_worker
+        def _worker():
+            # Acquire the lock and run predictions; the loop allows a single
+            # additional run if self.rerun_after_lock becomes True while
+            # executing.
+            with self.propagating_lock:
+                try:
+                    # change button_text to "Stop"
+                    propagated_successfully = True
+                    while propagated_successfully:
+                        propagated_successfully = self.propagate()
+                except Exception as e:
+                    print(f"Error in on_prompt_update_event: {e}")
+                    print(f"Traceback: {traceback.format_exc()}")
+
+        worker = _worker()
+
+        # Update UI when worker starts
+        def _on_started():
+            self.propagate_status_label.setText("Status: Running continously...")
+            self.propagate_button_continuos.setText("Stop")
+            self.propagate_button.setEnabled(False)
+        # Update UI when worker finishes or errors
+
+        def _on_done(*args, **kwargs):
+            self.propagate_status_label.setText("Status: Ready")
+            self.propagate_button_continuos.setText("Run")
+            self.propagate_button.setEnabled(True)
+        # Connect signals (thread_worker exposes started, finished, errored)
+        worker.started.connect(_on_started)
+        worker.finished.connect(_on_done)
+        worker.errored.connect(_on_done)
+
+        worker.start()
+
+    def propagate(self):
+        """
+        Propagate the masks from the current preview to the next frame.
+
+        Returns True if propagation was successful, False otherwise.
+        """
         img_layer = get_value(self.layerselect_a)[1]
 
         self.predictor.mask_threshold = get_value(self.threshold_slider)
@@ -169,25 +213,50 @@ class InteractiveSegmentationWidget2DTSAM(InteractiveSegmentationWidget2DSAM):
         frames = np.transpose(
             self._viewer.layers[img_layer].data, self._viewer.dims.order)
 
-        if len(frames.shape) != 3:
-            show_warning("The selected image layer is not 2D+t.")
-            return
+        N = len(frames.shape)
 
-        current_frame_idx = self._viewer.dims.current_step[self._viewer.dims.order[0]]
+        if N < 3:
+            show_warning("The selected image layer is not at least 3D (or 2D+t).")
+            return
+        
+        current_steps = [
+            self._viewer.dims.current_step[self._viewer.dims.order[i]]
+            for i in range(N-2)
+        ]
+        #print("current_steps", current_steps)
+
+        propagated_dim = get_value(self.propagation_dim_spinbox)
+
+        #print("propagated_dim", propagated_dim)
+
+        current_frame_idx = current_steps[propagated_dim]
 
         next_frame_idx = current_frame_idx + \
             1 if not get_value(
                 self.reverse_direction) else current_frame_idx - 1
 
-        if next_frame_idx >= self._viewer.layers[img_layer].data.shape[self._viewer.dims.order[0]] or next_frame_idx < 0:
-            show_warning("No more frames to propagate to.")
-            return
+        max_frame_idx = frames.shape[propagated_dim]
 
-        current_frame = frames[current_frame_idx]
+        if next_frame_idx >= max_frame_idx or next_frame_idx < 0:
+            show_warning("No more frames to propagate to.")
+            return False
+
+        current_frame_selector = tuple([
+            *[current_steps[i] for i in range(N-2)],
+            slice(None), slice(None)
+        ])
+        next_frame_selector = tuple([
+            current_frame_selector[i] if i != propagated_dim else next_frame_idx for i in range(N)
+        ]) 
+
+        #print("Current frame selector:", current_frame_selector)
+        #print("Next frame selector:", next_frame_selector)
+
+        current_frame = frames[current_frame_selector]
         current_frame = cv2.normalize(current_frame, None, alpha=0,
                                       beta=255, norm_type=cv2.NORM_MINMAX).astype(np.uint8)
         current_frame = cv2.cvtColor(current_frame, cv2.COLOR_GRAY2RGB)
-        next_frame = frames[next_frame_idx]
+        next_frame = frames[next_frame_selector]
         next_frame = cv2.normalize(next_frame, None, alpha=0,
                                    beta=255, norm_type=cv2.NORM_MINMAX).astype(np.uint8)
         next_frame = cv2.cvtColor(next_frame, cv2.COLOR_GRAY2RGB)
@@ -202,17 +271,17 @@ class InteractiveSegmentationWidget2DTSAM(InteractiveSegmentationWidget2DSAM):
         if self.preview_layer is None:
             show_warning(
                 "No preview layer found. Please run prediction first.")
-            return
+            return False
 
         transposed_preview_layer_data = np.transpose(
             self.preview_layer.data, self._viewer.dims.order)
 
-        current_mask = transposed_preview_layer_data[current_frame_idx]
+        current_mask = transposed_preview_layer_data[current_frame_selector]
 
         if np.sum(current_mask) == 0:
             show_warning(
                 "No mask found in the current frame of the preview layer. Please run prediction first.")
-            return
+            return False
 
         current_mask = current_mask
         visibile_object_ids = np.unique(current_mask)
@@ -221,8 +290,8 @@ class InteractiveSegmentationWidget2DTSAM(InteractiveSegmentationWidget2DSAM):
         if len(visibile_object_ids) == 0:
             show_warning(
                 "No object found in the current frame of the preview layer. Please run prediction first.")
-            return
-        print(visibile_object_ids)
+            return False
+
         for object_id in visibile_object_ids:
             obj_mask = (current_mask == object_id).astype(np.uint8)
             _, out_obj_ids, out_mask_logits = self.predictor.add_new_mask(
@@ -233,17 +302,17 @@ class InteractiveSegmentationWidget2DTSAM(InteractiveSegmentationWidget2DSAM):
         out_mask_masks = (
             out_mask_logits > self.predictor.mask_threshold).cpu().numpy().astype(np.uint8)
 
-        current_next_mask = transposed_preview_layer_data[next_frame_idx]
+        current_next_mask = transposed_preview_layer_data[next_frame_selector]
         visibile_object_ids_in_next = np.unique(current_next_mask)
         visibile_object_ids_in_next = visibile_object_ids_in_next[visibile_object_ids_in_next != 0]
-        print(visibile_object_ids_in_next)
+
         updated_next_mask = np.zeros_like(current_next_mask)
         # Write the new masks to the next frame, respecting the overwrite setting
         for i, object_id in enumerate(visibile_object_ids):
             if object_id in visibile_object_ids_in_next and not get_value(self.propagate_overwrite_cbx):
                 updated_next_mask[current_next_mask == object_id] = object_id
                 continue
-            print(out_mask_masks[i, 0].sum())
+
             next_object_mask = (
                 out_mask_masks[i, 0] * object_id).astype(np.uint8)
             # only write to pixels that are not already occupied if not overwriting
@@ -252,9 +321,13 @@ class InteractiveSegmentationWidget2DTSAM(InteractiveSegmentationWidget2DSAM):
                 (next_object_mask > 0) & (updated_next_mask == 0)))
 
         np.copyto(
-            transposed_preview_layer_data[next_frame_idx], updated_next_mask)
+            transposed_preview_layer_data[next_frame_selector], updated_next_mask)
+
+        # Copy to the backup data
         self.preview_label_data = self.preview_layer.data.copy()
-        self._viewer.dims.set_current_step(
-            self._viewer.dims.order[0], next_frame_idx)
-        self.preview_layer.refresh()
         # go to next frame
+
+        self._viewer.dims.set_current_step(propagated_dim, next_frame_idx)
+
+        self.preview_layer.refresh()
+        return True

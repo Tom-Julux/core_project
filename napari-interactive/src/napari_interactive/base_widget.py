@@ -486,7 +486,10 @@ class InteractiveSegmentationWidgetBase(QWidget):
             self._viewer.layers.remove(self.preview_layer)
             self.preview_label_data = None
             self.preview_layer = None
-        set_value(self.object_id_spinbox, 1)
+            
+        # Reset object id to 1 if multi object mode and object id spinbox exists
+        if hasattr(self, 'object_id_spinbox'):
+            set_value(self.object_id_spinbox, 1)
     # endregion
     
     # region Prompt Layer Management
@@ -732,8 +735,7 @@ class InteractiveSegmentationWidgetBase(QWidget):
             else:
                 np.copyto(transposed_out_mask[indices], new_mask)
         else:
-            np.copyto(transposed_out_mask[indices], new_mask, where=(
-                new_mask > 0) & (transposed_out_mask[indices] == 0))
+            np.copyto(transposed_out_mask[indices], new_mask, where=((transposed_out_mask[indices] == 0) | (transposed_out_mask[indices] == object_id)))
 
         self.preview_layer.data = out_mask
         self.preview_layer.refresh()
