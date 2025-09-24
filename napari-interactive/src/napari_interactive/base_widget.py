@@ -467,7 +467,7 @@ class InteractiveSegmentationWidgetBase(QWidget):
         self.preview_label_data = np.zeros(img_layer_shape, dtype=np.uint8)
         self.preview_layer = Labels(
             name='Preview Layer', data=self.preview_label_data.copy(), opacity=0.5)
-        self.preview_layer.contour = 1
+        self.preview_layer.contour = 0
         
         self._viewer.add_layer(self.preview_layer)
 
@@ -486,7 +486,7 @@ class InteractiveSegmentationWidgetBase(QWidget):
             self._viewer.layers.remove(self.preview_layer)
             self.preview_label_data = None
             self.preview_layer = None
-            
+
         # Reset object id to 1 if multi object mode and object id spinbox exists
         if hasattr(self, 'object_id_spinbox'):
             set_value(self.object_id_spinbox, 1)
