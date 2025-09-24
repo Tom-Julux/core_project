@@ -208,8 +208,11 @@ class DemoWidget(QWidget):
                  img = sitk.ReadImage(
                     f'{base_path}/example_data/2d+t_trackrad/A_003_frames_8bit.mha'
                 )
-
+            
             img = sitk.GetArrayFromImage(img)
+
+            img = np.rot90(img, k=1, axes=(1,2))
+
             image_layer = self._viewer.add_image(
                 img,
                 name='Example Image',
@@ -221,6 +224,7 @@ class DemoWidget(QWidget):
             self._viewer.window.add_dock_widget(
                 widget, name="Interactive Segmentation", area="right"
             )
+            self._viewer.dims.current_step = (34,0,0)
             self.active_widget = widget
             
         elif demo_id == "SAM2 3D (3D case with 3 2d masks)":
