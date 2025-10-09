@@ -25,7 +25,7 @@ class DemoWidget(QWidget):
             "---"
             "3D NoPredictor",
             "SAM2 3D (3D case with 3 2d masks)",
-            "nnInteractive 3D NNI"
+            #"nnInteractive 3D NNI"
         ]
 
         self.active_widget = None
