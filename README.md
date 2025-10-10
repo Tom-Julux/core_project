@@ -6,13 +6,23 @@
 
 It consists of a number of indivitual napari plugins:
 
-- **napari-interactive** is a base-plugin which
-- **napari-interactive-sam2** uses the base-plugin to implement
+- **napari-interactive** is a core-plugin of the core-tool. It implements an interactive segmentation widget for multidimensional images. The plugin supports multi-object segmentation, and can be used as a base for other plugins. The following plugins are derived versions of this plugin for specific models and use-cases.
+
+- **napari-interactive-2d-sam** uses the base-plugin to implement image segmentation based on SAM2 in 2D planes.
+
+- **napari-interactive-2dt-sam** extends the 2D SAM plugin with the ability to propagate masks to adjacent frames in 2D+t or 3D images.
+
+- **napari-interactive-3d-sam** extends the base-plugin to support segmentation in 3D images, based on up to three orthogonal planes. For this purpose, a view control section is implemented, to select the planes in the viewer.
+
+- **napari-interactive-{2d,3d}-noregistration** are placeholder plugins and do not contain any machine learning model. They can be used as a base for implementing new models or for testing of the UI.
+
+------ 
+
+The following are additional, mostly self-contained plugins that enhance the interactive segmentation experience:
 
 - **napari-edit-log** is plugin that logs every user interaction and stores it in a log-file. This log-file can then be used to analyize to usage of the tool.
 
 - **napari-shifted-preview** allows you to display masks across frames/layers, to ensure a more consistent segmentation experience.
-
 
 ## Installation
 
@@ -65,16 +75,65 @@ Use one of these three options to start napari and activate the core tool plugin
 python3 startup.py
 ```
 
-We recommend opening the 2D SAM2 demo while reading allong the Usage guide below.
+We recommend opening the 2D SAM2 demo while reading along the Usage guide below.
 
 ## Usage
 
-This section explains the overall princple.
+This section explains the overall princples of using the interactive segmentation plugins. The exact workflow might differ slightly between the different plugins, but the overall princples are the same.
+
+0. [Open an image in napari](https://napari.org/stable/tutorials/fundamentals/quick_start.html#open-an-image). This can be done by drag-and-drop, or via the `File -> Open` menu. 
+
+> Tip: Napari can open most image formats, with plugins available for more exotic formats. This leads to you maybe beeing asked with a dialog to select a plugin for opening your image. In most cases the default option (napari builtins) should work fine.
+
+1. Select the plugin you want to use from the plugins menu. The plugin will open a control panel on the right side of the napari viewer.
+
+2. At the top of this control panel you can select the **image layer** you want to segment. Changing the desired image layer will reset the plugin state, so make sure to select the correct layer first.
+
+3. Select the **prompt type** you want to use. Based on the selected prompt type, different prompt layers will appear in the __layerlist__ (typically on the left). For example, if you select the `Points` prompt type, two new layers will be created, one for foreground points and one for background points. For the `Box` prompt type, only a single layer for the bounding box will be created. For the `Mask` prompt type, a single layer for the input mask will be created.
+
+4. When a `prompt layer` is selected, you can use the respective napari tool to add prompts to the image. For this purpose, use the layer control panel (typically on the top left) to input the desired prompt.
+
+5. (optional) You can change the `hyperparameters` of the underlying model using the control panel. The available hyperparameters depend on the specific model and plugin you are using.
+
+6. (optional) Depending on the widget type, the widget might require certain additional steps. For example the 3D segmentation widget requires you to select up to three orthogonal planes in the viewer. This is controlled/informed via the `View Control` section of the control panel located above the `Propagation` panel. Other widgets currently do not require any additional steps.
+
+7. If the `AutoRun` option is enabled, a new prediction will be generated anytime you change the prompt or any hyperparameter. If it is disabled, you can use the `Predict` button to generate a new prediction.
+
+8. (optional) If you want to segment multiple objects, use the `Multi Object` section of the interactive segmentation plugin. Here you can switch between object ids to segment different objects.
+
+> Tip: You can change the color and opacity of each label using the [napari-labels](https://github.com/MIC-DKFZ/napari-labels) plugin.
+
+> Tip: Currently only non-overlapping objects are supported.
+
+9. (optional) Some plugins support additional features, such as `propagation` of masks to adjacent frames (for 2D+t or 3D images). These features are controlled via additional control panels, typically located below the main interactive segmentation plugin panel.
+
+10. Use the `Export` options to export the current segmentation mask to a new layer or to a file.
+
+11. Use the `Reset` button to clear the current prompt and prediction, and reset the underlying model.
+
 
 ### 2D+t/3D propagation
-
+TODO
 
 ### 3D segmentation from 2D planes
+TODO
+
+## Roadmap
+
+The goal for the core tool was to create a shared, highly usable tool for researchers to view arbitrary types of images and make use of promptable segmentation model for interactive segmentation.
+
+This goal was reached with the v0-beta version of the tool in October 2025. 
+
+The next step is to roll out the tool to researchers involved with the [BZKF lighthouse on local therapies](https://bzkf.de/f/forschung/leuchttuerme/lokale-therapien/). Additonally, we will work on a study to evaluate AI-assisted segmentation of GTVs in MRgRT in a clinical setting. Finally, there are a number of additonal features that are planned to be added to the tool.
+
+- Better documentation, including a developer guide for adding new models
+- Automatic loading of models from huggingface
+- A custom windowing plugin
+- Integration of more machine learning models, including models for specific organs or pathologies
+- A custom plugin for better label management
+- Extension of the edit log plugin with an replay function and automated analysis tools
+
+To tool is open-source and for the time being any PRs are welcome.
 
 ## Reference
 
@@ -82,7 +141,9 @@ The following section contains detailed information on how to use the tool. Feel
 
 ### Importing/Opening images
 
-Napari can open most types of images.
+See the napari documentation on [how to open images](https://napari.org/stable/tutorials/fundamentals/quick_start.html#open-an-image) for more information.
+
+> Tip: Napari can open most image formats, with plugins available for more exotic formats. This leads to you maybe beeing asked with a dialog to select a plugin for opening your image. In most cases the default option (napari builtins) should work fine.
 
 ### Prediction
 
@@ -111,16 +172,15 @@ The `Reset` button clear the preview layer, the prompt layers and resets the und
 
 <img src="images/Screenshot 2025-09-24 at 12.22.41.png"/>
 
+### Asthetics
+
+> Tip: You can change the color and opacity of each label using the [napari-labels](https://github.com/MIC-DKFZ/napari-labels) plugin.
+
 ### Windowing
 
 To apply windowing to the image in the napari viewer (or to adjust the contrast), we recommend using the [napari-brightness-contrast](https://github.com/haesleinhuepf/napari-brightness-contrast) plugin. This plugin allows you to set custom window levels and widths for your images and includes a brightness histogram for better visualization.
 
-
 <img src="images/Screenshot 2025-10-09 at 18.22.01.png"/>
-
-
-A custom windowing plugin for the core-tool could be developed in the furture, but is currently not a priority.
-
 
 ### Multi Object Mode
 
@@ -217,20 +277,15 @@ Alternatively, you can import the napari-interactive plugin class and create a n
 
 ## License
 
-Note that while this repository is available under Apache-2.0 license (see [LICENSE](./LICENSE)), the [model checkpoint](https://huggingface.co/nnInteractive/nnInteractive) is `Creative Commons Attribution Non Commercial Share Alike 4.0`!
+This repository is currently not licensed. It will be licensed under an open-source license in the near future upon release.
 
 ______________________________________________________________________
 
-
 ## Acknowledgments
 
-<p align="left">
-  <img src="https://github.com/MIC-DKFZ/napari-nninteractive/raw/main/imgs/Logos/HI_Logo.png" width="150"> &nbsp;&nbsp;&nbsp;&nbsp;
-  <img src="https://github.com/MIC-DKFZ/napari-nninteractive/raw/main/imgs/Logos/DKFZ_Logo.png" width="500">
-</p>
-
-This repository is developed and maintained by the Applied Computer Vision Lab (ACVL)
-of [Helmholtz Imaging](https://www.helmholtz-imaging.de/) and the
-[Division of Medical Image Computing](https://www.dkfz.de/en/medical-image-computing) at DKFZ.
+This repository is developed and maintained by the LMU Adaptive Radiation Therapy Lab (LMU ART Lab)
+of the [Department of Radiation Oncology, LMU University Hospital](https://www.lmu-klinikum.de/strahlentherapie-und-radioonkologie/forschung/physikalische-forschung/5e34c41a1e300c37), Munich, Germany, in the context of the [BZKF Lighthouse on Local Therapies](https://bzkf.de/f/forschung/leuchttuerme/lokale-therapien/).
 
 [napari]: https://github.com/napari/napari
+
+[napari_toolkit]: https://github.com/MIC-DKFZ/napari_toolkit
