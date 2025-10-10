@@ -6,7 +6,7 @@
 
 CoreTool is a collection of small, well-documented napari plugins that provide an extensible interactive segmentation workflow for multidimensional images. The repository groups a set of core components and plugins so researchers and developers can prototype, extend, and evaluate promptable segmentation models (for example SAM-based models).
 
-Main plugins included in this repository:
+Main plugin(s) included in this repository:
 
 - **napari-interactive** — the core plugin: an interactive segmentation widget that supports multi-object workflows and serves as the base class for model-specific plugins.
 - **napari-interactive-2d-sam** — 2D plane segmentation using a SAM2-based model.
@@ -21,14 +21,27 @@ Additional helper plugins:
 
 ## Table of contents
 
-- Quick start
-- Installation
-- Usage overview
-- Exporting & reset
-- Tips & troubleshooting
-- Development & contributing
-- Roadmap
-- License & acknowledgments
+- [Quick start](#quick-start)
+- [Installation](#installation)
+- [Usage overview](#usage-overview)
+- [Reference](#reference)
+  - [Importing/Opening images](#importingopening-images)
+  - [Prediction behaviour](#prediction-behaviour)
+  - [Exporting masks](#exporting-masks)
+  - [Reset](#reset)
+  - [Asthetics](#asthetics)
+  - [Windowing / contrast](#windowing--contrast)
+  - [Multi-object mode](#multi-object-mode)
+  - [Propagation (2D+t / 3D / >2D)](#propagation-2dt--3d---2d)
+  - [Keyboard control](#keyboard-control)
+  - [DemoWidget](#demowidget)
+- [Development & contributing](#development--contributing)
+  - [Development setup](#development-setup)
+  - [Adding support for new models](#adding-support-for-new-models)
+  - [Using napari-interactive as a library](#using-napari-interactive-as-a-library)
+- [Roadmap](#roadmap)
+- [License](#license)
+- [Acknowledgments](#acknowledgments)
 
 ## Quick start
 
