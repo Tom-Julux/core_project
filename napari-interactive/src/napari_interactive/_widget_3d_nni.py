@@ -169,7 +169,7 @@ class InteractiveSegmentationWidget3DNNI(InteractiveSegmentationWidget3DBase):
 
             print("USING NNI")
 
-            if self.session = None
+            if self.session == None:
                 self.load_model()
             
             from scipy.ndimage import binary_dilation

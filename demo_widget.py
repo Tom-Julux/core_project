@@ -15,6 +15,7 @@ class DemoWidget(QWidget):
         
         self.DEMOS = [
             "Select a demo...",
+            "shifted labels",
             "---"
             "2D NoPredictor",
             "SAM2 2D",
@@ -196,6 +197,37 @@ class DemoWidget(QWidget):
             widget = InteractiveSegmentationWidget2DTSAM(self._viewer)
             self._viewer.window.add_dock_widget(
                 widget, name="Interactive Segmentation", area="right"
+            )
+            self.active_widget = widget
+        elif demo_id == "shifted labels":
+            if os.path.exists("/app/example_data/2d+t_trackrad/A_003_frames_8bit.mha"):
+                img = sitk.ReadImage(
+                    "/app/example_data/2d+t_trackrad/A_003_frames_8bit.mha"
+                )
+            else:
+                 img = sitk.ReadImage(
+                    f'{base_path}/example_data/2d+t_trackrad/A_003_frames_8bit.mha'
+                )
+
+            img = sitk.GetArrayFromImage(img)
+
+            img = np.rot90(img, k=1, axes=(1,2))
+
+            image_layer = self._viewer.add_image(
+                img,
+                name='Example Image',
+                colormap='gray'
+            )
+
+            labels_layer = self._viewer.add_labels(
+                np.zeros_like(img, dtype=np.uint8),
+                name='Example Label'
+            )
+
+            from napari_shifted_labels import ShiftedLabelsWidget
+            widget = ShiftedLabelsWidget(self._viewer)
+            self._viewer.window.add_dock_widget(
+                widget, name="ShiftedLabel", area="right"
             )
             self.active_widget = widget
             

@@ -4,6 +4,8 @@ from pathlib import Path
 import threading
 import time
 import cv2
+import base64
+import zlib
 from magicgui import magicgui
 from napari.layers import Image
 from typing import TYPE_CHECKING
@@ -166,8 +168,8 @@ class EditLogWidget(QWidget):
             self.past_state_list.addItem(f"Layer Event: {event.type}, Data: {event.value}")
         else:
             self.past_state_list.addItem(f"Layer Event: {event.type}, Data: {event}")
-        print(f"Layer Event: {event.type}, Data: {event}")
-        print(event.__dict__.keys())
+        #print(f"Layer Event: {event.type}, Data: {event}")
+        #print(event.__dict__.keys())
         self.edit_log.append({
             'event_group': 'layer',
             'event_type': event.type,
@@ -179,12 +181,19 @@ class EditLogWidget(QWidget):
         if not self.recording:
             return
 
+        #data = event
+        source_layer = event._sources[0]
+        data_base64 = base64.b64encode(zlib.compress(source_layer.data.tobytes())).decode('utf-8')
+
         if event.type == "labels_update" and self.edit_log and self.edit_log[-1]['event_type'] == 'labels_update':
+            # Skip logging if the last event was also a label layer update and merge them
+            
             self.edit_log[-1]["count"] = self.edit_log[-1].get("count", 0) + 1
             self.edit_log[-1]["last_event"] = time.time()
+            self.edit_log[-1]["data"] = str(event)
+            self.edit_log[-1]["data2"] = data_base64  # Update compressed data
             print(f"Skipping layer update event: {event.type}, Data: {event}")
             return
-            # Skip logging if the last event was also a layer update
 
         self.past_state_list.addItem(f"Edit Event: {event.type}, {event}")
         self.edit_log.append({
@@ -193,6 +202,7 @@ class EditLogWidget(QWidget):
             'count': 1,  # Count of updates
             'last_event': time.time(),
             'data': str(event),
+            'data2': data_base64,
             'timestamp': time.time()
         })
 

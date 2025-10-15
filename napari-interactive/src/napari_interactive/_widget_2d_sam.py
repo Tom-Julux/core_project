@@ -66,6 +66,13 @@ class InteractiveSegmentationWidget2DSAM(InteractiveSegmentationWidget2DBase):
             base_path = os.path.dirname(os.path.dirname(
                 os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
             checkpoint = os.path.join(base_path, "MedSAM2_latest.pt")
+        else:
+            checkpoint = "/app/MedSAM2_latest.pt"
+
+        if not os.path.exists(checkpoint):
+            show_info("Downloading MedSAM2 model from Huggingface...")
+            from huggingface_hub import hf_hub_download
+            model_path = hf_hub_download(repo_id="wanglab/MedSAM2", filename="MedSAM2_latest.pt")
 
         model_cfg = "configs/sam2.1_hiera_t512.yaml"
         self.predictor = build_sam2_camera_predictor(

@@ -12,6 +12,9 @@ contributions:
     - id: "napari-interactive.InteractiveSegmentationWidget2DSAM"
       title: "SAM2 2D"
       python_name: "napari_interactive:InteractiveSegmentationWidget2DSAM"
+    - id: "napari-interactive.InteractiveSegmentationWidget2DTSAM"
+      title: "SAM2 2D+t"
+      python_name: "napari_interactive:InteractiveSegmentationWidget2DTSAM"
     - id: "napari-interactive.InteractiveSegmentationWidget3DSAM"
       title: "SAM2 3D"
       python_name: "napari_interactive:InteractiveSegmentationWidget3DSAM"
@@ -33,6 +36,8 @@ contributions:
     
     - command: "napari-interactive.InteractiveSegmentationWidget2DSAM"
       display_name: SAM2 2D
+    - command: "napari-interactive.InteractiveSegmentationWidget2DTSAM"
+      display_name: SAM2 2D+t
     - command: "napari-interactive.InteractiveSegmentationWidget3DSAM"
       display_name: SAM2 3D
     - command: "napari-interactive.InteractiveSegmentationWidget3DNNI"

@@ -1,0 +1,7 @@
+opencv-python-headless
+simpleitk
+torch 
+torchvision 
+# For SAM2
+hydra-core 
+iopath

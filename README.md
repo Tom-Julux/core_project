@@ -16,8 +16,10 @@ Main plugin(s) included in this repository:
 
 Additional helper plugins:
 
-- **napari-edit-log** — logs user interactions to a file for replay and analysis.
-- **napari-shifted-preview** — visualizes masks across frames to provide a more consistent segmentation experience.
+- [**napari-edit-log**](./napari-edit-log/README.md) — logs user interactions to a file for replay and analysis.
+- [**napari-shifted-labels**](./napari-shifted-labels/README.md)  — visualizes masks across frames to provide a more consistent segmentation experience.
+
+The documentation for these plugins is available in their respective folders.
 
 ## Table of contents
 
@@ -282,6 +284,8 @@ Planned short- and mid-term improvements:
 ## License
 
 This repository is currently not licensed. It will be licensed under an open-source license in the near future upon release.
+
+The `napari_toolkit` subfolder is a fork of [napari-toolkit](https://github.com/MIC-DKFZ/napari_toolkit). It is licensed under the terms of the [Apache Software License 2.0] license.
 
 ## Acknowledgments
 
