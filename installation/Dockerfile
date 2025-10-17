@@ -13,9 +13,13 @@ RUN pip install nninteractive
 
 WORKDIR /app
 
-COPY ../napari-interactive /app/napari-interactive
+COPY ./napari-interactive /app/napari-interactive
 RUN pip install -e /app/napari-interactive
+COPY ./napari-interactive /app/napari-interactive
+RUN pip install -e /app/napari-interactive
+COPY ./napari-shifted-labels /app/napari-shifted-labels
+RUN pip install -e /app/napari-shifted-labels
+COPY ./napari-edit-log /app/napari-edit-log
+RUN pip install -e /app/napari-edit-log
 
-COPY start.sh /app/start.sh
-
-ENTRYPOINT [ "/bin/bash", "start.sh" ]
+ENTRYPOINT [ "python3", "/app/startup.py" ]

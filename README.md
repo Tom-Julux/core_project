@@ -45,16 +45,6 @@ The documentation for these plugins is available in their respective folders.
 - [License](#license)
 - [Acknowledgments](#acknowledgments)
 
-## Quick start
-
-If you just want to try the demo widget and inspect the UI, run:
-
-```bash
-python3 startup.py
-```
-
-This opens napari with the demo plugin preloaded. We recommend opening the 2D SAM2 demo when following the usage guide below.
-
 ## Installation
 
 ### Prerequisites
@@ -82,6 +72,17 @@ done
 
 After installation, start napari (`napari` or `python3 startup.py`) and open the plugin from the Plugins menu. Alternatively, use the `startup.py` script to launch napari with the demo plugin preloaded.
 
+
+## Quick start
+
+If you just want to try the demo widget and inspect the UI, run:
+
+```bash
+python3 startup.py
+```
+
+This opens napari with the demo plugin preloaded. We recommend opening the 2D SAM2 demo when following the usage guide below.
+
 ### Install selected plugins only (non-developer)
 
 If you only need a single plugin and do not want an editable install, install the package directly from a git URL. Example:
@@ -93,7 +94,7 @@ pip install git+https://git.repo/some_repo.git#egg=PACKAGE_NAME&subdirectory=SUB
 
 ### Docker (optional)
 
-We also provide Docker run scripts for GUI-enabled/testing environments (see `script.sh` / `script_debug.sh`). The containers are large and meant for reproducible runs and CI, not lightweight local development. If you use Docker, make sure to mount any datasets and (when needed) model checkpoints.
+We also provide Docker run scripts for GUI-enabled/testing environments (see `script.sh` / `script_web.sh`). The containers are large and meant for reproducible runs and CI, not lightweight local development. If you use Docker, make sure to mount any datasets and (when needed) model checkpoints.
 
 ## Usage overview
 

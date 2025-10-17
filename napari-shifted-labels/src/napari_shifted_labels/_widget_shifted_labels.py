@@ -118,11 +118,11 @@ class ShiftedLabelsWidget(QWidget):
 
         # layer select for image layer
         self.layerselect_a = setup_layerselect(
-            _layout, self._viewer, Labels
+            _scroll_layout, self._viewer, Labels
         )
 
         self.run_button = setup_iconbutton(
-            None,
+            _scroll_layout,
             "Start",
             "right_arrow",
             self._viewer.theme,
