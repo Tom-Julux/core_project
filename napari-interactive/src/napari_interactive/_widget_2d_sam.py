@@ -57,6 +57,29 @@ class InteractiveSegmentationWidget2DSAM(InteractiveSegmentationWidget2DBase):
     def supported_prompt_types(self):
         return ["Points", "BBox", "Mask", "Manual"]
 
+    def setup_model_selection_gui(self, _scroll_layout):
+        pass
+        # log view
+        _container, _layout = setup_vcollapsiblegroupbox(
+            _scroll_layout, "Setup", True)
+
+        _ = setup_label(_layout, "Select model:")
+
+        model_options = ["MedSAM2-May2025"]
+
+        self.model_selection = setup_combobox(
+            _layout, options=model_options, function=lambda: print(
+                "Model Selection Changed")
+        )
+
+        _ = setup_iconbutton(
+            _layout, "Initialize", "new_labels", self._viewer.theme, lambda: self.on_model_change()
+        )
+
+    def on_model_change(self):
+        self.reset_model()
+        self.load_model()
+
     def load_model(self):
         from sam2.build_sam import build_sam2_camera_predictor, build_sam2
         from sam2.sam2_image_predictor import SAM2ImagePredictor
@@ -70,7 +93,10 @@ class InteractiveSegmentationWidget2DSAM(InteractiveSegmentationWidget2DBase):
         if not os.path.exists(checkpoint):
             show_info("Downloading MedSAM2 model from Huggingface...")
             from huggingface_hub import hf_hub_download
-            checkpoint = hf_hub_download(repo_id="wanglab/MedSAM2", filename="MedSAM2_latest.pt")
+            local_checkpoints_dir = None
+            if os.path.exists("/app/checkpoints"):
+                local_checkpoints_dir = "/app/checkpoints"
+            checkpoint = hf_hub_download(repo_id="wanglab/MedSAM2", filename="MedSAM2_latest.pt", local_dir=local_checkpoints_dir)
 
         model_cfg = "configs/sam2.1_hiera_t512.yaml"
         self.predictor = build_sam2_camera_predictor(

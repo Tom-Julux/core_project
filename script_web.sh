@@ -17,5 +17,6 @@ docker run --rm -it --gpus=all -v /project_data_2/:/project_data_2/\
     -v /project_data/:/project_data/\
     -v  "$(abspath ../example_data)":/app/example_data\
     -v  "$(abspath ../startup.py)":/app/startup.py\
+    -v  "$(abspath ./checkpoints)":/app/checkpoints\
     -v  "$(abspath ../demo_widget.py)":/app/demo_widget.py\
     -p 9876:9876 napari_core_web

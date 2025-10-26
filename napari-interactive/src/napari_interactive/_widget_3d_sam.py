@@ -102,7 +102,10 @@ class InteractiveSegmentationWidget3DSAM(InteractiveSegmentationWidget3DBase):
             if not os.path.exists(checkpoint):
                 show_info("Downloading MedSAM2 model from Huggingface...")
                 from huggingface_hub import hf_hub_download
-                checkpoint = hf_hub_download(repo_id="wanglab/MedSAM2", filename="MedSAM2_latest.pt")
+                local_checkpoints_dir = None
+                if os.path.exists("/app/checkpoints"):
+                    local_checkpoints_dir = "/app/checkpoints"
+                checkpoint = hf_hub_download(repo_id="wanglab/MedSAM2", filename="MedSAM2_latest.pt", local_dir=local_checkpoints_dir)
 
             model_cfg = "configs/sam2.1_hiera_t512.yaml"
             self.predictor = build_sam2_camera_predictor(

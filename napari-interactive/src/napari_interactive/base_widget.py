@@ -39,7 +39,7 @@ from napari_toolkit.widgets import (
     setup_dirselect,
     setup_spinbox,
 )
-from napari.qt.threading import thread_worker
+from napari.qt.threading import thread_worker, create_worker
 from qtpy.QtWidgets import (
     QFileDialog,
     QSizePolicy,
@@ -101,7 +101,15 @@ class InteractiveSegmentationWidgetBase(QWidget):
         self.prevent_auto_run_on_change = False
 
         self.build_gui()
-        self.load_model()
+        # load model in other thread
+
+        self.model_is_loaded = False
+        def load_model_in_thread():
+            self.load_model()
+            self.model_is_loaded = True
+        worker = create_worker(load_model_in_thread)
+        worker.start()
+        
         print("InteractiveSegmentationWidgetBase initialized")
         if get_value(self.layerselect_a)[1] != -1:
             self.setup_preview_layer()
@@ -361,7 +369,7 @@ class InteractiveSegmentationWidgetBase(QWidget):
             self.layerselect_a._update)
         self._viewer.layers.events.removed.disconnect(
             self.layerselect_a._update)
-        layer_names = {layer: layer.name for layer in self._viewer.layers if self.layerselect_a.layer_types is None or isinstance(
+        layer_names = {layer: layer.name for layer in self._viewer.layers if not hasattr(self.layerselect_a, "layer_types") or self.layerselect_a.layer_types is None or isinstance(
             layer, self.layerselect_a.layer_types)}
         for layer in layer_names:
             layer.events.name.disconnect(self.layerselect_a._update)
@@ -378,23 +386,24 @@ class InteractiveSegmentationWidgetBase(QWidget):
         and connects image transform events so prompts and preview follow the
         image when scaled/rotated/translated.
         """
-        self.clear_prompt_layers()
-        self.clear_preview_layer()
-        self.disconnect_image_layer_events()
-        self.reset_model()
+        with self.no_autopredict():
+            self.clear_prompt_layers()
+            self.clear_preview_layer()
+            self.disconnect_image_layer_events()
+            self.reset_model()
 
-        img_layer, img_layer_idx = get_value(self.layerselect_a)
+            img_layer, img_layer_idx = get_value(self.layerselect_a)
 
-        if img_layer_idx == -1 or img_layer not in self._viewer.layers:
-            show_warning("Please select a valid image layer.")
-            self.run_button.setEnabled(False)
-            return
+            if img_layer_idx == -1 or img_layer not in self._viewer.layers:
+                show_warning("Please select a valid image layer.")
+                self.run_button.setEnabled(False)
+                return
 
-        self.setup_preview_layer()
-        self.update_prompt_type()
-        self.connect_image_layer_events()
-        self.on_image_layer_scale_or_rotate()
-        self.run_button.setEnabled(True)
+            self.setup_preview_layer()
+            self.update_prompt_type()
+            self.connect_image_layer_events()
+            self.on_image_layer_scale_or_rotate()
+            self.run_button.setEnabled(True)
 
     def connect_image_layer_events(self):
         """
@@ -649,6 +658,10 @@ class InteractiveSegmentationWidgetBase(QWidget):
         """
         print("run_predict_in_thread")
 
+        if not self.model_is_loaded:
+            show_error("Model still loading. Try again later.")
+            return
+
         # If a prediction is currently running, schedule a rerun and update
         # the status immediately.
         if self.propagating_lock.locked():
@@ -872,9 +885,6 @@ class InteractiveSegmentationWidget3DBase(InteractiveSegmentationWidgetBase):
         pass
 
     def setup_hyperparameter_gui(self, _layout):
-        pass
-
-    def setup_model_selection_gui(self, _scroll_layout):
         pass
 
     def setup_model_selection_gui(self, _scroll_layout):

@@ -19,7 +19,7 @@ class DemoWidget(QWidget):
             "---"
             "2D NoPredictor",
             "SAM2 2D",
-            "---"
+            "---",
             "SAM2 2D+t CineMRI",
             "SAM2 3D (3D case with one 2d masks)",
             "Fetal Tracking SAM2 3D+t",
@@ -153,7 +153,7 @@ class DemoWidget(QWidget):
         elif demo_id == "SAM2 2D":
             if os.path.exists("/app/example_data/3d mrlinac/aumc_lung_patient031__GTV.mha"):
                 img = sitk.ReadImage(
-                    "/app//Users/tomjulius/Developer/core_project/example_data/3d mrlinac/aumc_lung_patient031__GTV.mha"
+                    "/app/example_data/3d mrlinac/aumc_lung_patient031__GTV.mha"
                 )
             else:
                  img = sitk.ReadImage(
