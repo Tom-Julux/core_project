@@ -16,7 +16,7 @@ class DemoWidget(QWidget):
         self.DEMOS = [
             "Select a demo...",
             "shifted labels",
-            "---"
+            "---",
             "2D NoPredictor",
             "SAM2 2D",
             "---",
