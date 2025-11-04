@@ -1,5 +1,5 @@
 name: napari-shifted-labels
-display_name: Edit Log
+display_name: Shifted Labels
 # use 'hidden' to remove plugin from napari hub search results
 visibility: hidden
 # see https://napari.org/stable/plugins/technical_references/manifest.html#fields for valid categories
@@ -8,7 +8,7 @@ contributions:
   commands:
     - id: "napari-shifted-labels.ShiftedLabelsWidget"
       title: "Shifted Labels"
-      python_name: "napari_edit_log:ShiftedLabelsWidget"
+      python_name: "napari_shifted_labels:ShiftedLabelsWidget"
   widgets:
     - command: "napari-shifted-labels.ShiftedLabelsWidget"
       display_name: Shifted Labels
