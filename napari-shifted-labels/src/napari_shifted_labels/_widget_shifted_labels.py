@@ -121,6 +121,16 @@ class ShiftedLabelsWidget(QWidget):
             _scroll_layout, self._viewer, Labels
         )
 
+        setup_label(_scroll_layout, "Frame shift amount:")
+        self.offset_number = setup_spinbox(
+            _scroll_layout,
+            default=-1,
+            minimum=-5,
+            maximum=5,
+            step_size=1,
+            function=lambda value: self.sync_data()
+        )
+
         self.run_button = setup_iconbutton(
             _scroll_layout,
             "Start",
@@ -130,6 +140,7 @@ class ShiftedLabelsWidget(QWidget):
         )
 
         self.setup_connections()
+
     def clear(self):
         if self.preview_layer is not None and self.preview_layer in self._viewer.layers:
             self._viewer.layers.remove(self.preview_layer)
@@ -164,7 +175,8 @@ class ShiftedLabelsWidget(QWidget):
 
         if self.preview_layer is not None:
             # remove old
-            self._viewer.layers.remove(self.preview_layer)
+            if self.preview_layer in self._viewer.layers:
+                self._viewer.layers.remove(self.preview_layer)
             self.preview_layer = None
 
         if label_layer is None or img_layer_idx == -1:
@@ -204,6 +216,22 @@ class ShiftedLabelsWidget(QWidget):
 
         self.copied_layer.events.name.connect(self._sync_name)
 
+    def sync_data(self):
+        """Initial sync of data from source layer to preview layer"""
+        if self.copied_layer is None or self.preview_layer is None:
+            return
+
+        offset = get_value(self.offset_number)
+        if offset == 0:
+            self.preview_layer.data = self.copied_layer.data.copy()
+            self.preview_layer.refresh()
+            return
+
+        self.preview_layer.data = np.roll(self.copied_layer.data.copy(), -offset, axis=self._viewer.dims.order[0])
+        np.transpose(self.preview_layer.data, self._viewer.dims.order)[0] = 0
+
+        self.preview_layer.refresh()
+
     def _sync_name(self, event):
         """sync name of layers"""
         self.preview_layer.name = "(shifted) " + event.source.name
@@ -221,11 +249,8 @@ class ShiftedLabelsWidget(QWidget):
         # Ignore in-progress events for performance reasons
         if hasattr(event, 'action') and event.action in ['adding', 'removing', 'changing']:
             return
-        
-        self.preview_layer.data = np.roll(event.source.data.copy(), 1, axis=self._viewer.dims.order[0])
-        np.transpose(self.preview_layer.data, self._viewer.dims.order)[0] = 0
 
-        self.preview_layer.refresh()
+        self.sync_data()
 
     def _property_sync(self, name, event):
         """Sync layers properties (except the name)"""
