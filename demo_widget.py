@@ -16,6 +16,7 @@ class DemoWidget(QWidget):
         self.DEMOS = [
             "Select a demo...",
             "shifted labels",
+            "napari-shape-based-interpolation",
             "---",
             "2D NoPredictor",
             "SAM2 2D",
@@ -230,7 +231,38 @@ class DemoWidget(QWidget):
                 widget, name="ShiftedLabel", area="right"
             )
             self.active_widget = widget
-            
+
+        elif demo_id == "napari-shape-based-interpolation":
+            if os.path.exists("/app/example_data/2d+t_trackrad/A_003_frames_8bit.mha"):
+                img = sitk.ReadImage(
+                    "/app/example_data/2d+t_trackrad/A_003_frames_8bit.mha"
+                )
+            else:
+                img = sitk.ReadImage(
+                    f'{base_path}/example_data/2d+t_trackrad/A_003_frames_8bit.mha'
+                )
+
+            img = sitk.GetArrayFromImage(img)
+
+            img = np.rot90(img, k=1, axes=(1,2))
+
+            image_layer = self._viewer.add_image(
+                img,
+                name='Example Image',
+                colormap='gray'
+            )
+
+            labels_layer = self._viewer.add_labels(
+                np.zeros_like(img, dtype=np.uint8),
+                name='Example Label'
+            )
+
+            from napari_shape_based_interpolation import ShapeBasedInterpolationWidget
+            widget = ShapeBasedInterpolationWidget(self._viewer)
+            self._viewer.window.add_dock_widget(
+                widget, name="napari-shape-based-interpolation", area="right"
+            )
+            self.active_widget = widget 
         elif demo_id == "SAM2 2D+t CineMRI":
             if os.path.exists("/app/example_data/2d+t_trackrad/A_003_frames_8bit.mha"):
                 img = sitk.ReadImage(

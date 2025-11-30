@@ -45,6 +45,7 @@ from qtpy.QtWidgets import (
     QSizePolicy,
     QVBoxLayout,
     QWidget,
+    QMessageBox
 )
 import traceback
 
@@ -80,10 +81,10 @@ class ScribblePromptLayer(Labels):
         super().__init__(*args, **kwargs)
 
 
-layer_to_controls[PointPromptLayer] = CustomQtPointsControls
-layer_to_controls[BoxPromptLayer] = CustomQtBBoxControls
-layer_to_controls[ScribblePromptLayer] = CustomQtScribbleControls
-layer_to_controls[ContourPromptLayer] = QtShapesControls
+#layer_to_controls[PointPromptLayer] = CustomQtPointsControls
+#layer_to_controls[BoxPromptLayer] = CustomQtBBoxControls
+#layer_to_controls[ScribblePromptLayer] = CustomQtScribbleControls
+#layer_to_controls[ContourPromptLayer] = QtShapesControls
 
 
 class InteractiveSegmentationWidgetBase(QWidget):
@@ -243,6 +244,23 @@ class InteractiveSegmentationWidgetBase(QWidget):
 
         self.prompt_type_select = setup_combobox(  # , "Points", "BBox"],\
             _layout, self.supported_prompt_types, "QComboBox", function=lambda: self.update_prompt_type()
+        )
+
+        _container, _layout = setup_vcollapsiblegroupbox(
+            _scroll_layout, "Import Prompt:", collapsed=False)
+        _ = setup_label(
+            _layout, "Import prompt from other layer. (Overwrites current prompts!)")
+
+        self.import_prompt_layerselect = setup_layerselect(
+            _layout, self._viewer, Layer, function=lambda: None)
+        
+        self.import_prompt_button = setup_iconbutton(
+            _layout,
+            "Import Prompt",
+            "right_arrow",
+            self._viewer.theme,
+            function=lambda: self.import_prompt_from_layer(),
+            tooltips="Import prompt from selected layer.",
         )
 
         self.setup_view_control_gui(_scroll_layout)
@@ -562,8 +580,8 @@ class InteractiveSegmentationWidgetBase(QWidget):
                 name='Mask Prompt Layer', data=data)
             mask_layer.contour = 1
 
-            color_dict = {None: [0, 0, 0, 0], 0: [0, 0, 0, 0], 1: [255, 255, 255, 255]}
-            mask_layer.colormap = DirectLabelColormap(color_dict = color_dict)
+            #color_dict = {None: [0, 0, 0, 0], 0: [0, 0, 0, 0], 1: [255, 255, 255, 255]}
+            #mask_layer.colormap = DirectLabelColormap(color_dict = color_dict)
 
             self._viewer.add_layer(mask_layer)
             self.prompt_layers['mask'] = mask_layer
@@ -603,6 +621,113 @@ class InteractiveSegmentationWidgetBase(QWidget):
             if layer in self._viewer.layers:
                 self._viewer.layers.remove(layer)
         self.prompt_layers.clear()
+
+    def import_prompt_from_layer(self):
+        """
+        Import prompt data from the selected layer into the current prompt layer.
+        """
+        import_layer, import_layer_idx = get_value(self.import_prompt_layerselect)
+        if import_layer_idx == -1 or import_layer not in self._viewer.layers:
+            show_warning("Please select a valid layer to import from.")
+            return
+        import_layer = self._viewer.layers[import_layer]
+
+        prompt_type = get_value(self.prompt_type_select)[0]
+
+        if prompt_type == "Points":
+            if not isinstance(import_layer, Points):
+                show_warning("Selected layer is not a Points layer.")
+                return
+            
+            import_points = import_layer.data
+
+            dlg = QMessageBox(self)
+            dlg.setWindowTitle("Point Prompts Import!")
+            dlg.setText("Should the selected points be imported as positive points (Yes) or negative points (No)?")
+            dlg.setStandardButtons(
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            )
+            dlg.setIcon(QMessageBox.Icon.Question)
+            button = dlg.exec()
+
+            print(import_points.shape)
+            print(self.prompt_layers['point_positive'].data.shape)
+
+            if button == QMessageBox.StandardButton.Yes:
+                self.prompt_layers['point_positive'].data = import_points
+            else:
+                self.prompt_layers['point_negative'].data = import_points
+
+        elif prompt_type == "BBox":
+            if not isinstance(import_layer, Shapes):
+                show_warning("Selected layer is not a Shapes layer.")
+                return
+            
+            import_bboxes = import_layer.data
+            print(import_bboxes.shape)
+            print(self.prompt_layers['bbox'].data.shape)
+            
+            if len(import_bboxes) == 0:
+                show_warning("No shapes found in the selected layer.")
+                return
+            if len(import_bboxes[0]) > 1 or import_bboxes[0].shape[0] != 4:
+                show_warning("Imported layer contains more then one box or non-box shapes.")
+                return  
+            self.prompt_layers['bbox'].data = import_bboxes
+        elif prompt_type == "Mask":
+            if not isinstance(import_layer, Labels):
+                show_warning("Selected layer is not a Labels layer.")
+                return
+            
+            import_mask = import_layer.data
+
+            print(import_mask.shape)
+            print(self.prompt_layers['mask'].data.shape)
+            if import_mask.shape == self.prompt_layers['mask'].data.shape:
+                np.copyto(self.prompt_layers['mask'].data, import_mask)
+            else: # the shapes don't match
+                
+                prompt_mask = self.prompt_layers['mask'].data.copy()
+                transposed_prompt_mask = np.transpose(prompt_mask, self._viewer.dims.order)
+
+                # copy the currently viwed slice to the mask layer
+                current_indices = self._viewer.dims.current_step
+                # unsqueeze import mask to have same number of dimensions as prompt mask
+                while len(import_mask.shape) < len(transposed_prompt_mask.shape):
+                    import_mask = np.expand_dims(import_mask, axis=0)
+                transposed_import_mask = np.transpose(import_mask, self._viewer.dims.order)
+
+                print(transposed_import_mask.shape)
+                print(transposed_prompt_mask.shape)
+                N = len(transposed_import_mask.shape)
+                M = len(transposed_prompt_mask.shape)
+                try:
+                    if N == 3 and M == 3:
+                        np.copyto(transposed_prompt_mask[self._viewer.dims.current_step[self._viewer.dims.order[0]]], transposed_import_mask[0])
+                    elif N == 4 and M == 4 and transposed_import_mask.shape[0] == 1 and transposed_import_mask.shape[1] == 1:
+                        np.copyto(transposed_prompt_mask[self._viewer.dims.current_step[self._viewer.dims.order[0]],
+                                                            self._viewer.dims.current_step[self._viewer.dims.order[1]]],
+                                                            transposed_import_mask[0,0])
+                    elif N == 4 and M == 4 and transposed_import_mask.shape[0] == 1 and transposed_import_mask.shape[1] == transposed_prompt_mask.shape[1]:
+                        np.copyto(transposed_prompt_mask[self._viewer.dims.current_step[self._viewer.dims.order[0]]],
+                                                            transposed_import_mask[0])
+                    elif N == 4 and M == 4 and transposed_import_mask.shape[0] == 1:
+                        np.copyto(transposed_prompt_mask[self._viewer.dims.current_step[self._viewer.dims.order[0]],
+                                                            self._viewer.dims.current_step[self._viewer.dims.order[1]]],
+                                                            transposed_import_mask[0, self._viewer.dims.current_step[self._viewer.dims.order[1]]])
+                    else:
+                        show_warning("Imported layer shape is not compatible with the prompt layer shape.")
+                        return
+                except Exception as e:
+                    show_warning(f"Error during import: {e}")
+                    return
+
+                self.prompt_layers['mask'].data = prompt_mask
+            self.prompt_layers['mask'].refresh()
+        else:
+            show_warning("Import not supported for the selected prompt type.")
+            return
+        
     # endregion
 
     def on_hyperparameter_update(self):
