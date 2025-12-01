@@ -5,7 +5,7 @@ class CustomQtPointsControls(QtPointsControls):
     def __init__(self, layer):
         super().__init__(layer)
         fields_to_hide = [
-            self.faceColorEdit,
+            #self.faceColorEdit,
             self.borderColorEdit,
             self.symbolComboBox,
             self.textDispCheckBox,

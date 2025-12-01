@@ -7,7 +7,7 @@ categories: ["Utilities"]
 contributions:
   commands:
     - id: "napari-shape-based-interpolation.ShapeBasedInterpolationWidget"
-      title: "Shifted Labels"
+      title: "Shape Based Interpolation"
       python_name: "napari_shape_based_interpolation:ShapeBasedInterpolationWidget"
   widgets:
     - command: "napari-shape-based-interpolation.ShapeBasedInterpolationWidget"
