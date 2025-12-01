@@ -16,6 +16,8 @@ class DemoWidget(QWidget):
         self.DEMOS = [
             "Select a demo...",
             "shifted labels",
+            "Import",
+            "Size Estimator",
             "napari-shape-based-interpolation",
             "---",
             "2D NoPredictor",
@@ -231,7 +233,30 @@ class DemoWidget(QWidget):
                 widget, name="ShiftedLabel", area="right"
             )
             self.active_widget = widget
+        elif demo_id == "Size Estimator":
+            if os.path.exists("/app/example_data/3d mrlinac/aumc_lung_patient031__GTV.mha"):
+                img = sitk.ReadImage(
+                    "/app/example_data/3d mrlinac/aumc_lung_patient031__GTV.mha"
+                )
+            else:
+                 img = sitk.ReadImage(
+                    f'{base_path}/example_data/3d mrlinac/aumc_lung_patient031__GTV.mha'
+                )
 
+            img = sitk.GetArrayFromImage(img)
+            img = img = img[img.shape[0]//2-16:img.shape[0]//2+32]
+            image_layer = self._viewer.add_image(
+                img,
+                name='Example Image',
+                colormap='gray'
+            )
+
+            from napari_size_estimator._widget_napari_size_estimator import SizeEstimatorWidget
+            widget = SizeEstimatorWidget(self._viewer)
+            self._viewer.window.add_dock_widget(
+                widget, name="Size Estimator", area="right"
+            )
+            self.active_widget = widget
         elif demo_id == "napari-shape-based-interpolation":
             if os.path.exists("/app/example_data/2d+t_trackrad/A_003_frames_8bit.mha"):
                 img = sitk.ReadImage(
@@ -263,6 +288,35 @@ class DemoWidget(QWidget):
                 widget, name="napari-shape-based-interpolation", area="right"
             )
             self.active_widget = widget 
+                
+        elif demo_id == "Import":
+            if os.path.exists("/app/example_data/2d+t_trackrad/A_003_frames_8bit.mha"):
+                img = sitk.ReadImage(
+                    "/app/example_data/2d+t_trackrad/A_003_frames_8bit.mha"
+                )
+            else:
+                 img = sitk.ReadImage(
+                    f'{base_path}/example_data/2d+t_trackrad/A_003_frames_8bit.mha'
+                )
+            
+            img = sitk.GetArrayFromImage(img)
+
+            img = np.rot90(img, k=1, axes=(1,2))
+
+            image_layer = self._viewer.add_image(
+                img,
+                name='Example Image',
+                colormap='gray'
+            )
+
+            from napari_interactive._widget_2d_noregistration import InteractiveSegmentationWidget2DNoRegistration
+            widget = InteractiveSegmentationWidget2DNoRegistration(self._viewer)
+            self._viewer.window.add_dock_widget(
+                widget, name="Interactive Segmentation", area="right"
+            )
+            self.active_widget = widget
+            self._viewer.dims.current_step = (34,0,0)
+
         elif demo_id == "SAM2 2D+t CineMRI":
             if os.path.exists("/app/example_data/2d+t_trackrad/A_003_frames_8bit.mha"):
                 img = sitk.ReadImage(

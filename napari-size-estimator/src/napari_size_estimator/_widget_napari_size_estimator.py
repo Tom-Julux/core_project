@@ -96,33 +96,38 @@ class SizeEstimatorWidget(QWidget):
         _container, _layout = setup_vcollapsiblegroupbox(
             _scroll_layout, "Resolution:", collapsed=False)
 
-        _ = setup_label(
-            _layout, "Resolution in x:")
+        _resolution_label_x = setup_label(
+            None, "Resolution in x:")
         self.resolution_x_spinbox = setup_doublespinbox(
-            _layout,
+            None,
             default=1.0,
             minimum=0.01,
             maximum=1000.0,
             step_size=0.1,
             )
-        _ = setup_label(
-            _layout, "Resolution in y:")
+        _ = hstack(_layout, [_resolution_label_x, self.resolution_x_spinbox], stretch=[0, 1])
+
+        _resolution_label_y = setup_label(
+            None, "Resolution in y:")
         self.resolution_y_spinbox = setup_doublespinbox(
-            _layout,
+            None,
             default=1.0,
             minimum=0.01,
             maximum=1000.0,
             step_size=0.1,
             )
-        _ = setup_label(
-            _layout, "Resolution in z:")
+        _ = hstack(_layout, [_resolution_label_y, self.resolution_y_spinbox], stretch=[0, 1])
+
+        _resolution_label_z = setup_label(
+            None, "Resolution in z:")
         self.resolution_z_spinbox = setup_doublespinbox(
-            _layout,
+            None,
             default=1.0,
             minimum=0.01,
             maximum=1000.0,
             step_size=0.1,
             )
+        _ = hstack(_layout, [_resolution_label_z, self.resolution_z_spinbox], stretch=[0, 1])
 
         self.run_button = setup_iconbutton(
             _scroll_layout,
