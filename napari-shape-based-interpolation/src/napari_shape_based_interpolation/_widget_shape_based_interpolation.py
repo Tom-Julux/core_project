@@ -213,6 +213,9 @@ class ShapeBasedInterpolationWidget(QWidget):
             self.manual_frames = non_empty_labels.tolist()
 
         if len(non_empty_labels) < 2:
+            if np.where(new_labels.sum(axis=(1,2)) >= 0)[0].shape[0] < 2:
+                show_warning("At least two frames with labels are required for shape based interpolation. Did you select the correct label index?")
+                return
             show_warning("At least two frames with labels are required for shape based interpolation.")
             return
 
@@ -264,6 +267,7 @@ class ShapeBasedInterpolationWidget(QWidget):
         if self.manual_frames is None or len(self.manual_frames) <= 2:
             return
 
+        non_empty_labels = self.manual_frames
         new_labels = label_data.copy()
         # for each pair of non empty labels, clear interpolated frames
         for i in range(len(non_empty_labels) - 1):
@@ -329,7 +333,7 @@ class ShapeBasedInterpolationWidget(QWidget):
 
     def on_selected_label_update(self, event):
         if self.current_layer is None:
-            show_warning("Please select a valid label layer.")
+            #show_warning("Please select a valid label layer.")
             return
         label_layer = self.current_layer
         
