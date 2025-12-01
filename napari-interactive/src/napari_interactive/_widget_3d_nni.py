@@ -110,13 +110,15 @@ class InteractiveSegmentationWidget3DNNI(InteractiveSegmentationWidget3DBase):
             return
 
     def reset_model(self):
-        self.session.reset_interactions()
+        if self.session is not None:
+            self.session.reset_interactions()
 
     def closeEvent(self, event=None):
         super().closeEvent()
-        self.session.reset_interactions()
-        del self.session
-        self.session = None
+        if self.session is not None:
+            self.session.reset_interactions()
+            del self.session
+            self.session = None
         
     def predict(self):
         prompt_type = get_value(self.prompt_type_select)[0]
