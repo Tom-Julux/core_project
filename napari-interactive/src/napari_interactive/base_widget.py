@@ -27,7 +27,6 @@ from napari_toolkit.widgets import (
     setup_editdoubleslider,
     setup_iconbutton,
     setup_label,
-    setup_layerselect,
     setup_lineedit,
     setup_fileselect,
     setup_savefileselect,
@@ -39,6 +38,8 @@ from napari_toolkit.widgets import (
     setup_dirselect,
     setup_spinbox,
 )
+from .layer_select import setup_layerselect
+
 from napari.qt.threading import thread_worker, create_worker
 from qtpy.QtWidgets import (
     QFileDialog,
@@ -81,14 +82,14 @@ class ScribblePromptLayer(Labels):
         super().__init__(*args, **kwargs)
 
 
-#layer_to_controls[PointPromptLayer] = CustomQtPointsControls
-#layer_to_controls[BoxPromptLayer] = CustomQtBBoxControls
-#layer_to_controls[ScribblePromptLayer] = CustomQtScribbleControls
-#layer_to_controls[ContourPromptLayer] = QtShapesControls
+# layer_to_controls[PointPromptLayer] = CustomQtPointsControls
+# layer_to_controls[BoxPromptLayer] = CustomQtBBoxControls
+# layer_to_controls[ScribblePromptLayer] = CustomQtScribbleControls
+# layer_to_controls[ContourPromptLayer] = QtShapesControls
 
 
 class InteractiveSegmentationWidgetBase(QWidget):
-    def __init__(self, viewer: Viewer,hide_model_setup=False, hide_prompt_type_select = False, hide_prompt_import=False, hide_multi_object=False, hide_export=False):
+    def __init__(self, viewer: Viewer, hide_model_setup=False, hide_prompt_type_select=False, hide_prompt_import=False, hide_multi_object=False, hide_export=False):
         super().__init__()
         self._viewer = viewer
 
@@ -112,13 +113,14 @@ class InteractiveSegmentationWidgetBase(QWidget):
         # load model in other thread
 
         self.model_is_loaded = False
+
         def load_model_in_thread():
             self.load_model()
             self.model_is_loaded = True
         load_model_in_thread()
         worker = create_worker(load_model_in_thread)
         worker.start()
-        
+
         print("InteractiveSegmentationWidgetBase initialized")
         if get_value(self.layerselect_a)[1] != -1:
             self.setup_preview_layer()
@@ -263,7 +265,7 @@ class InteractiveSegmentationWidgetBase(QWidget):
 
         self.import_prompt_layerselect = setup_layerselect(
             _layout, self._viewer, Layer, function=lambda: None)
-        
+
         self.import_prompt_button = setup_iconbutton(
             _layout,
             "Import Prompt",
@@ -324,9 +326,11 @@ class InteractiveSegmentationWidgetBase(QWidget):
         )
 
         _label = setup_label(None, "Current Object:")
+
         def on_spin_box_change():
             if self.preview_layer is not None:
-                self.preview_layer.selected_label = get_value(self.object_id_spinbox)
+                self.preview_layer.selected_label = get_value(
+                    self.object_id_spinbox)
 
             self.run_predict_in_thread()
         self.object_id_spinbox = setup_spinbox(
@@ -373,7 +377,6 @@ class InteractiveSegmentationWidgetBase(QWidget):
         )
         if self.hide_export:
             _container.setVisible(False)
-
 
         # Reset group
         _container, _layout = setup_vgroupbox(_scroll_layout, "Reset:")
@@ -490,7 +493,8 @@ class InteractiveSegmentationWidgetBase(QWidget):
             self.preview_layer.scale = self._viewer.layers[img_layer].scale
             self.preview_layer.rotate = self._viewer.layers[img_layer].rotate
             self.preview_layer.translate = self._viewer.layers[img_layer].translate
-            self.preview_layer.affine.affine_matrix = self._viewer.layers[img_layer].affine.affine_matrix
+            self.preview_layer.affine.affine_matrix = self._viewer.layers[
+                img_layer].affine.affine_matrix
 
         for layer in self.prompt_layers.values():
             layer.scale = self._viewer.layers[img_layer].scale
@@ -516,12 +520,13 @@ class InteractiveSegmentationWidgetBase(QWidget):
         self.preview_layer = Labels(
             name='Preview Layer', data=self.preview_label_data.copy(), opacity=0.5)
         self.preview_layer.contour = 0
-        
+
         self._viewer.add_layer(self.preview_layer)
 
         def on_label_change():
             if self.preview_layer.selected_label != 0:
-                set_value(self.object_id_spinbox, self.preview_layer.selected_label)
+                set_value(self.object_id_spinbox,
+                          self.preview_layer.selected_label)
 
         self.preview_layer.events.selected_label.connect(on_label_change)
         self.on_image_layer_scale_or_rotate()
@@ -539,7 +544,7 @@ class InteractiveSegmentationWidgetBase(QWidget):
         if hasattr(self, 'object_id_spinbox'):
             set_value(self.object_id_spinbox, 1)
     # endregion
-    
+
     # region Prompt Layer Management
     def update_prompt_type(self):
         """
@@ -586,11 +591,10 @@ class InteractiveSegmentationWidgetBase(QWidget):
         elif prompt_type == "BBox":
             bbox_layer = BoxPromptLayer(
                 name='BBox Prompt Layer', ndim=len(img_layer_shape),
-                face_color = "#ffffff00",edge_color = "#ffffffff",opacity = 0.7)
+                face_color="#ffffff00", edge_color="#ffffffff", opacity=0.7)
 
             self._viewer.add_layer(bbox_layer)
             self.prompt_layers['bbox'] = bbox_layer
-
 
             bbox_layer.events.data.connect(self.on_prompt_update_event)
             # set active layer to bbox layer
@@ -601,13 +605,13 @@ class InteractiveSegmentationWidgetBase(QWidget):
                 name='Mask Prompt Layer', data=data)
             mask_layer.contour = 1
 
-            #color_dict = {None: [0, 0, 0, 0], 0: [0, 0, 0, 0], 1: [255, 255, 255, 255]}
-            #mask_layer.colormap = DirectLabelColormap(color_dict = color_dict)
+            # color_dict = {None: [0, 0, 0, 0], 0: [0, 0, 0, 0], 1: [255, 255, 255, 255]}
+            # mask_layer.colormap = DirectLabelColormap(color_dict = color_dict)
 
             self._viewer.add_layer(mask_layer)
             self.prompt_layers['mask'] = mask_layer
 
-            #mask_layer.events.data.connect(self.on_prompt_update_event)
+            # mask_layer.events.data.connect(self.on_prompt_update_event)
             # For the Labels layer, use the paint event to catch changes after they occured
             mask_layer.events.paint.connect(self.on_prompt_update_event)
 
@@ -616,7 +620,7 @@ class InteractiveSegmentationWidgetBase(QWidget):
 
         elif prompt_type == "Manual":
             self._viewer.layers.selection.active = self.preview_layer
-        
+
         self.on_image_layer_scale_or_rotate()
 
     def clear_prompt_layer_content(self):
@@ -647,7 +651,8 @@ class InteractiveSegmentationWidgetBase(QWidget):
         """
         Import prompt data from the selected layer into the current prompt layer.
         """
-        import_layer, import_layer_idx = get_value(self.import_prompt_layerselect)
+        import_layer, import_layer_idx = get_value(
+            self.import_prompt_layerselect)
         if import_layer_idx == -1 or import_layer not in self._viewer.layers:
             show_warning("Please select a valid layer to import from.")
             return
@@ -659,12 +664,13 @@ class InteractiveSegmentationWidgetBase(QWidget):
             if not isinstance(import_layer, Points):
                 show_warning("Selected layer is not a Points layer.")
                 return
-            
+
             import_points = import_layer.data
 
             dlg = QMessageBox(self)
             dlg.setWindowTitle("Point Prompts Import!")
-            dlg.setText("Should the selected points be imported as positive points (Yes) or negative points (No)?")
+            dlg.setText(
+                "Should the selected points be imported as positive points (Yes) or negative points (No)?")
             dlg.setStandardButtons(
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
             )
@@ -683,40 +689,43 @@ class InteractiveSegmentationWidgetBase(QWidget):
             if not isinstance(import_layer, Shapes):
                 show_warning("Selected layer is not a Shapes layer.")
                 return
-            
+
             import_bboxes = import_layer.data
             print(import_bboxes.shape)
             print(self.prompt_layers['bbox'].data.shape)
-            
+
             if len(import_bboxes) == 0:
                 show_warning("No shapes found in the selected layer.")
                 return
             if len(import_bboxes[0]) > 1 or import_bboxes[0].shape[0] != 4:
-                show_warning("Imported layer contains more then one box or non-box shapes.")
-                return  
+                show_warning(
+                    "Imported layer contains more then one box or non-box shapes.")
+                return
             self.prompt_layers['bbox'].data = import_bboxes
         elif prompt_type == "Mask":
             if not isinstance(import_layer, Labels):
                 show_warning("Selected layer is not a Labels layer.")
                 return
-            
+
             import_mask = import_layer.data
 
             print(import_mask.shape)
             print(self.prompt_layers['mask'].data.shape)
             if import_mask.shape == self.prompt_layers['mask'].data.shape:
                 np.copyto(self.prompt_layers['mask'].data, import_mask)
-            else: # the shapes don't match
-                
+            else:  # the shapes don't match
+
                 prompt_mask = self.prompt_layers['mask'].data.copy()
-                transposed_prompt_mask = np.transpose(prompt_mask, self._viewer.dims.order)
+                transposed_prompt_mask = np.transpose(
+                    prompt_mask, self._viewer.dims.order)
 
                 # copy the currently viwed slice to the mask layer
                 current_indices = self._viewer.dims.current_step
                 # unsqueeze import mask to have same number of dimensions as prompt mask
                 while len(import_mask.shape) < len(transposed_prompt_mask.shape):
                     import_mask = np.expand_dims(import_mask, axis=0)
-                transposed_import_mask = np.transpose(import_mask, self._viewer.dims.order)
+                transposed_import_mask = np.transpose(
+                    import_mask, self._viewer.dims.order)
 
                 print(transposed_import_mask.shape)
                 print(transposed_prompt_mask.shape)
@@ -724,20 +733,22 @@ class InteractiveSegmentationWidgetBase(QWidget):
                 M = len(transposed_prompt_mask.shape)
                 try:
                     if N == 3 and M == 3:
-                        np.copyto(transposed_prompt_mask[self._viewer.dims.current_step[self._viewer.dims.order[0]]], transposed_import_mask[0])
+                        np.copyto(
+                            transposed_prompt_mask[self._viewer.dims.current_step[self._viewer.dims.order[0]]], transposed_import_mask[0])
                     elif N == 4 and M == 4 and transposed_import_mask.shape[0] == 1 and transposed_import_mask.shape[1] == 1:
                         np.copyto(transposed_prompt_mask[self._viewer.dims.current_step[self._viewer.dims.order[0]],
-                                                            self._viewer.dims.current_step[self._viewer.dims.order[1]]],
-                                                            transposed_import_mask[0,0])
+                                                         self._viewer.dims.current_step[self._viewer.dims.order[1]]],
+                                  transposed_import_mask[0, 0])
                     elif N == 4 and M == 4 and transposed_import_mask.shape[0] == 1 and transposed_import_mask.shape[1] == transposed_prompt_mask.shape[1]:
                         np.copyto(transposed_prompt_mask[self._viewer.dims.current_step[self._viewer.dims.order[0]]],
-                                                            transposed_import_mask[0])
+                                  transposed_import_mask[0])
                     elif N == 4 and M == 4 and transposed_import_mask.shape[0] == 1:
                         np.copyto(transposed_prompt_mask[self._viewer.dims.current_step[self._viewer.dims.order[0]],
-                                                            self._viewer.dims.current_step[self._viewer.dims.order[1]]],
-                                                            transposed_import_mask[0, self._viewer.dims.current_step[self._viewer.dims.order[1]]])
+                                                         self._viewer.dims.current_step[self._viewer.dims.order[1]]],
+                                  transposed_import_mask[0, self._viewer.dims.current_step[self._viewer.dims.order[1]]])
                     else:
-                        show_warning("Imported layer shape is not compatible with the prompt layer shape.")
+                        show_warning(
+                            "Imported layer shape is not compatible with the prompt layer shape.")
                         return
                 except Exception as e:
                     show_warning(f"Error during import: {e}")
@@ -748,7 +759,7 @@ class InteractiveSegmentationWidgetBase(QWidget):
         else:
             show_warning("Import not supported for the selected prompt type.")
             return
-        
+
     # endregion
 
     def on_hyperparameter_update(self):
@@ -772,7 +783,7 @@ class InteractiveSegmentationWidgetBase(QWidget):
         # Ignore in progress events like adding, removing, changing
         if hasattr(event, 'action') and event.action in ['adding', 'removing', 'changing']:
             return
-        
+
         if self.prevent_auto_run_on_change:
             return
         if get_value(self.autorun_ckbx) and self.run_button.isEnabled():
@@ -829,7 +840,7 @@ class InteractiveSegmentationWidgetBase(QWidget):
                 self.rerun_after_lock = True
                 while self.rerun_after_lock:
                     self.rerun_after_lock = False
-                    try:  
+                    try:
                         self.predict()
                     except Exception as e:
                         print(f"Error in on_prompt_update_event: {e}")
@@ -878,7 +889,8 @@ class InteractiveSegmentationWidgetBase(QWidget):
         new_mask = np.where(new_mask > 0, object_id, 0).astype(np.uint8)
 
         # set preview layer data to preview label data with overwrites from the new mask at the indices
-        out_mask = self.preview_label_data.copy() if self.is_multi_object else self.preview_layer.data.copy()
+        out_mask = self.preview_label_data.copy(
+        ) if self.is_multi_object else self.preview_layer.data.copy()
 
         if indices is None:
             indices = np.s_[:]
@@ -890,11 +902,12 @@ class InteractiveSegmentationWidgetBase(QWidget):
             # overwrite current preview_label_data at indices with new_mask where new_mask > 0
             if self.is_multi_object:
                 np.copyto(transposed_out_mask[indices],
-                      new_mask, where=(new_mask > 0))
+                          new_mask, where=(new_mask > 0))
             else:
                 np.copyto(transposed_out_mask[indices], new_mask)
         else:
-            np.copyto(transposed_out_mask[indices], new_mask, where=((transposed_out_mask[indices] == 0) | (transposed_out_mask[indices] == object_id)))
+            np.copyto(transposed_out_mask[indices], new_mask, where=(
+                (transposed_out_mask[indices] == 0) | (transposed_out_mask[indices] == object_id)))
 
         self.preview_layer.data = out_mask
         self.preview_layer.refresh()
@@ -988,199 +1001,6 @@ class InteractiveSegmentationWidgetBase(QWidget):
             show_error(f"Failed to export preview layer: {e}")
     # endregion
 
-
-class InteractiveSegmentationWidget3DBase(InteractiveSegmentationWidgetBase):
-    """Base class for 3D interactive segmentation widgets.
-
-    This class extends the generic InteractiveSegmentationWidgetBase with
-    helpers for orthogonal (three-view) prompting. It tracks whether a
-    prompt (contour/mask) has been set for each orthogonal view and the
-    associated slice/index for each view. Subclasses should implement
-    model-specific methods like ``load_model``, ``predict`` and
-    ``reset_model``.
-    """
-
-    def __init__(self, viewer: Viewer):
-        """Initialize 3D prompt-tracking state.
-
-        The constructor initializes boolean flags that indicate whether a
-        prompt has been set for each of the three orthogonal views and
-        stores the index (slice) for each view. These are used to control
-        when prediction is allowed to run in multi-view workflows.
-        """
-        super().__init__(viewer)
-        self.prompt_frame_set_view_1 = False
-        self.prompt_frame_set_view_2 = False
-        self.prompt_frame_set_view_3 = False
-
-        self.prompt_frame_index_view_1 = 0
-        self.prompt_frame_index_view_2 = 0
-        self.prompt_frame_index_view_3 = 0
-
-    @property
-    def supported_prompt_types(self):
-        return ["Mask"]  # ["Points", "BBox", "Mask"]
-
-    def load_model(self):
-        pass
-
-    def predict(self):
-        pass
-
-    def reset_model(self):
-        pass
-
-    def setup_hyperparameter_gui(self, _layout):
-        pass
-
-    def setup_model_selection_gui(self, _scroll_layout):
-        pass
-    
-    # GUI
-    def setup_view_control_gui(self, _scroll_layout):
-        """Build the view control section of the GUI.
-
-        Adds a switch to choose the active orthogonal view, three progress
-        indicators showing whether a prompt has been set for each view, and
-        a button that copies the current mask into the prompt set for the
-        selected view.
-        """
-        _container, _layout = setup_vgroupbox(_scroll_layout, "View Control:")
-        self.view_select = setup_hswitch(
-            _layout, ["View A", "View B", "View C"], default=0, function=lambda: self.set_view())
-
-        # Progress indicatoin
-        setup_label(_layout, "Progress:")
-        self.progress_indicator_1 = setup_checkbox(
-            _layout, "Contour in view 1", False)
-        self.progress_indicator_1.setDisabled(True)
-        self.progress_indicator_2 = setup_checkbox(
-            _layout, "Contour in view 2", False)
-        self.progress_indicator_2.setDisabled(True)
-        self.progress_indicator_3 = setup_checkbox(
-            _layout, "Contour in view 3", False)
-        self.progress_indicator_3.setDisabled(True)
-
-        # Button to set the current mask as prompt
-        self.set_prompt_button = setup_iconbutton(
-            _layout,
-            "Set Prompt",
-            "check",
-            self._viewer.theme,
-            function=lambda: self.set_current_view_prompt(),
-            tooltips="Set the current mask as prompt.",
-        )
-
-    def set_view(self):
-        """Switch the viewer dimension ordering based on the selected view.
-
-        This method updates ``self._viewer.dims.order`` so that the napari
-        display presents the chosen orthogonal slice ordering. If a caller
-        wants to automatically set prompts on view change, they can call
-        ``set_current_view_prompt`` (optionally controlled by a checkbox).
-        """
-        # Set the current view based on the selected option in the view_select widget
-        selected_view = get_value(self.view_select)[1]
-
-        print(f"Selected View: {selected_view}")
-
-        current_view = self._viewer.dims.order[0]
-        print(f"Current Order: {current_view}")
-
-        # Update the prompt type based on the current view
-        # if get_value(self.auto_set_prompt_ckbx):
-        #    self.set_current_view_prompt(view=selected_view)
-
-        if selected_view == 0:
-            # Set the order of dimensions to A
-            self._viewer.dims.order = (0, 1, 2)
-        elif selected_view == 1:
-            self._viewer.dims.order = (1, 0, 2)
-        elif selected_view == 2:
-            self._viewer.dims.order = (2, 0, 1)
-
-
-    def increment_object_id(self):
-        """Increment the current object id and reset orthogonal prompting.
-
-        When the active object changes in a multi-object workflow, any
-        previously-set orthogonal prompts are cleared so that the new
-        object can be defined from scratch.
-        """
-        self.reset_orthogonal_prompting()
-        super().increment_object_id()
-        
-    def reset_orthogonal_prompting(self):
-        """Clear all orthogonal prompt flags and reset indices.
-
-        This helper returns the widget to a state where no view prompts are
-        considered set and disables the Predict button until new prompts are
-        provided.
-        """
-        self.prompt_frame_set_view_1 = False
-        self.prompt_frame_set_view_2 = False
-        self.prompt_frame_set_view_3 = False
-
-        self.prompt_frame_index_view_1 = 0
-        self.prompt_frame_index_view_2 = 0
-        self.prompt_frame_index_view_3 = 0
-        self.run_button.setEnabled(False)
-
-    def set_current_view_prompt(self, view=None):
-        """Set the current mask as the prompt for the chosen orthogonal view.
-
-        Args:
-            view: optional int 0/1/2 indicating which orthogonal view to set.
-                  If None, the currently selected view in the GUI is used.
-
-        This method records that a prompt (mask/contour) exists for the
-        selected view, stores the corresponding slice index, updates the
-        progress indicator text and, if all three view prompts are present,
-        enables the Predict button and optionally triggers an automatic run
-        if autorun is enabled.
-        """
-        if view is None:
-            view = get_value(self.view_select)[1]
-
-        print(f"Setting prompt for view: {view}")
-
-        mask_prompt_layer = self.prompt_layers['mask']
-        prompt_frames = self._viewer.dims.current_step
-        # prompt_frames = [self.prompt_frame_index_view_1, self.prompt_frame_index_view_2, self.prompt_frame_index_view_3]
-        # mask_0 = np.take(mask_prompt_layer.data,prompt_frames[view], axis=view)  # Take the mask along the current view axis
-
-        if view == 0:
-            self.prompt_frame_set_view_1 = True
-            self.prompt_frame_index_view_1 = prompt_frames[0]
-            set_value(self.progress_indicator_1, self.prompt_frame_set_view_1)
-            self.progress_indicator_1.setText(
-                f"Contour in view 1 (slice {self.prompt_frame_index_view_1})")
-        elif view == 1:
-            self.prompt_frame_set_view_2 = True
-            self.prompt_frame_index_view_2 = prompt_frames[1]
-            set_value(self.progress_indicator_2, self.prompt_frame_set_view_2)
-            self.progress_indicator_2.setText(
-                f"Contour in view 2 (slice {self.prompt_frame_index_view_2})")
-        elif view == 2:
-            self.prompt_frame_set_view_3 = True
-            self.prompt_frame_index_view_3 = prompt_frames[2]
-            set_value(self.progress_indicator_3, self.prompt_frame_set_view_3)
-            self.progress_indicator_3.setText(
-                f"Contour in view 3 (slice {self.prompt_frame_index_view_3})")
-
-        if self.prompt_frame_set_view_1 and self.prompt_frame_set_view_2 and self.prompt_frame_set_view_3:
-            self.run_button.setEnabled(True)
-            if get_value(self.autorun_ckbx):
-                self.run_predict_in_thread()
-
-    def closeEvent(self, event=None):
-        super().closeEvent(event=event)
-        self.prompt_frame_set_view_1 = False
-        self.prompt_frame_set_view_2 = False
-        self.prompt_frame_set_view_3 = False
-
-
-class InteractiveSegmentationWidget2DBase(InteractiveSegmentationWidgetBase):
     def __init__(self, viewer: Viewer, **kwargs):
         super().__init__(viewer, **kwargs)
 

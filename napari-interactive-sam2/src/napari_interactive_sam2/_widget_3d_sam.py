@@ -19,25 +19,7 @@ from napari_toolkit.containers.boxlayout import hstack
 from napari_toolkit.utils import set_value
 from napari_toolkit.data_structs import setup_list
 from napari_toolkit.utils.widget_getter import get_value
-from napari_toolkit.widgets import (
-    setup_checkbox,
-    setup_combobox,
-    setup_editcolorpicker,
-    setup_editdoubleslider,
-    setup_iconbutton,
-    setup_label,
-    setup_layerselect,
-    setup_lineedit,
-    setup_fileselect,
-    setup_savefileselect,
-    setup_labeledslider,
-    setup_pushbutton,
-    setup_hswitch,
-    setup_radiobutton,
-    setup_savefileselect,
-    setup_dirselect,
-    setup_spinbox,
-)
+from napari_toolkit.widgets import *
 from napari.qt.threading import thread_worker
 from qtpy.QtWidgets import (
     QFileDialog,
@@ -49,7 +31,7 @@ import traceback
 
 from napari.layers import Shapes, Points, Labels
 
-from napari_interactive.base_widget import InteractiveSegmentationWidget3DBase
+from napari_interactive import InteractiveSegmentationWidget3DBase
 
 
 class InteractiveSegmentationWidget3DSAM(InteractiveSegmentationWidget3DBase):

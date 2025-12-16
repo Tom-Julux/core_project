@@ -49,7 +49,7 @@ import traceback
 
 from napari.layers import Shapes, Points, Labels
 
-from napari_interactive.base_widget import InteractiveSegmentationWidget3DBase
+from napari_interactive import InteractiveSegmentationWidget3DBase
 
 
 class InteractiveSegmentationWidget3DSAM(InteractiveSegmentationWidget3DBase):

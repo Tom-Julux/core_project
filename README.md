@@ -58,14 +58,14 @@ For the local installation, clone the repository and install plugin packages in 
 
 ```bash
 # clone the repository
-git clone <repo-url>
+git clone <repo-url> core_project
 cd core_project
 
 # install each plugin in editable mode (example pattern)
 for plugin in ./napari-*; do
     if [ -d "$plugin" ]; then
         echo "Installing $plugin"
-        pip install -e "$plugin"
+        pip3 install -e "$plugin"
     fi
 done
 ```
@@ -286,7 +286,8 @@ Planned short- and mid-term improvements:
 
 This repository is currently not licensed. It will be licensed under an open-source license in the near future upon release.
 
-The `napari_toolkit` subfolder is a fork of [napari-toolkit](https://github.com/MIC-DKFZ/napari_toolkit). It is licensed under the terms of the [Apache Software License 2.0] license.
+The UI is based upon the [napari-toolkit](https://github.com/MIC-DKFZ/napari_toolkit) project. It is licensed under the terms of the [Apache Software License 2.0](https://github.com/MIC-DKFZ/napari_toolkit/blob/master/LICENSE) license.
+The toolkit is typically imported as a library, but some files are copied and adapted for use in this repository. These files are marked with a header comment containing the original license information.
 
 ## Acknowledgments
 

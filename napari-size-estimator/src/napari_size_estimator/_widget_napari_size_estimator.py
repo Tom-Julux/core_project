@@ -20,24 +20,7 @@ from napari_toolkit.containers.boxlayout import hstack
 from napari_toolkit.utils import set_value
 from napari_toolkit.data_structs import setup_list
 from napari_toolkit.utils.widget_getter import get_value
-from napari_toolkit.widgets import (
-    setup_checkbox,
-    setup_combobox,
-    setup_editcolorpicker,
-    setup_editdoubleslider,
-    setup_iconbutton,
-    setup_label,
-    setup_lineedit,
-    setup_fileselect,
-    setup_savefileselect,
-    setup_plaintextedit,
-    setup_labeledslider,
-    setup_pushbutton,setup_lineedit,
-    setup_hswitch,
-    setup_radiobutton,setup_textedit,
-    setup_savefileselect,
-    setup_doublespinbox,
-)
+from napari_toolkit.widgets import *
 from .file_select import setup_dirselect
 from .layer_select import setup_layerselect
 from napari.utils.action_manager import action_manager
@@ -222,6 +205,8 @@ class SizeEstimatorWidget(QWidget):
         if self.silence_events:
             return
 
+        self.run_size_estimation()
+
     def _on_labels_update(self, event):
         """sync data modification from additional viewers"""
         # Ignore in-progress events for performance reasons
@@ -234,7 +219,7 @@ class SizeEstimatorWidget(QWidget):
         #if self.is_running:
         #    self.should_run = True
         #else:
-        self.run_()
+        self.run_size_estimation()
 
         # add current frame to manual frames
 

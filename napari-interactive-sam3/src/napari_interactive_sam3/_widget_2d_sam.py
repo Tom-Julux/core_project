@@ -46,7 +46,7 @@ from qtpy.QtWidgets import (
 )
 
 from napari.layers import Shapes, Points, Labels
-from napari_interactive.base_widget import InteractiveSegmentationWidget2DBase
+from napari_interactive import InteractiveSegmentationWidget2DBase
 
 class InteractiveSegmentationWidget2DSAM(InteractiveSegmentationWidget2DBase):
     def __init__(self, viewer: Viewer, **kwargs):

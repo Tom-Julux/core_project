@@ -37,7 +37,7 @@ from napari_toolkit.widgets import (
 )
 import traceback
 
-from .base_widget import InteractiveSegmentationWidget3DBase
+from .base_widget_3d import InteractiveSegmentationWidget3DBase
 
 
 class InteractiveSegmentationWidget3DNoRegistration(InteractiveSegmentationWidget3DBase):

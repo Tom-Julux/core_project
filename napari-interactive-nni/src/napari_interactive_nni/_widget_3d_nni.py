@@ -40,7 +40,7 @@ from napari.qt.threading import thread_worker
 
 import traceback
 
-from napari_interactive.base_widget import InteractiveSegmentationWidget3DBase
+from napari_interactive import InteractiveSegmentationWidget3DBase
 
 
 class InteractiveSegmentationWidget3DNNI(InteractiveSegmentationWidget3DBase):
