@@ -47,7 +47,7 @@ testing = [
 ]
 
 [project.entry-points."napari.manifest"]
-napari-edit-log = "napari_interactive:napari.yaml"
+napari-interactive = "napari_interactive:napari.yaml"
 
 [build-system]
 requires = ["setuptools>=42.0.0", "wheel"]

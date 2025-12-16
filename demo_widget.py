@@ -251,8 +251,8 @@ class DemoWidget(QWidget):
                 colormap='gray'
             )
 
-            from napari_size_estimator._widget_napari_size_estimator import SizeEstimatorWidget
-            widget = SizeEstimatorWidget(self._viewer)
+            from napari_size_estimator._widget_napari_size_estimator import SizeEstimatorWidget, FileListWidget
+            widget = FileListWidget(self._viewer)
             self._viewer.window.add_dock_widget(
                 widget, name="Size Estimator", area="right"
             )

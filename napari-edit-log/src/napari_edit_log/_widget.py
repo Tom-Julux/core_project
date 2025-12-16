@@ -96,9 +96,6 @@ class EditLogWidget(QWidget):
         print("Exporting edit log...")
 
         if self.edit_log and not self.edit_log[-1]['event_type'] == 'labels_update':
-            # TODO: If the last event was labels update, the log does not contain the latest changes.
-            # Pull the latest data from the last layer 
-            self.edit_log[-1]["data"] = None
             pass
 
         file_path, _ = QFileDialog.getSaveFileName(self, "Save Edit Log", "", "JSON Files (*.json)")
