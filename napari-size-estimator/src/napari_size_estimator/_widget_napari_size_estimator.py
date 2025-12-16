@@ -254,19 +254,88 @@ class SizeEstimatorWidget(QWidget):
 
 
 class FileListWidget(QWidget):
-    def __init__(self, viewer: Viewer, on_file_selected=lambda x: None):
+    def __init__(self, viewer: Viewer):
         super().__init__()
         self._viewer = viewer
 
-        self.on_file_selected = on_file_selected
-        
         main_layout = QVBoxLayout(self)
 
         _scroll_widget, _scroll_layout = setup_vscrollarea(main_layout)
         _scroll_layout.setContentsMargins(0,0,0,0)
         _scroll_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
+        self.file_list_widget = FileListWidget2(self._viewer, _scroll_layout, on_file_selected=self.on_file_selected)
+
+        self.sam2d_widget = None
+        self.size_estimator_widget = None
+        self.image_layer = None
+    
+    def on_file_selected(self, file_path):
+        print("Selected file:", file_path)
+
+        # Remove existing layers to avoid confusion
+        for layer in self._viewer.layers:
+            self._viewer.layers.remove(layer)
+
+        if self.image_layer is not None:
+            self.image_layer = None
+
+        if self.sam2d_widget is not None:
+            self._viewer.window.remove_dock_widget(self.sam2d_widget)
+            self.sam2d_widget.close()
+        from napari_interactive_sam2._widget_2d_sam import InteractiveSegmentationWidget2DSAM
+        widget = InteractiveSegmentationWidget2DSAM(self._viewer, hide_model_setup=True, hide_prompt_type_select=True, hide_prompt_import=True, hide_export=True)
+        self._viewer.window.add_dock_widget(
+            widget, name="Interactive Segmentation", area="right"
+        )
+        self.sam2d_widget = widget
+
+        if self.size_estimator_widget is not None:
+            self._viewer.window.remove_dock_widget(self.size_estimator_widget)
+            self.size_estimator_widget.close()
+        size_widget = SizeEstimatorWidget(self._viewer)
+        self._viewer.window.add_dock_widget(
+            size_widget, name="Size Estimator", area="right"
+        )
+        self.size_estimator_widget = size_widget
+
+        import SimpleITK as sitk
+        base_dir = self.file_list_widget.import_dir_select.get_dir()
+        img_sitk = sitk.ReadImage(
+            os.path.join(base_dir, file_path)
+        )
+
+        img = sitk.GetArrayFromImage(img_sitk)
+        img = img = img[img.shape[0]//2-16:img.shape[0]//2+32]
+        self.image_layer = self._viewer.add_image(
+            img,
+            name='Example Image',
+            colormap='gray'
+        )
+        resolution = img_sitk.GetSpacing()  # x,y,z
+        print("Image resolution:", resolution)
+
+        self.size_estimator_widget.resolution_x_spinbox.setValue(resolution[0])
+        self.size_estimator_widget.resolution_y_spinbox.setValue(resolution[1])
+        self.size_estimator_widget.resolution_z_spinbox.setValue(resolution[2])
+
+
+    def showEvent(self, event):
+        pass
+    
+    def closeEvent(self, event):
+        self.hideEvent(event)
+
+    def hideEvent(self, event):
+        pass
+
+class FileListWidget2(QWidget):
+    def __init__(self, viewer, parent_layout, on_file_selected=lambda x: None):
+        super().__init__()
+        self._viewer = viewer
+        self.on_file_selected = on_file_selected
         # File input
+        _scroll_layout = parent_layout
 
         _container, _layout = setup_vcollapsiblegroupbox(
             _scroll_layout, "Folder selection:", collapsed=False)

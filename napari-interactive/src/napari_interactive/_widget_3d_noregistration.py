@@ -41,8 +41,8 @@ from .base_widget import InteractiveSegmentationWidget3DBase
 
 
 class InteractiveSegmentationWidget3DNoRegistration(InteractiveSegmentationWidget3DBase):
-    def __init__(self, viewer: Viewer):
-        super().__init__(viewer)
+    def __init__(self, viewer: Viewer, **kwargs):
+        super().__init__(viewer, **kwargs)
 
     def setup_hyperparameter_gui(self, _layout):
         pass

@@ -88,9 +88,16 @@ class ScribblePromptLayer(Labels):
 
 
 class InteractiveSegmentationWidgetBase(QWidget):
-    def __init__(self, viewer: Viewer):
+    def __init__(self, viewer: Viewer,hide_model_setup=False, hide_prompt_type_select = False, hide_prompt_import=False, hide_multi_object=False, hide_export=False):
         super().__init__()
         self._viewer = viewer
+
+        # Widget options to hide certain sections
+        self.hide_model_setup = hide_model_setup
+        self.hide_prompt_type_select = hide_prompt_type_select
+        self.hide_prompt_import = hide_prompt_import
+        self.hide_multi_object = hide_multi_object
+        self.hide_export = hide_export
 
         # layers managed by this widget
         self.prompt_layers = {}
@@ -108,6 +115,7 @@ class InteractiveSegmentationWidgetBase(QWidget):
         def load_model_in_thread():
             self.load_model()
             self.model_is_loaded = True
+        load_model_in_thread()
         worker = create_worker(load_model_in_thread)
         worker.start()
         
@@ -245,6 +253,8 @@ class InteractiveSegmentationWidgetBase(QWidget):
         self.prompt_type_select = setup_combobox(  # , "Points", "BBox"],\
             _layout, self.supported_prompt_types, "QComboBox", function=lambda: self.update_prompt_type()
         )
+        if self.hide_prompt_type_select:
+            _container.setVisible(False)
 
         _container, _layout = setup_vcollapsiblegroupbox(
             _scroll_layout, "Import Prompt:", collapsed=False)
@@ -262,6 +272,9 @@ class InteractiveSegmentationWidgetBase(QWidget):
             function=lambda: self.import_prompt_from_layer(),
             tooltips="Import prompt from selected layer.",
         )
+
+        if self.hide_prompt_import:
+            _container.setVisible(False)
 
         self.setup_view_control_gui(_scroll_layout)
 
@@ -325,6 +338,9 @@ class InteractiveSegmentationWidgetBase(QWidget):
             _layout, "Next Object", "right_arrow", self._viewer.theme, self.increment_object_id
         )
 
+        if self.hide_multi_object:
+            _container.setVisible(False)
+
         _container, _layout = setup_vgroupbox(
             _scroll_layout, "Export to layer:")
         _ = setup_label(
@@ -336,6 +352,8 @@ class InteractiveSegmentationWidgetBase(QWidget):
         _ = setup_iconbutton(
             _layout, "Export to layer", "pop_out", self._viewer.theme, self.export_preview
         )
+        if self.hide_export:
+            _container.setVisible(False)
         _container, _layout = setup_vcollapsiblegroupbox(
             _scroll_layout, "Export to file:", collapsed=True)
         _ = setup_label(
@@ -353,6 +371,9 @@ class InteractiveSegmentationWidgetBase(QWidget):
         _ = setup_iconbutton(
             _layout, "Export to file", "copy_to_clipboard", self._viewer.theme, self.export_to_file
         )
+        if self.hide_export:
+            _container.setVisible(False)
+
 
         # Reset group
         _container, _layout = setup_vgroupbox(_scroll_layout, "Reset:")
@@ -1160,8 +1181,8 @@ class InteractiveSegmentationWidget3DBase(InteractiveSegmentationWidgetBase):
 
 
 class InteractiveSegmentationWidget2DBase(InteractiveSegmentationWidgetBase):
-    def __init__(self, viewer: Viewer):
-        super().__init__(viewer)
+    def __init__(self, viewer: Viewer, **kwargs):
+        super().__init__(viewer, **kwargs)
 
     @property
     def supported_prompt_types(self):

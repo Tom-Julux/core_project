@@ -93,7 +93,7 @@ class DemoWidget(QWidget):
             image_layer.translate = np.array(image_layer.data.shape) * (image_layer.scale * (image_layer.scale !=1))
             self._viewer.dims.current_step = (img.shape[0]//2, img.shape[1]//2, img.shape[2]//2)
 
-            from napari_interactive._widget_3d_nni import InteractiveSegmentationWidget3DNNI
+            from napari_interactive_nni._widget_3d_nni import InteractiveSegmentationWidget3DNNI
             widget = InteractiveSegmentationWidget3DNNI(self._viewer)
             self._viewer.window.add_dock_widget(
                 widget, name="Interactive Segmentation", area="right"
@@ -171,7 +171,7 @@ class DemoWidget(QWidget):
                 colormap='gray'
             )
 
-            from napari_interactive._widget_2d_sam import InteractiveSegmentationWidget2DSAM
+            from napari_interactive_sam2._widget_2d_sam import InteractiveSegmentationWidget2DSAM
             widget = InteractiveSegmentationWidget2DSAM(self._viewer)
             self._viewer.window.add_dock_widget(
                 widget, name="Interactive Segmentation", area="right"
@@ -196,7 +196,7 @@ class DemoWidget(QWidget):
                 colormap='gray'
             )
 
-            from napari_interactive._widget_2dt_sam import InteractiveSegmentationWidget2DTSAM
+            from napari_interactive_sam2._widget_2dt_sam import InteractiveSegmentationWidget2DTSAM
             widget = InteractiveSegmentationWidget2DTSAM(self._viewer)
             self._viewer.window.add_dock_widget(
                 widget, name="Interactive Segmentation", area="right"
@@ -337,7 +337,7 @@ class DemoWidget(QWidget):
                 colormap='gray'
             )
 
-            from napari_interactive._widget_2dt_sam import InteractiveSegmentationWidget2DTSAM
+            from napari_interactive_sam2._widget_2dt_sam import InteractiveSegmentationWidget2DTSAM
             widget = InteractiveSegmentationWidget2DTSAM(self._viewer)
             self._viewer.window.add_dock_widget(
                 widget, name="Interactive Segmentation", area="right"
@@ -363,7 +363,7 @@ class DemoWidget(QWidget):
                 colormap='gray'
             )
 
-            from napari_interactive._widget_3d_sam import InteractiveSegmentationWidget3DSAM
+            from napari_interactive_sam2._widget_3d_sam import InteractiveSegmentationWidget3DSAM
             widget = InteractiveSegmentationWidget3DSAM(self._viewer)
             self._viewer.window.add_dock_widget(
                 widget, name="Interactive Segmentation", area="right"
@@ -388,7 +388,7 @@ class DemoWidget(QWidget):
                 colormap='gray'
             )
 
-            from napari_interactive._widget_2dt_sam import InteractiveSegmentationWidget2DTSAM
+            from napari_interactive_sam2._widget_2dt_sam import InteractiveSegmentationWidget2DTSAM
             widget = InteractiveSegmentationWidget2DTSAM(self._viewer)
             self._viewer.window.add_dock_widget(
                 widget, name="Interactive Segmentation", area="right"
