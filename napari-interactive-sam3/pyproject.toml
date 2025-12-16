@@ -1,5 +1,5 @@
 [project]
-name = "napari-shape-based-interpolation"
+name = "napari-interactive-sam3"
 dynamic = ["version"]
 description = "Adding ."
 readme = "README.md"
@@ -29,7 +29,12 @@ requires-python = ">=3.9"
 dependencies = [
     "numpy",
     "qtpy",
-    "napari_toolkit"
+    "napari_toolkit",
+    "torch>=2.5.1",
+    "hydra-core",
+    "iopath",
+    "torchvision",
+    "tqdm"
 ]
 
 [project.optional-dependencies]
@@ -40,10 +45,11 @@ testing = [
     "pytest-qt",  # https://pytest-qt.readthedocs.io/en/latest/
     "napari",
     "pyqt5",
+    "transformers"
 ]
 
 [project.entry-points."napari.manifest"]
-napari-shape-based-interpolation = "napari_shape_based_interpolation:napari.yaml"
+napari-interactive-sam3 = "napari_interactive_sam3:napari.yaml"
 
 [build-system]
 requires = ["setuptools>=42.0.0", "wheel"]
@@ -63,11 +69,9 @@ Homepage = "TODO"
 Code = "TODO"
 
 [tool.setuptools.dynamic]
-version = {attr = "napari_shape_based_interpolation.__init__.__version__"}
+version = {attr = "napari_interactive_sam3.__init__.__version__"}
 
-[tool.black]
-line-length = 100
-target-version = ['py39', 'py310', 'py311', 'py312', 'py313']
+
 
 [tool.ruff]
 line-length = 100
@@ -111,5 +115,5 @@ exclude = [
     "*_vendor*",
 ]
 
-target-version = "py39"
+target-version = "py38"
 fix = true

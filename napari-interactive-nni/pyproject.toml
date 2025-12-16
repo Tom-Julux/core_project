@@ -21,6 +21,8 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Scientific/Engineering :: Image Processing",
 ]
 requires-python = ">=3.9"
@@ -35,7 +37,6 @@ dependencies = [
 
 [project.optional-dependencies]
 testing = [
-    "tox",
     "pytest",  # https://docs.pytest.org/en/latest/contents.html
     "pytest-cov",  # https://pytest-cov.readthedocs.io/en/latest/
     "pytest-qt",  # https://pytest-qt.readthedocs.io/en/latest/
@@ -66,9 +67,6 @@ Code = "TODO"
 [tool.setuptools.dynamic]
 version = {attr = "napari_interactive.__init__.__version__"}
 
-[tool.black]
-line-length = 100
-target-version = ['py38', 'py39', 'py310']
 
 [tool.ruff]
 line-length = 100
@@ -100,7 +98,6 @@ exclude = [
     ".pants.d",
     ".ruff_cache",
     ".svn",
-    ".tox",
     ".venv",
     "__pypackages__",
     "_build",
