@@ -18,6 +18,8 @@ class DemoWidget(QWidget):
             "shifted labels",
             "Import",
             "Size Estimator",
+            "QuickView",
+            "QuickSize",
             "napari-shape-based-interpolation",
             "---",
             "2D NoPredictor",
@@ -251,10 +253,28 @@ class DemoWidget(QWidget):
                 colormap='gray'
             )
 
-            from napari_size_estimator._widget_napari_size_estimator import SizeEstimatorWidget, FileListWidget
-            widget = FileListWidget(self._viewer)
+            from napari_size_estimator import SizeEstimatorWidget
+            widget = SizeEstimatorWidget(self._viewer)
             self._viewer.window.add_dock_widget(
                 widget, name="Size Estimator", area="right"
+            )
+            self.active_widget = widget
+        elif demo_id == "QuickView":
+           
+
+            from napari_quick_view import QuickViewWidget
+            widget = QuickViewWidget(self._viewer)
+            self._viewer.window.add_dock_widget(
+                widget, name="QuickView", area="right"
+            )
+            self.active_widget = widget
+        elif demo_id == "QuickSize":
+           
+
+            from napari_quick_view import QuickSizeWidget
+            widget = QuickSizeWidget(self._viewer)
+            self._viewer.window.add_dock_widget(
+                widget, name="QuickSizeWidget", area="right"
             )
             self.active_widget = widget
         elif demo_id == "napari-shape-based-interpolation":

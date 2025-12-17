@@ -460,7 +460,7 @@ class BaseWidget(QWidget):
         img_layer.events.scale.connect(self.on_image_layer_scale_or_rotate)
         img_layer.events.rotate.connect(self.on_image_layer_scale_or_rotate)
         img_layer.events.translate.connect(self.on_image_layer_scale_or_rotate)
-        img_layer.events.affine.connect(self.on_image_layer_scale_or_rotate)
+        #img_layer.events.affine.connect(self.on_image_layer_scale_or_rotate)
 
     def disconnect_image_layer_events(self):
         """
@@ -476,8 +476,8 @@ class BaseWidget(QWidget):
                 self.on_image_layer_scale_or_rotate)
             img_layer.events.translate.disconnect(
                 self.on_image_layer_scale_or_rotate)
-            img_layer.events.affine.disconnect(
-                self.on_image_layer_scale_or_rotate)
+            #img_layer.events.affine.disconnect(
+            #    self.on_image_layer_scale_or_rotate)
 
     def on_image_layer_scale_or_rotate(self, event=None):
         """
@@ -493,14 +493,14 @@ class BaseWidget(QWidget):
             self.preview_layer.scale = self._viewer.layers[img_layer].scale
             self.preview_layer.rotate = self._viewer.layers[img_layer].rotate
             self.preview_layer.translate = self._viewer.layers[img_layer].translate
-            self.preview_layer.affine.affine_matrix = self._viewer.layers[
-                img_layer].affine.affine_matrix
+            #self.preview_layer.affine.affine_matrix = self._viewer.layers[
+            #    img_layer].affine.affine_matrix
 
         for layer in self.prompt_layers.values():
             layer.scale = self._viewer.layers[img_layer].scale
             layer.rotate = self._viewer.layers[img_layer].rotate
             layer.translate = self._viewer.layers[img_layer].translate
-            layer.affine.affine_matrix = self._viewer.layers[img_layer].affine.affine_matrix
+            #layer.affine.affine_matrix = self._viewer.layers[img_layer].affine.affine_matrix
     # endregion
 
     # region Preview Layer Management
