@@ -117,7 +117,7 @@ class BaseWidget(QWidget):
         def load_model_in_thread():
             self.load_model()
             self.model_is_loaded = True
-        load_model_in_thread()
+        #load_model_in_thread()
         worker = create_worker(load_model_in_thread)
         worker.start()
 
