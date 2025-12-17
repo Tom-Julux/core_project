@@ -29,9 +29,9 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from napari_interactive import InteractiveSegmentationWidget2DBase
+from napari_interactive import BaseWidget2D
 
-class InteractiveSegmentationWidget2DSAM(InteractiveSegmentationWidget2DBase):
+class InteractiveSegmentationWidget2DSAM(BaseWidget2D):
     def __init__(self, viewer: Viewer, **kwargs):
         super().__init__(viewer, **kwargs)
         set_value(self.autorun_ckbx, True)

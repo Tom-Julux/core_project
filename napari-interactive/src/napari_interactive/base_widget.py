@@ -88,7 +88,7 @@ class ScribblePromptLayer(Labels):
 # layer_to_controls[ContourPromptLayer] = QtShapesControls
 
 
-class InteractiveSegmentationWidgetBase(QWidget):
+class BaseWidget(QWidget):
     def __init__(self, viewer: Viewer, hide_model_setup=False, hide_prompt_type_select=False, hide_prompt_import=False, hide_multi_object=False, hide_export=False):
         super().__init__()
         self._viewer = viewer
@@ -121,7 +121,7 @@ class InteractiveSegmentationWidgetBase(QWidget):
         worker = create_worker(load_model_in_thread)
         worker.start()
 
-        print("InteractiveSegmentationWidgetBase initialized")
+        print("BaseWidget initialized")
         if get_value(self.layerselect_a)[1] != -1:
             self.setup_preview_layer()
             self.update_prompt_type()
@@ -1000,37 +1000,3 @@ class InteractiveSegmentationWidgetBase(QWidget):
         except Exception as e:
             show_error(f"Failed to export preview layer: {e}")
     # endregion
-
-    def __init__(self, viewer: Viewer, **kwargs):
-        super().__init__(viewer, **kwargs)
-
-    @property
-    def supported_prompt_types(self):
-        return ["Points", "BBox", "Mask"]
-
-    def load_model(self):
-        pass
-
-    def predict(self):
-        pass
-
-    def reset_model(self):
-        pass
-
-    def setup_hyperparameter_gui(self, _layout):
-        pass
-
-    def setup_model_selection_gui(self, _scroll_layout):
-        pass
-
-    def update_prompt_type(self):
-        super().update_prompt_type()
-        self.run_button.setEnabled(True)
-
-    # GUI
-
-    def setup_view_control_gui(self, _scroll_layout):
-        pass
-
-    def closeEvent(self, event=None):
-        super().closeEvent(event=event)

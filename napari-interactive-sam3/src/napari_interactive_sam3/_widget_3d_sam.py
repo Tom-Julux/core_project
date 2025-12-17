@@ -49,10 +49,10 @@ import traceback
 
 from napari.layers import Shapes, Points, Labels
 
-from napari_interactive import InteractiveSegmentationWidget3DBase
+from napari_interactive import BaseWidget3D
 
 
-class InteractiveSegmentationWidget3DSAM(InteractiveSegmentationWidget3DBase):
+class InteractiveSegmentationWidget3DSAM(BaseWidget3D):
     def __init__(self, viewer: Viewer, **kwargs):
         super().__init__(viewer, **kwargs)
         self.autorun_ckbx.setChecked(False)

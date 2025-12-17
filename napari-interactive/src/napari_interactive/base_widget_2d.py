@@ -14,10 +14,10 @@ from napari_toolkit.widgets import *
 
 import traceback
 
-from .base_widget import InteractiveSegmentationWidgetBase
+from .base_widget import BaseWidget
 
 
-class InteractiveSegmentationWidget2DBase(InteractiveSegmentationWidgetBase):
+class BaseWidget2D(BaseWidget):
     def __init__(self, viewer: Viewer, **kwargs):
         super().__init__(viewer, **kwargs)
 

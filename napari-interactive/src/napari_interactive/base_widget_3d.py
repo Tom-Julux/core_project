@@ -55,13 +55,13 @@ from napari._qt.layer_controls.qt_layer_controls_container import layer_to_contr
 from napari.layers import Shapes, Points, Labels
 from contextlib import contextmanager
 
-from .base_widget import InteractiveSegmentationWidgetBase
+from .base_widget import BaseWidget
 
 
-class InteractiveSegmentationWidget3DBase(InteractiveSegmentationWidgetBase):
+class BaseWidget3D(BaseWidget):
     """Base class for 3D interactive segmentation widgets.
 
-    This class extends the generic InteractiveSegmentationWidgetBase with
+    This class extends the generic BaseWidget with
     helpers for orthogonal (three-view) prompting. It tracks whether a
     prompt (contour/mask) has been set for each orthogonal view and the
     associated slice/index for each view. Subclasses should implement

@@ -40,10 +40,10 @@ from napari.qt.threading import thread_worker
 
 import traceback
 
-from napari_interactive import InteractiveSegmentationWidget3DBase
+from napari_interactive import BaseWidget3D
 
 
-class InteractiveSegmentationWidget3DNNI(InteractiveSegmentationWidget3DBase):
+class InteractiveSegmentationWidget3DNNI(BaseWidget3D):
     def __init__(self, viewer: Viewer, **kwargs):
         super().__init__(viewer, **kwargs)
         self.autorun_ckbx.setChecked(False)

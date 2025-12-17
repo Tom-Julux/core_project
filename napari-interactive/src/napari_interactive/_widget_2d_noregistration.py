@@ -1,9 +1,9 @@
 from napari.utils.notifications import show_info, show_warning, show_error, show_console_notification
 from napari import Viewer
-from .base_widget_2d import InteractiveSegmentationWidget2DBase
+from .base_widget_2d import BaseWidget2D
 
 
-class InteractiveSegmentationWidget2DNoRegistration(InteractiveSegmentationWidget2DBase):
+class InteractiveSegmentationWidget2DNoRegistration(BaseWidget2D):
     def __init__(self, viewer: Viewer, **kwargs):
         super().__init__(viewer, **kwargs)
 

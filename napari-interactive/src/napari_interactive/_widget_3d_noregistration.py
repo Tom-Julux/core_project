@@ -37,10 +37,10 @@ from napari_toolkit.widgets import (
 )
 import traceback
 
-from .base_widget_3d import InteractiveSegmentationWidget3DBase
+from .base_widget_3d import BaseWidget3D
 
 
-class InteractiveSegmentationWidget3DNoRegistration(InteractiveSegmentationWidget3DBase):
+class InteractiveSegmentationWidget3DNoRegistration(BaseWidget3D):
     def __init__(self, viewer: Viewer, **kwargs):
         super().__init__(viewer, **kwargs)
 
