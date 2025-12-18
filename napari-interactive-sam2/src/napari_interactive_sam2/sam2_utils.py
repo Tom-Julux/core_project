@@ -13,7 +13,8 @@ def bounding_box(label):
     ], dtype=np.float32)
     return box_prompt
 
-def propagate_along_path(slices, predictor, threshold=0.5, reset_state=True, keep_logits=True,adaptive_thresholding=True,exit_early=True, initialization="point", point_prompts=None, point_labels=None, mask_prompt=None, box_prompt=None, disable_tqdm=True):
+from contextlib import nullcontext
+def propagate_along_path(slices, predictor, threshold=0.5, reset_state=True, keep_logits=True,adaptive_thresholding=True,exit_early=True, autocast= False, initialization="point", point_prompts=None, point_labels=None, mask_prompt=None, box_prompt=None, disable_tqdm=True):
     results = {
         "masks": [],
     }
@@ -22,7 +23,7 @@ def propagate_along_path(slices, predictor, threshold=0.5, reset_state=True, kee
 
     if keep_logits:
         results["logits"] = []
-    with torch.inference_mode():#, torch.autocast("cuda", dtype=torch.bfloat16):
+    with torch.inference_mode(), (torch.autocast("cuda", dtype=torch.bfloat16) if autocast else nullcontext()):
         image = cv2.cvtColor(slices[0], cv2.COLOR_GRAY2RGB)
         predictor.load_first_frame(image)
         if initialization == "point":

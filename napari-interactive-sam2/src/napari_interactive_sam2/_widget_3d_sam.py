@@ -158,38 +158,37 @@ class InteractiveSegmentationWidget3DSAM(BaseWidget3D):
 
             print("USING SAM2")
             from napari_interactive.sam2_utils import propagate_along_path, merge_results, view_1_to_view_2, view_1_to_view_3, mask_view_2_to_view_1, center_of_mass, mask_view_3_to_view_1
+            
             volume_labels = mask_prompt_layer.data
             volume_data = img_data
             sam_mask_threshold = self.predictor.mask_threshold
             center_slice = prompt_frames[0]
+            
+            with torch.inference_mode(), (torch.autocast("cuda", dtype=torch.bfloat16) if get_value(self.autocast_cbk) else nullcontext()):
 
-            # initial_point = np.array([center_slice, point[0],point[1]], dtype=np.float32)
-            # point_prompts = np.concatenate([point_prompts, np.array([[volume_data.shape[1]/2, volume_data.shape[2]/2]], dtype=np.float32)], axis=0)
-            # point_prompts, point_labels = add_negative_point_prompts(point_prompts, point_labels, volume_labels, d=negative_point_distance)
-            # cha forward in space
-            results_1 = merge_results(propagate_along_path(volume_data[:center_slice+1][::-1], self.predictor, threshold=sam_mask_threshold, keep_logits=True, reset_state=True, initialization="mask", mask_prompt=volume_labels[center_slice]),
-                                        propagate_along_path(volume_data[center_slice:], self.predictor, threshold=sam_mask_threshold, keep_logits=True, reset_state=True, initialization="mask", mask_prompt=volume_labels[center_slice]))
-            # do propagation
-            volume_data_view2 = view_1_to_view_2(volume_data)
-            volume_labels_view2 = view_1_to_view_2(volume_labels)
-            center_slice_2 = prompt_frames[1]
-            results_2 = merge_results(propagate_along_path(volume_data_view2[:center_slice_2+1][::-1], self.predictor, threshold=sam_mask_threshold, keep_logits=True, reset_state=True, initialization="mask", mask_prompt=volume_labels_view2[center_slice_2]),
-                                        propagate_along_path(volume_data_view2[center_slice_2:], self.predictor, threshold=sam_mask_threshold, keep_logits=True, reset_state=True,  initialization="mask", mask_prompt=volume_labels_view2[center_slice_2]))
-            results_2["masks"] = mask_view_2_to_view_1(results_2["masks"])
-            # view 3
-            volume_data_view3 = view_1_to_view_3(volume_data)
-            volume_labels_view3 = view_1_to_view_3(volume_labels).copy()
-            center_slice_3 = prompt_frames[2]
-            results_3 = merge_results(propagate_along_path(volume_data_view3[:center_slice_3+1][::-1], self.predictor, threshold=sam_mask_threshold, keep_logits=True, reset_state=True, initialization="mask", mask_prompt=volume_labels_view3[center_slice_3]),
-                                        propagate_along_path(volume_data_view3[center_slice_3:], self.predictor, threshold=sam_mask_threshold, keep_logits=True, reset_state=True, initialization="mask", mask_prompt=volume_labels_view3[center_slice_3]))
-            results_3["masks"] = mask_view_3_to_view_1(results_3["masks"])
-            m1 = results_1["masks"]
-            m2 = results_2["masks"]
-            m3 = results_3["masks"]
-            # m_threshold2 = (np.array([m1.sum(), m2.sum(), m3.sum()])>20).sum()
-            union = m1
-            # union = np.sum([m1, m2, m3], axis=0) >= (m_threshold-1 if m_threshold>1 else 1)
-            out_mask_masks = union.astype(np.uint8)  # Convert to uint8
+                results_1 = merge_results(propagate_along_path(volume_data[:center_slice+1][::-1], self.predictor, threshold=sam_mask_threshold, keep_logits=True, reset_state=True, initialization="mask", mask_prompt=volume_labels[center_slice]),
+                                                propagate_along_path(volume_data[center_slice:], self.predictor, threshold=sam_mask_threshold, keep_logits=True, reset_state=True, initialization="mask", mask_prompt=volume_labels[center_slice]))
+                # do propagation
+                volume_data_view2 = view_1_to_view_2(volume_data)
+                volume_labels_view2 = view_1_to_view_2(volume_labels)
+                center_slice_2 = prompt_frames[1]
+                results_2 = merge_results(propagate_along_path(volume_data_view2[:center_slice_2+1][::-1], self.predictor, threshold=sam_mask_threshold, keep_logits=True, reset_state=True, initialization="mask", mask_prompt=volume_labels_view2[center_slice_2]),
+                                            propagate_along_path(volume_data_view2[center_slice_2:], self.predictor, threshold=sam_mask_threshold, keep_logits=True, reset_state=True,  initialization="mask", mask_prompt=volume_labels_view2[center_slice_2]))
+                results_2["masks"] = mask_view_2_to_view_1(results_2["masks"])
+                # view 3
+                volume_data_view3 = view_1_to_view_3(volume_data)
+                volume_labels_view3 = view_1_to_view_3(volume_labels).copy()
+                center_slice_3 = prompt_frames[2]
+                results_3 = merge_results(propagate_along_path(volume_data_view3[:center_slice_3+1][::-1], self.predictor, threshold=sam_mask_threshold, keep_logits=True, reset_state=True, initialization="mask", mask_prompt=volume_labels_view3[center_slice_3]),
+                                            propagate_along_path(volume_data_view3[center_slice_3:], self.predictor, threshold=sam_mask_threshold, keep_logits=True, reset_state=True, initialization="mask", mask_prompt=volume_labels_view3[center_slice_3]))
+                results_3["masks"] = mask_view_3_to_view_1(results_3["masks"])
+                m1 = results_1["masks"]
+                m2 = results_2["masks"]
+                m3 = results_3["masks"]
+                # m_threshold2 = (np.array([m1.sum(), m2.sum(), m3.sum()])>20).sum()
+                union = m1
+                # union = np.sum([m1, m2, m3], axis=0) >= (m_threshold-1 if m_threshold>1 else 1)
+                out_mask_masks = union.astype(np.uint8)  # Convert to uint8
         else:
             return
         # Merge the predicted mask into the preview using the base class

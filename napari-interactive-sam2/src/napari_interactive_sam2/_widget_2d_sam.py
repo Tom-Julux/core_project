@@ -9,6 +9,7 @@ import cv2
 from magicgui import magicgui
 from napari.layers import Image
 from typing import TYPE_CHECKING
+from contextlib import nullcontext
 from functools import partial
 import numpy as np
 from napari.utils.notifications import show_info, show_warning, show_error, show_console_notification
@@ -93,6 +94,9 @@ class InteractiveSegmentationWidget2DSAM(BaseWidget2D):
         self.threshold_slider = setup_editdoubleslider(
             _layout, 2, -3, 3.0, 0.5, function=lambda: self.on_hyperparameter_update(), include_buttons=False
         )
+        self.autocast_cbk = setup_checkbox(
+            _layout, "Autocast to bfloat16", value=False, function=lambda: self.on_hyperparameter_update()
+        )
         pass
 
     def predict(self):
@@ -128,7 +132,8 @@ class InteractiveSegmentationWidget2DSAM(BaseWidget2D):
             self.predictor.reset_state()
         except:
             pass
-        self.predictor.load_first_frame(frame)
+        with torch.inference_mode(), (torch.autocast("cuda", dtype=torch.bfloat16) if get_value(self.autocast_cbk) else nullcontext()):
+            self.predictor.load_first_frame(frame)
 
         if prompt_type == "Points":
             # Get the positive and negative point layers
@@ -177,10 +182,10 @@ class InteractiveSegmentationWidget2DSAM(BaseWidget2D):
                 (pos_points, neg_points), axis=0)
             point_labels = np.concatenate(
                 (np.ones(len(pos_points)), np.zeros(len(neg_points))), axis=0)
-
-            _, out_obj_ids, out_mask_logits = self.predictor.add_new_prompt(
-                frame_idx=0, obj_id=0,
-                points=point_prompts, labels=point_labels)
+            with torch.inference_mode(), (torch.autocast("cuda", dtype=torch.bfloat16) if get_value(self.autocast_cbk) else nullcontext()):
+                _, out_obj_ids, out_mask_logits = self.predictor.add_new_prompt(
+                    frame_idx=0, obj_id=0,
+                    points=point_prompts, labels=point_labels)
             out_mask_masks = (out_mask_logits > self.predictor.mask_threshold)
             out_mask_masks = out_mask_masks[0,
                                             0].cpu().numpy().astype(np.uint8)
@@ -206,12 +211,13 @@ class InteractiveSegmentationWidget2DSAM(BaseWidget2D):
             bbox_prompt[1] = np.maximum(bbox_prompt[1], 0)
             bbox_prompt[2] = np.minimum(bbox_prompt[2], frame.shape[1])
             bbox_prompt[3] = np.minimum(bbox_prompt[3], frame.shape[0])
+            
+            with torch.inference_mode(), (torch.autocast("cuda", dtype=torch.bfloat16) if get_value(self.autocast_cbk) else nullcontext()):
+                _, out_obj_ids, out_mask_logits = self.predictor.add_new_prompt(
+                    frame_idx=0, obj_id=0,
+                    bbox=bbox_prompt)
 
-            _, out_obj_ids, out_mask_logits = self.predictor.add_new_prompt(
-                frame_idx=0, obj_id=0,
-                bbox=bbox_prompt)
-
-            out_mask_masks = (out_mask_logits > self.predictor.mask_threshold)
+                out_mask_masks = (out_mask_logits > self.predictor.mask_threshold)
 
             out_mask_masks = out_mask_masks[0,0].cpu().numpy().astype(np.uint8)
 

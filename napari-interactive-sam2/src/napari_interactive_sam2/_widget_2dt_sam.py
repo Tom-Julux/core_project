@@ -9,6 +9,7 @@ import cv2
 from magicgui import magicgui
 from napari.layers import Image
 from typing import TYPE_CHECKING
+from contextlib import nullcontext
 from functools import partial
 import numpy as np
 from napari.utils.notifications import show_info, show_warning, show_error, show_console_notification
@@ -125,7 +126,8 @@ class InteractiveSegmentationWidget2DTSAM(InteractiveSegmentationWidget2DSAM):
             # executing.
             with self.propagating_lock:
                 try:
-                    self.propagate()
+                    with torch.inference_mode(), (torch.autocast("cuda", dtype=torch.bfloat16) if get_value(self.autocast_cbk) else nullcontext()):
+                        self.propagate()
                 except Exception as e:
                     print(f"Error in on_prompt_update_event: {e}")
                     print(f"Traceback: {traceback.format_exc()}")
@@ -160,10 +162,11 @@ class InteractiveSegmentationWidget2DTSAM(InteractiveSegmentationWidget2DSAM):
             with self.propagating_lock:
                 try:
                     # change button_text to "Stop"
-                    propagated_successfully = self.propagate(initialize=True)
-                    self.stop_propagation_after_frame = False
-                    while propagated_successfully and not self.stop_propagation_after_frame:
-                        propagated_successfully = self.propagate(initialize=False)
+                    with torch.inference_mode(), (torch.autocast("cuda", dtype=torch.bfloat16) if get_value(self.autocast_cbk) else nullcontext()):
+                        propagated_successfully = self.propagate(initialize=True)
+                        self.stop_propagation_after_frame = False
+                        while propagated_successfully and not self.stop_propagation_after_frame:
+                            propagated_successfully = self.propagate(initialize=False)
                 except Exception as e:
                     print(f"Error in on_prompt_update_event: {e}")
                     print(f"Traceback: {traceback.format_exc()}")
@@ -256,7 +259,7 @@ class InteractiveSegmentationWidget2DTSAM(InteractiveSegmentationWidget2DSAM):
             except:
                 pass
 
-            self.predictor.load_first_frame(current_frame)
+        self.predictor.load_first_frame(current_frame)
 
         if self.preview_layer is None:
             show_warning(
@@ -287,7 +290,7 @@ class InteractiveSegmentationWidget2DTSAM(InteractiveSegmentationWidget2DSAM):
                 obj_mask = (current_mask == object_id).astype(np.uint8)
                 _, out_obj_ids, out_mask_logits = self.predictor.add_new_mask(
                     frame_idx=0, obj_id=object_id, mask=obj_mask)
-
+    
         out_obj_ids, out_mask_logits = self.predictor.track(next_frame)
 
         out_mask_masks = (
