@@ -90,7 +90,6 @@ class QuickViewWidget(QWidget):
 
         img = sitk.GetArrayFromImage(img_sitk)
 
-        transpose_order = tuple(int(i) for i in self.transpose_selection.currentText().split(","))
         #img = np.transpose(img, transpose_order)
 
         self.image_layer = self._viewer.add_image(
@@ -100,6 +99,7 @@ class QuickViewWidget(QWidget):
         )
 
         resolution = img_sitk.GetSpacing()  # x,y,z
+        transpose_order = tuple(int(i) for i in self.transpose_selection.currentText().split(","))
 
         self._viewer.dims.order = transpose_order
 
@@ -128,6 +128,15 @@ class QuickSizeWidget(QWidget):
 
         self.file_list_widget = FileListWidget(self._viewer, _scroll_layout, on_file_selected=self.on_file_selected)
 
+        container, _layout = setup_vcollapsiblegroupbox(
+            _scroll_layout, "Instructions:", collapsed=True)
+        
+        # select qbox
+        _ = setup_label(
+            _layout, "Select a transpoing:")
+        self.transpose_selection = setup_combobox(
+            _layout, ["0,1,2", "2,1,0", "2,0,1", "1,2,0", "0,2,1"], "0,1,2",)
+
         self.sam2d_widget = None
         self.size_estimator_widget = None
         self.image_layer = None
@@ -152,14 +161,15 @@ class QuickSizeWidget(QWidget):
         )
         self.sam2d_widget = widget
 
-        if self.size_estimator_widget is not None:
-            self._viewer.window.remove_dock_widget(self.size_estimator_widget)
-            self.size_estimator_widget.close()
-        size_widget = SizeEstimatorWidget(self._viewer)
-        self._viewer.window.add_dock_widget(
-            size_widget, name="Size Estimator", area="right"
-        )
-        self.size_estimator_widget = size_widget
+        #if self.size_estimator_widget is not None:
+        #    self._viewer.window.remove_dock_widget(self.size_estimator_widget)
+        #    self.size_estimator_widget.close()
+        #from napari_size_estimator import SizeEstimatorWidget
+        #size_widget = SizeEstimatorWidget(self._viewer)
+        #self._viewer.window.add_dock_widget(
+        #    size_widget, name="Size Estimator", area="right"
+        #)
+        #self.size_estimator_widget = size_widget
 
         import SimpleITK as sitk
         base_dir = self.file_list_widget.import_dir_select.get_dir()
@@ -168,7 +178,7 @@ class QuickSizeWidget(QWidget):
         )
 
         img = sitk.GetArrayFromImage(img_sitk)
-        img = img = img[img.shape[0]//2-16:img.shape[0]//2+32]
+
         self.image_layer = self._viewer.add_image(
             img,
             name='Example Image',
@@ -177,11 +187,13 @@ class QuickSizeWidget(QWidget):
         resolution = img_sitk.GetSpacing()  # x,y,z
         print("Image resolution:", resolution)
 
-        self.size_estimator_widget.resolution_x_spinbox.setValue(resolution[0])
-        self.size_estimator_widget.resolution_y_spinbox.setValue(resolution[1])
-        self.size_estimator_widget.resolution_z_spinbox.setValue(resolution[2])
+        #self.size_estimator_widget.resolution_x_spinbox.setValue(resolution[0])
+        #self.size_estimator_widget.resolution_y_spinbox.setValue(resolution[1])
+        #self.size_estimator_widget.resolution_z_spinbox.setValue(resolution[2])
 
-
+        transpose_order = tuple(int(i) for i in self.transpose_selection.currentText().split(","))
+        self._viewer.dims.order = transpose_order
+        
     def showEvent(self, event):
         pass
     
