@@ -285,8 +285,8 @@ class DemoWidget(QWidget):
             )
             self.active_widget = widget
         elif demo_id == "QuickSize3DNNI":
-            from napari_quick_view import QuickSize3DNNI
-            widget = QuickSize3DNNI(self._viewer)
+            from napari_quick_view import QuickSize3DNNIWidget
+            widget = QuickSize3DNNIWidget(self._viewer)
             self._viewer.window.add_dock_widget(
                 widget, name="QuickSize3DNNI", area="right"
             )
