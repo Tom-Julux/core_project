@@ -65,7 +65,7 @@ Homepage = "TODO"
 Code = "TODO"
 
 [tool.setuptools.dynamic]
-version = {attr = "napari_interactive.__init__.__version__"}
+version = {attr = "napari_interactive_nni.__init__.__version__"}
 
 
 [tool.ruff]
