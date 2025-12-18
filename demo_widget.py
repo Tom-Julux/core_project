@@ -20,6 +20,8 @@ class DemoWidget(QWidget):
             "Size Estimator",
             "QuickView",
             "QuickSize",
+            "QuickSize3D",
+            "QuickSize3DNNI",
             "napari-shape-based-interpolation",
             "---",
             "2D NoPredictor",
@@ -269,12 +271,24 @@ class DemoWidget(QWidget):
             )
             self.active_widget = widget
         elif demo_id == "QuickSize":
-           
-
             from napari_quick_view import QuickSizeWidget
             widget = QuickSizeWidget(self._viewer)
             self._viewer.window.add_dock_widget(
                 widget, name="QuickSizeWidget", area="right"
+            )
+            self.active_widget = widget
+        elif demo_id == "QuickSize3D":
+            from napari_quick_view import QuickSize3DWidget
+            widget = QuickSize3DWidget(self._viewer)
+            self._viewer.window.add_dock_widget(
+                widget, name="QuickSize3DWidget", area="right"
+            )
+            self.active_widget = widget
+        elif demo_id == "QuickSize3DNNI":
+            from napari_quick_view import QuickSize3DNNI
+            widget = QuickSize3DNNI(self._viewer)
+            self._viewer.window.add_dock_widget(
+                widget, name="QuickSize3DNNI", area="right"
             )
             self.active_widget = widget
         elif demo_id == "napari-shape-based-interpolation":

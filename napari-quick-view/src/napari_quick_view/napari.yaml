@@ -13,10 +13,21 @@ contributions:
       title: "QuickSizeWidget"
       python_name: "napari_quick_view:QuickSizeWidget"
       
+    - id: "napari-quick-view.QuickSize3DNNIWidget"
+      title: "QuickSize3DNNIWidget"
+      python_name: "napari_quick_view:QuickSize3DNNIWidget"
+
+    - id: "napari-quick-view.QuickSize3DWidget"
+      title: "QuickSize3DWidget"
+      python_name: "napari_quick_view:QuickSize3DWidget"
+      
   widgets:
     - command: "napari-quick-view.QuickViewWidget"
       display_name: QuickViewWidget
     - command: "napari-quick-view.QuickSizeWidget"
       display_name: QuickSizeWidget
   
-      #autogenerate: true
+    - command: "napari-quick-view.QuickSize3DNNIWidget"
+      display_name: QuickSize3DNNIWidget
+    - command: "napari-quick-view.QuickSize3DWidget"
+      display_name: QuickSize3DWidget
