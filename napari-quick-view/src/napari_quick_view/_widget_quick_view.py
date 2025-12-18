@@ -155,7 +155,7 @@ class QuickSizeWidget(QWidget):
             self._viewer.window.remove_dock_widget(self.sam2d_widget)
             self.sam2d_widget.close()
         from napari_interactive_sam2._widget_2d_sam import InteractiveSegmentationWidget2DSAM
-        widget = InteractiveSegmentationWidget2DSAM(self._viewer, hide_model_setup=True, hide_prompt_type_select=True, hide_prompt_import=True, hide_export=True)
+        widget = InteractiveSegmentationWidget2DSAM(self._viewer, hide_model_setup=True, hide_prompt_type_select=False, hide_prompt_import=True, hide_export=False)
         self._viewer.window.add_dock_widget(
             widget, name="Interactive Segmentation", area="right"
         )
@@ -244,7 +244,7 @@ class QuickSize3DWidget(QWidget):
             self._viewer.window.remove_dock_widget(self.sam2d_widget)
             self.sam2d_widget.close()
         from napari_interactive_sam2._widget_3d_sam import InteractiveSegmentationWidget3DSAM
-        widget = InteractiveSegmentationWidget3DSAM(self._viewer, hide_model_setup=True, hide_prompt_type_select=True, hide_prompt_import=True, hide_export=True)
+        widget = InteractiveSegmentationWidget3DSAM(self._viewer, hide_model_setup=True, hide_prompt_type_select=False, hide_prompt_import=True, hide_export=False)
         self._viewer.window.add_dock_widget(
             widget, name="Interactive Segmentation", area="right"
         )
@@ -333,7 +333,7 @@ class QuickSize3DNNIWidget(QWidget):
             self._viewer.window.remove_dock_widget(self.sam2d_widget)
             self.sam2d_widget.close()
         from napari_interactive_nni._widget_3d_nni import InteractiveSegmentationWidget3DNNI
-        widget = InteractiveSegmentationWidget3DNNI(self._viewer, hide_model_setup=True, hide_prompt_type_select=True, hide_prompt_import=True, hide_export=True)
+        widget = InteractiveSegmentationWidget3DNNI(self._viewer, hide_model_setup=True, hide_prompt_type_select=False, hide_prompt_import=True, hide_export=False)
         self._viewer.window.add_dock_widget(
             widget, name="Interactive Segmentation", area="right"
         )
