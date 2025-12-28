@@ -1,0 +1,20 @@
+[project]
+name = "core_tool"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "napari[pyqt6,optional]", "opencv-python-headless", "napari_toolkit"
+]
+
+[tool.uv.sources]
+napari-interactive = { workspace = true }
+napari-interactive-sam2 = { workspace = true }
+napari-shape-based-interpolation = { workspace = true }
+napari-shifted-labels = { workspace = true }
+napari-size-estimator = { workspace = true }
+napari-edit-log = { workspace = true }
+napari-quick-view = { workspace = true }
+
+[tool.uv.workspace]
+members = ["packages/*"]
+exclude = ["packages/napari-camera-stream"]

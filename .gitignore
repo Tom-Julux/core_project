@@ -204,3 +204,5 @@ __marimo__/
 
 # checkpoints
 **/*.pt
+
+example_data

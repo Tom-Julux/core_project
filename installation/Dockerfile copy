@@ -1,0 +1,14 @@
+# Dockerfile for project
+
+# inherit from python image
+FROM ghcr.io/napari/napari:sha-77fc0af
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+# update to latest pip version 
+WORKDIR /app
+
+COPY ./packages /app/packages
+
+RUN uv sync
+
+ENTRYPOINT [ "uv", "run", "/app/startup.py" ]

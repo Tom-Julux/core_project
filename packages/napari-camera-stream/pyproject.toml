@@ -1,0 +1,58 @@
+[project]
+name = "napari-camera-stream"
+dynamic = ["version"]
+description = "Adding ."
+readme = "README.md"
+license = {file = "LICENSE"}
+authors = [
+  {name = "Tom Blöcker"},
+  {email = "Tom.Bloecker@campus.lmu.de"},
+]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Framework :: napari",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering :: Image Processing",
+]
+requires-python = ">=3.9"
+dependencies = [
+    "numpy",
+    "qtpy",
+    "napari_toolkit"
+]
+
+
+
+[project.entry-points."napari.manifest"]
+napari-camera-stream = "napari_camera_stream:napari.yaml"
+
+[build-system]
+requires = ["setuptools>=42.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"*" = ["*.yaml"]
+
+
+
+[tool.setuptools.dynamic]
+version = {attr = "napari_shifted_labels.__init__.__version__"}
+
+
