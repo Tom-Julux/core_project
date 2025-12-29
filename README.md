@@ -1,6 +1,6 @@
 # CoreTool
 
-<img src="images/Screenshot 2025-09-24 at 12.21.15.png" loading="lazy" alt="CoreTool screenshot" />
+<img src="images/Screenshot 2025-09-24 at 12.21.15.png" loading="lazy" alt="CoreTool screenshot" width="500"/>
 
 ## What is this "CoreTool"?
 
@@ -9,28 +9,35 @@ CoreTool is a collection of napari plugins that provide an extensible interactiv
 <details>
   <summary>Why "CoreTool" as a name?</summary>
 
-  The name "CoreTool" reflects the project's position at the core of the [BZKF Lighthouse on Local Therapies](https://bzkf.de/fileadmin/local-therapies.pdf) research project. 
-  The project aims to use promptable foundation models and other AI based tools to improve local therapies. For this purpose, the CoreTool provides a modular and extensible base for segmenting medical images using prompts.
+  > The name "CoreTool" reflects the project's position at the core of the [BZKF Lighthouse on Local Therapies](https://bzkf.de/fileadmin/local-therapies.pdf) research project. 
+  > The project aims to use promptable foundation models and other AI based tools to improve local therapies. For this purpose, the CoreTool provides a modular and extensible base for segmenting medical images using prompts.
 </details>
 
-Main plugin(s) included in this repository:
+## Overview
+This repository contains a number of napari plugins centered around interactive segmentation:
 
-- **napari-promptable** — the core plugin: an interactive segmentation widget that supports multi-object workflows and serves as the base class for model-specific plugins.
-- **napari-promptable-2d-sam** — 2D plane segmentation using a SAM2-based model.
-- **napari-promptable-2dt-sam** — 2D+t (or 3D) propagation: extends the 2D plugin with mask propagation between adjacent frames.
-- **napari-promptable-3d-sam** — 3D segmentation using up to three orthogonal planes and a simple view-control UI.
-- **napari-promptable-{2d,3d}-noregistration** — lightweight example plugins without ML models; useful for UI testing and as implementation templates.
+- [**napari-promptable**](./packages/napari-promptable/) — the core plugin: an interactive segmentation widget that supports multi-object workflows and serves as the base class for model-specific plugins.
 
-Additional helper plugins:
+Based on this core plugin, several model-backed segmentation plugins are provided:
+- [**napari-promptable-sam2**](packages/napari-promptable-sam2/) — segmentation in 2D, 2D+t, or 3D using a [sam2](https://github.com/facebookresearch/sam2)-based model
+- [**napari-promptable-nnI**](packages/napari-promptable-nni/) — segmentation in 3D using a [nnInteractive](https://github.com/MIC-DKFZ/nnInteractive)-based model
 
-- [**napari-edit-log**](./napari-edit-log/README.md) — logs user interactions to a file for replay and analysis.
-- [**napari-shifted-labels**](./napari-shifted-labels/README.md)  — visualizes masks across frames to provide a more consistent segmentation experience.
+It also contains some utility plugins:
+
+- [**napari-edit-log**](./packages/napari-edit-log/) — logs user interactions to a file for replay and analysis.
+- [**napari-shifted-labels**](./packages/napari-shifted-labels/) — visualizes masks across frames to provide a more consistent segmentation experience.
+- [**napari-size-estimator**](./packages/napari-size-estimator/) — computes the volume of segmented objects in physical units.
+- [**napari-shape-based-interpolation**](./packages/napari-shape-based-interpolation/) — shape based interpolation of labels between keyframes. (As an alternative to AI-based methods.)
+- [**napari-quick-view**](./packages/napari-quick-view/) — quickly cycle through different images.
+
+These pulgins are designed to work together for different applications. Examples are provided as *core_tool_apps* in the `core_tool_apps/` folder.
+
+- [**core-tool-apps**](./core_tool_apps/)
 
 The documentation for these plugins is currently work in progress.
 
 ## Table of contents
 
-- [Quick start](#quick-start)
 - [Installation](#installation)
 - [Development & contributing](#development--contributing)
 - [Roadmap](#roadmap)
@@ -41,14 +48,11 @@ The documentation for these plugins is currently work in progress.
 
 ### Requirements
 
-The tool requires 
-
-In principle, the CoreTool only requires a working napari installation and could be installed from the plugins menus. Some model-backed plugins (for example SAM2 variants) will require a CUDA-capable GPU and the matching PyTorch + CUDA runtime for best performance. The project is tested on macOS and Linux. Windows may work as well but may encounter platform-specific issues. Please report any problems.
+The tool should in principle work wherever napari works. However, some plugins may have additional requirements (for example a CUDA-capable GPU for model inference). The project is also only tested on macOS and Linux.
 
 ### Local installation
 
-For the local installation, clone the repository and install plugin packages in editable mode. We recommend [uv](https://github.com/astral-sh/uv) for this purpose.
-
+For a local installation, clone the repository and install plugin packages in editable mode. We recommend [uv](https://github.com/astral-sh/uv) for this purpose.
 
 ```bash
 # clone the repository
@@ -145,5 +149,5 @@ This project is developed and maintained by the [LMU Adaptive Radiation Therapy 
 
 For more information about napari and related toolkits see:
 
-- [napari]: https://github.com/napari/napari
-- [napari_toolkit]: https://github.com/MIC-DKFZ/napari_toolkit
+- **napari**: https://github.com/napari/napari
+- **napari_toolkit**: https://github.com/MIC-DKFZ/napari_toolkit
