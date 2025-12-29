@@ -25,7 +25,22 @@ The documentation for these plugins is available in their respective folders.
 
 - [Quick start](#quick-start)
 - [Installation](#installation)
+- [Usage overview](#usage-overview)
+- [Reference](#reference)
+  - [Importing/Opening images](#importingopening-images)
+  - [Prediction behaviour](#prediction-behaviour)
+  - [Exporting masks](#exporting-masks)
+  - [Reset](#reset)
+  - [Asthetics](#asthetics)
+  - [Windowing / contrast](#windowing--contrast)
+  - [Multi-object mode](#multi-object-mode)
+  - [Propagation (2D+t / 3D / >2D)](#propagation-2dt--3d---2d)
+  - [Keyboard control](#keyboard-control)
+  - [DemoWidget](#demowidget)
 - [Development & contributing](#development--contributing)
+  - [Development setup](#development-setup)
+  - [Adding support for new models](#adding-support-for-new-models)
+  - [Using napari-interactive as a library](#using-napari-interactive-as-a-library)
 - [Roadmap](#roadmap)
 - [License](#license)
 - [Acknowledgments](#acknowledgments)
@@ -72,9 +87,8 @@ docker run --rm -it --gpus=all -v /project_data/:/project_data/ --device=/dev/dr
 
 ```
 
-<details>
- <summary>Using the tool in the browser:</summary>
-  
+<summary>
+ <details>Using the tool in the browser:</details>
   You can also use [xpra](https://github.com/Xpra-org/xpra?tab=readme-ov-file#usage) to use the tool in your browser. Althouhgh you will only be able to load files available to the docker container.
 
   ```bash
@@ -83,7 +97,7 @@ docker run --rm -it --gpus=all -v /project_data/:/project_data/ --device=/dev/dr
   docker run --rm -it --gpus=all -v /project_data/:/project_data/ -p 9876:9876 napari_core_web
 
   ```
-</details>
+</summary>
 
 ## Usage overview
 
@@ -119,20 +133,110 @@ The plugins share a common interaction model:
 
 Tip: You can customize label colors and opacity with the `napari-labels` plugin.
 
+## Reference
+The following section contains more detailed information on how to use the tool.
+
+### Importing/Opening images
+
+See the napari documentation on [how to open images](https://napari.org/stable/tutorials/fundamentals/quick_start.html#open-an-image) for more information.
+
+> Tip: Napari can open most image formats, with plugins available for more exotic formats. This leads to you maybe beeing asked with a dialog to select a plugin for opening your image. In most cases the default option (napari builtins) should work fine.
+
+### Prediction behaviour
+
+The default behavior is to re-run predictions when prompts or hyperparameters change (AutoRun). If predictions are slow, disable AutoRun and use the `Predict` button when ready.
+
+<img src="images/Screenshot 2025-09-24 at 12.22.23.png" loading="lazy" alt="Prediction control panel screenshot" />
+
+
+### Exporting masks
+
+Masks can be exported in two ways:
+
+- Export to layer: copies the current preview into a new labels layer in napari (useful for further editing/visualization).
+- Export to file: saves the mask to disk at the chosen path. The exported array preserves shape and dimensionality and is saved as uint8 by default.
+
+<img src="images/Screenshot 2025-09-24 at 12.22.34.png" loading="lazy" alt="Export controls screenshot" />
+
+### Reset
+
+The `Reset` button clears the preview and prompt layers and resets the underlying model state.
+
+<img src="images/Screenshot 2025-09-24 at 12.22.41.png" loading="lazy" alt="Reset button screenshot" />
+
+### Asthetics
+
+> Tip: You can change the color and opacity of each label using the [napari-labels](https://github.com/MIC-DKFZ/napari-labels) plugin.
+
+### Windowing / contrast
+
+For windowing and contrast controls the `napari-brightness-contrast` plugin is recommended.
+
+<img src="images/Screenshot 2025-10-09 at 18.22.01.png" loading="lazy" alt="Windowing and contrast controls screenshot" />
+
+### Multi-object mode
+
+Use the multi-object controls to create and switch between object IDs while segmenting. This is useful when annotating multiple distinct structures in a single volume.
+
+<img src="images/Screenshot 2025-09-24 at 12.22.06.png" loading="lazy" alt="Multi-object mode screenshot" />
+
+> Tip: Currently only non-overlapping objects are supported.
+
+### Propagation (2D+t / 3D / >2D)
+
+The propagation panel lets you propagate masks along a chosen axis, from one frame to the next.
+
+Typical controls:
+
+- dimension selector (which axis to propagate along)
+- direction (forward / reverse)
+- overwrite existing (whether to replace masks in the destination frame)
+- step (propagate one frame)
+- run (continuous propagation)
+
+Multiple objects (with the same label index) can be propagated in parallel.
+
+<img src="images/Screenshot 2025-09-24 at 12.22.15.png" loading="lazy" alt="Propagation controls screenshot" />
+
+> Tip: The run option typically uses a larger prompt memory bank (for SAM2) and can give more consistent results than repeatedly clicking Step.
+
+### Keyboard control
+
+Napari (and the plugins of the core-tool) support a variety of keyboard shortcuts for controlling the viewer. They are mostly also tied to UI elements and can be discoverd by hovering with the pointer over any given UI element.
+
+The most useful viewer shortcuts (for the purpose of interactive segmentation) include:
+
+- **Switching between the tools**: "Number keys" (1-9)
+- **Moving between frames**: "Arrow keys" (left / right)
+- ...
+
+The most usefull shortcuts from the core project plugins include:
+
+- **Add new label**: `N`
+- ...
+
+> Tip: You can also customize these shortcuts to your liking in the [napari preferences menu](https://napari.org/dev/guides/preferences.html#shortcuts-settings).
+
+### DemoWidget
+
+The Demo Widget was developed to enable an easy showcase the core tool. It loads example imaging data and a correspoding interactive segmentation plugin.
+
+<img src="images/demo_widget.png"/>
+
+> Tip: Adding an new plugin/extended widget to the demo allows you to quickly reload the widget after changes to its code.
+
 ## Development & contributing
 
-We welcome any contributions that align with the goals of the project.
+We welcome contributions that align with the goals of the project.
 
 ### Development setup
 
 1. Follow the Local installation steps above.
-
-2. Use the `development.ipynb` notebook for (semi-)hot-reloading during UI development or run `uv run startup.py`.
+2. Use the `development.ipynb` notebook for hot-reloading during UI development, or run `startup.py` if you prefer a non-hot-reload session.
 
 3. Make any desired changes to the source code.
 
-
-### Adding support for new promptable models
+### Adding support for new models
 
 1. Follow the local setup guide above.
 
@@ -155,13 +259,11 @@ We welcome any contributions that align with the goals of the project.
 10. For loading model checkpoints we recomment hosting them on huggingface and downloading them on-demand via `huggingface_hub`. Alternatively, you can store them somewhere local.
 
 
-<details>
-  <summary>Tips for model authors:</summary>
-  
-  - Pick a comparable widget and copy its structure.
-  - Implement `load_model`, `predict`, and `reset_model` following the existing patterns.
-  - Prefer on-demand model download via `huggingface_hub` for large checkpoints, or document where to place local checkpoints. To store checkpoints locally, please use the `checkpoints/` folder.
-</details>
+> Tips for model authors:
+
+> - Pick a comparable widget and copy its structure.
+> - Implement `load_model`, `predict`, and `reset_model` following the existing patterns.
+> - Prefer on-demand model download via `huggingface_hub` for large checkpoints, or document where to place local checkpoints (for example `MedSAM2_latest.pt`).
 
 ### Using napari-interactive as a library
 
@@ -169,7 +271,7 @@ Alternatively, you can import the napari-interactive plugin class and create a n
 
 1. Create a new plugin.
 
-2. Add `napari-interactive` as a dependency to your project.
+2. Add `napari-interactive` as a dependencie to your `requirements.txt`.
 
 3. Import whatever widget class you want to use as parent and implement the plugin for your own model.
 

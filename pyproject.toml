@@ -1,9 +1,17 @@
 [project]
 name = "core_tool"
 version = "0.1.0"
-requires-python = ">=3.12"
+requires-python = ">=3.12,<3.14"
 dependencies = [
-    "napari[pyqt6,optional]", "opencv-python-headless", "napari_toolkit"
+    "napari[pyqt6,optional]", "opencv-python-headless", "napari_toolkit", "SimpleITK",
+    # dependencies for plugins in the workspace
+    "napari-interactive", 
+    "napari-interactive-sam2", 
+    "napari-shape-based-interpolation",
+    "napari-shifted-labels", 
+    "napari-size-estimator", 
+    "napari-edit-log", 
+    "napari-quick-view"
 ]
 
 [tool.uv.sources]

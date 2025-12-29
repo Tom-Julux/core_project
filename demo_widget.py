@@ -13,6 +13,8 @@ class DemoWidget(QWidget):
         super().__init__()
         self._viewer = viewer  # type: Viewer
         
+        # list of all available demos
+        # add new demos here and in the load_demo function below
         self.DEMOS = [
             "Select a demo...",
             "shifted labels",
@@ -39,17 +41,16 @@ class DemoWidget(QWidget):
         self.active_widget = None
 
         main_layout = QVBoxLayout(self)
+        # the demo selection does not need to scroll
+        _scroll_layout = main_layout
 
-        _scroll_layout = main_layout#setup_vscrollarea(main_layout)
+        setup_label(_scroll_layout, "Select a demo to load:")        
 
-        setup_label(_scroll_layout, "Select a demo to load:")
-
-        
-        # layer select for image layer
-        self.demo_select = setup_combobox(#, "Points", "BBox"],\
+        self.demo_select = setup_combobox(
             _scroll_layout, self.DEMOS, "QComboBox", function=lambda: None
         )
 
+        # setup run and reset buttons
         self.run_button = setup_iconbutton(
             None,
             "Load",
@@ -66,9 +67,11 @@ class DemoWidget(QWidget):
             function=lambda: self.reset_viewer()
         )
         hstack(_scroll_layout, [self.run_button, self.reset_button])
+        # initial reset
         self.reset_viewer()
 
     def load_demo(self, demo_id=None):
+        # load the demo as specified in the demo_id, or from the dropdown if None
         if demo_id is None:
             demo_id = get_value(self.demo_select)[0]
 
@@ -432,26 +435,44 @@ class DemoWidget(QWidget):
         elif demo_id == "Select a demo...":
             pass
         else:
+            # No such demo exists
             show_warning(f"Demo '{demo_id}' not found.")
 
 
     def reset_viewer(self):
+        # this function tries to remove all layers and widgets from the viewer
+        # this is needed to free memory and GPU resources when loading new demos
+        # it also might fail, in which case napari might need to be restarted to free all resources
+        # this might look like a crash, but is actually the intended behavior ;)
+
         # remove all layers except the image layer
         for layer in self._viewer.layers:
             try:
                 self._viewer.layers.remove(layer)
             except:
                 pass
+        
+        # remove active widget
         if self.active_widget is not None:
             try:
+                # this should call the closeEvent of the widget
                 self._viewer.window.remove_dock_widget(self.active_widget)
+                # manually call close event in case the above does not work
                 self.active_widget.close()
+                # mannually call close event in case the above does not work
                 self.active_widget.closeEvent()
             except:
                 pass
+
+            # hopefully the widget removes all its resources in the close event
+            # if not, garbage collection maybe takes care of it    
             self.active_widget = None
-        # unload all dock widgets except this one
-        for name, widget in list(self._viewer.window._dock_widgets.items()):
+            # if this also does not work, napari might close to free all resources
+            # this might look like a crash, but is actually intended ;)
+            # otherwise memory leaks might occur, especially with machine learning models
+        
+        # unload all dock widgets except the demo loader
+        for name, widget in list(self._viewer.window.dock_widgets.items()):
             try:
                 if widget is not self and widget.widget() is not self:
                     self._viewer.window.remove_dock_widget(widget)

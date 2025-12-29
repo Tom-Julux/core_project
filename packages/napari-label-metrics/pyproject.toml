@@ -1,6 +1,6 @@
 [project]
 name = "napari-label-metrics"
-dynamic = ["version"]
+version = "0.1.0"
 description = "Adding ."
 readme = "README.md"
 license = {file = "LICENSE"}
@@ -32,14 +32,12 @@ dependencies = [
     "napari_toolkit"
 ]
 
-
-
 [project.entry-points."napari.manifest"]
 napari-label-metrics = "napari_label_metrics:napari.yaml"
 
 [build-system]
-requires = ["setuptools>=42.0.0", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["uv_build>=0.9.18,<0.10.0"]
+build-backend = "uv_build"
 
 [tool.setuptools]
 include-package-data = true
@@ -49,11 +47,3 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 "*" = ["*.yaml"]
-
-
-
-[tool.setuptools.dynamic]
-version = {attr = "napari_label_metrics.__init__.__version__"}
-
-
-

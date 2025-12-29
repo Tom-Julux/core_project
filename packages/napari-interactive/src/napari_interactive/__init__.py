@@ -1,4 +1,4 @@
-__version__ = "0.0.1"
+
 
 from .base_widget import BaseWidget
 from .base_widget_2d import BaseWidget2D

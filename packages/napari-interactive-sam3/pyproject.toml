@@ -1,6 +1,6 @@
 [project]
 name = "napari-interactive-sam3"
-dynamic = ["version"]
+version = "0.1.0"
 description = "Adding ."
 readme = "README.md"
 license = {file = "LICENSE"}
@@ -43,8 +43,8 @@ dependencies = [
 napari-interactive-sam3 = "napari_interactive_sam3:napari.yaml"
 
 [build-system]
-requires = ["setuptools>=42.0.0", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["uv_build>=0.9.18,<0.10.0"]
+build-backend = "uv_build"
 
 [tool.setuptools]
 include-package-data = true
@@ -54,11 +54,3 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 "*" = ["*.yaml"]
-
-
-
-[tool.setuptools.dynamic]
-version = {attr = "napari_interactive_sam3.__init__.__version__"}
-
-
-
