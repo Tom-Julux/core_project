@@ -211,4 +211,5 @@ class InteractiveSegmentationWidget3DNNI(BaseWidget3D):
         #    out_mask = out_mask_masks[np.argmax(out_mask_scores)]  # Select the mask with the highest score
         # else:
 
-        self.add_prediction_to_preview(out_mask_masks, transposed=True)
+        #self.add_prediction_to_preview(out_mask_masks, transposed=True)
+        return out_mask_masks, None, True

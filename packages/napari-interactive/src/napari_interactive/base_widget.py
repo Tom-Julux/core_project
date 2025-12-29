@@ -159,11 +159,13 @@ class BaseWidget(QWidget):
         """
         Run a prediction using the current prompt state and update preview.
 
+        Returns:
+            out_mask, selector: tuple of (predicted mask array, selector slice)
+        
         Contract: gather prompts from prompt layers (points, bbox, mask,
-        etc.), prepare the image/frame data, call the model/predictor API and
-        then call add_prediction_to_preview(...) to merge results into the
-        preview. Should be safe to call from a background thread (run_predict_in_thread
-        handles locking).
+        etc.), prepare the image/frame data, then return a (out_mask, selector) tuple 
+        to merge results into the preview. Should be safe to call from a background thread 
+        (run_predict_in_thread handles locking).
         """
         pass
 
@@ -258,7 +260,7 @@ class BaseWidget(QWidget):
         if self.hide_prompt_type_select:
             _container.setVisible(False)
 
-        _container, _layout = setup_vcollapsiblegroupbox(
+        self._prompt_import_container, _layout = setup_vcollapsiblegroupbox(
             _scroll_layout, "Import Prompt:", collapsed=False)
         _ = setup_label(
             _layout, "Import prompt from other layer. (Overwrites current prompts!)")
@@ -276,14 +278,17 @@ class BaseWidget(QWidget):
         )
 
         if self.hide_prompt_import:
-            _container.setVisible(False)
+            self._prompt_import_container.setVisible(False)
 
         self.setup_view_control_gui(_scroll_layout)
 
-        _container, _layout = setup_vgroupbox(
-            _scroll_layout, "Hyperparameters:")
+        self._hyperparameter_container, _layout = setup_vcollapsiblegroupbox(
+            _scroll_layout, "Hyperparameters:", collapsed=False)
 
         self.setup_hyperparameter_gui(_layout)
+
+        if _layout.count() == 0:
+            self._hyperparameter_container.setVisible(False)
 
         _group_box, _layout = setup_vgroupbox(
             _scroll_layout, text="Predict:")
@@ -727,6 +732,8 @@ class BaseWidget(QWidget):
                 transposed_import_mask = np.transpose(
                     import_mask, self._viewer.dims.order)
 
+                # there might be a better way to do this...
+                # but 4D should cover most use cases (ZCYX, ZTXY, TCYX, etc.)
                 print(transposed_import_mask.shape)
                 print(transposed_prompt_mask.shape)
                 N = len(transposed_import_mask.shape)
@@ -841,26 +848,46 @@ class BaseWidget(QWidget):
                 while self.rerun_after_lock:
                     self.rerun_after_lock = False
                     try:
-                        self.predict()
+                        return self.predict()
                     except Exception as e:
                         print(f"Error in on_prompt_update_event: {e}")
                         print(f"Traceback: {traceback.format_exc()}")
 
         worker = _worker()
 
+        predict_start_time = 0
+
         # Update UI when worker starts
         def _on_started():
             self.run_button.setEnabled(False)
             self.status_label.setText("Status: Running...")
-        # Update UI when worker finishes or errors
+            nonlocal predict_start_time
+            predict_start_time = time.perf_counter()
 
         def _on_done(*args, **kwargs):
-            self.status_label.setText("Status: Ready")
+            end_time = time.perf_counter()
+            elapsed_time = end_time - predict_start_time
+            self.status_label.setText(f"Status: Ready ({elapsed_time:.3f} s)")
             self.run_button.setEnabled(True)
-        # Connect signals (thread_worker exposes started, finished, errored)
+
+        def on_returned(value):
+            # Merge the returned mask into the preview
+            # This needs to be done in the main thread to avoid threading issues
+            if value is None:
+                return
+                
+            out_mask, selector, transposed = value
+            self.add_prediction_to_preview(out_mask, indices=selector, transposed=transposed)
+
+        def _on_error(*args, **kwargs):
+            self.status_label.setText(f"Status: Ready (after error)")
+            self.run_button.setEnabled(True)
+
+        # Connect signals
         worker.started.connect(_on_started)
         worker.finished.connect(_on_done)
-        worker.errored.connect(_on_done)
+        worker.errored.connect(_on_error)
+        worker.returned.connect(on_returned)
 
         worker.start()
 

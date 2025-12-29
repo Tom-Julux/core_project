@@ -210,6 +210,5 @@ class InteractiveSegmentationWidget3DSAM(BaseWidget3D):
             out_mask_masks = union.astype(np.uint8)  # Convert to uint8
         else:
             return
-        # Merge the predicted mask into the preview using the base class
-        # helper so overwrite/indices/object-id logic is respected.
-        self.add_prediction_to_preview(out_mask_masks, transposed=True)
+            
+        return out_mask_masks, None, False

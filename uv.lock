@@ -1593,6 +1593,7 @@ wheels = [
 
 [[package]]
 name = "napari-edit-log"
+version = "0.1.0"
 source = { editable = "packages/napari-edit-log" }
 dependencies = [
     { name = "napari-toolkit" },
@@ -1609,6 +1610,7 @@ requires-dist = [
 
 [[package]]
 name = "napari-interactive"
+version = "0.1.0"
 source = { editable = "packages/napari-interactive" }
 dependencies = [
     { name = "hydra-core" },
@@ -1637,6 +1639,7 @@ requires-dist = [
 
 [[package]]
 name = "napari-interactive-nni"
+version = "0.1.0"
 source = { editable = "packages/napari-interactive-nni" }
 dependencies = [
     { name = "napari-toolkit" },
@@ -1674,6 +1677,7 @@ provides-extras = ["testing"]
 
 [[package]]
 name = "napari-interactive-sam2"
+version = "0.1.0"
 source = { editable = "packages/napari-interactive-sam2" }
 dependencies = [
     { name = "hydra-core" },
@@ -1700,6 +1704,7 @@ requires-dist = [
 
 [[package]]
 name = "napari-interactive-sam3"
+version = "0.1.0"
 source = { editable = "packages/napari-interactive-sam3" }
 dependencies = [
     { name = "hydra-core" },
@@ -1726,6 +1731,7 @@ requires-dist = [
 
 [[package]]
 name = "napari-label-metrics"
+version = "0.1.0"
 source = { editable = "packages/napari-label-metrics" }
 dependencies = [
     { name = "napari-toolkit" },
@@ -1742,6 +1748,7 @@ requires-dist = [
 
 [[package]]
 name = "napari-merge-labels"
+version = "0.1.0"
 source = { editable = "packages/napari-merge-labels" }
 dependencies = [
     { name = "napari-toolkit" },
@@ -1783,6 +1790,7 @@ wheels = [
 
 [[package]]
 name = "napari-quick-view"
+version = "0.1.0"
 source = { editable = "packages/napari-quick-view" }
 dependencies = [
     { name = "napari-toolkit" },
@@ -1799,6 +1807,7 @@ requires-dist = [
 
 [[package]]
 name = "napari-shape-based-interpolation"
+version = "0.1.0"
 source = { editable = "packages/napari-shape-based-interpolation" }
 dependencies = [
     { name = "napari-toolkit" },
@@ -1815,6 +1824,7 @@ requires-dist = [
 
 [[package]]
 name = "napari-shifted-labels"
+version = "0.1.0"
 source = { editable = "packages/napari-shifted-labels" }
 dependencies = [
     { name = "napari-toolkit" },
@@ -1831,6 +1841,7 @@ requires-dist = [
 
 [[package]]
 name = "napari-size-estimator"
+version = "0.1.0"
 source = { editable = "packages/napari-size-estimator" }
 dependencies = [
     { name = "napari-toolkit" },

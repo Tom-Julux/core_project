@@ -55,6 +55,13 @@ uv sync
 
 # run the startup script
 uv run startup.py
+
+# alternatively you can activate the venv created by uv and start the script directly
+source .venv/bin/activate
+python3 startup.py
+
+# finally you can start napari and load the plugins from the plugins menu (inside the venv)
+napari
 ```
 
 

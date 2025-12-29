@@ -9,13 +9,8 @@ contributions:
     - id: "napari-size-estimator.SizeEstimatorWidget"
       title: "Size Estimator"
       python_name: "napari_size_estimator:SizeEstimatorWidget"
-    - id: "napari-size-estimator.FileListWidget"
-      title: "FileListWidget"
-      python_name: "napari_size_estimator:FileListWidget"
   widgets:
     - command: "napari-size-estimator.SizeEstimatorWidget"
       display_name: Size Estimator
-    - command: "napari-size-estimator.FileListWidget"
-      display_name: FileListWidget
   
       #autogenerate: true

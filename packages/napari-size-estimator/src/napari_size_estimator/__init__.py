@@ -1,7 +1,7 @@
 
 
 from ._widget_napari_size_estimator import (
-    SizeEstimatorWidget, FileListWidget
+    SizeEstimatorWidget
 )
 
-__all__ = ("SizeEstimatorWidget", "FileListWidget")
+__all__ = ("SizeEstimatorWidget",)

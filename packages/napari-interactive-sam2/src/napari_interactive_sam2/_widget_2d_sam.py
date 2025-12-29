@@ -95,7 +95,7 @@ class InteractiveSegmentationWidget2DSAM(BaseWidget2D):
             _layout, 2, -3, 3.0, 0.5, function=lambda: self.on_hyperparameter_update(), include_buttons=False
         )
         self.autocast_cbk = setup_checkbox(
-            _layout, "Autocast to bfloat16", value=False, function=lambda: self.on_hyperparameter_update()
+            _layout, "Autocast to bfloat16", False, function=lambda: self.on_hyperparameter_update()
         )
         pass
 
@@ -245,5 +245,5 @@ class InteractiveSegmentationWidget2DSAM(BaseWidget2D):
         if N == 4:
             selector = np.s_[self._viewer.dims.current_step[self._viewer.dims.order[0]],
                             self._viewer.dims.current_step[self._viewer.dims.order[1]]]
-        self.add_prediction_to_preview(
-            out_mask, selector)
+
+        return out_mask, selector, False

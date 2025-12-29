@@ -127,20 +127,25 @@ class InteractiveSegmentationWidget2DTSAM(InteractiveSegmentationWidget2DSAM):
             with self.propagating_lock:
                 try:
                     with torch.inference_mode(), (torch.autocast("cuda", dtype=torch.bfloat16) if get_value(self.autocast_cbk) else nullcontext()):
-                        self.propagate()
+                        return self.propagate()
                 except Exception as e:
                     print(f"Error in on_prompt_update_event: {e}")
                     print(f"Traceback: {traceback.format_exc()}")
 
         worker = _worker()
 
+        start_time = 0
         # Update UI when worker starts
         def _on_started():
+            nonlocal start_time
+            start_time = time.perf_counter()
             self.propagate_status_label.setText("Status: Running...")
         # Update UI when worker finishes or errors
 
         def _on_done(*args, **kwargs):
-            self.propagate_status_label.setText("Status: Ready")
+            end_time = time.perf_counter()
+            elapsed_time = end_time - start_time
+            self.propagate_status_label.setText(f"Status: (completed in {elapsed_time:.3f} s)")
         # Connect signals (thread_worker exposes started, finished, errored)
         worker.started.connect(_on_started)
         worker.finished.connect(_on_done)
@@ -163,10 +168,17 @@ class InteractiveSegmentationWidget2DTSAM(InteractiveSegmentationWidget2DSAM):
                 try:
                     # change button_text to "Stop"
                     with torch.inference_mode(), (torch.autocast("cuda", dtype=torch.bfloat16) if get_value(self.autocast_cbk) else nullcontext()):
+                        start_time = time.perf_counter()
                         propagated_successfully = self.propagate(initialize=True)
+                        end_time = time.perf_counter()
+                        self.propagate_status_label.setText(f"Status: Running until stopped... ({end_time - start_time:.3f} s)")
                         self.stop_propagation_after_frame = False
                         while propagated_successfully and not self.stop_propagation_after_frame:
+                            start_time = time.perf_counter()
                             propagated_successfully = self.propagate(initialize=False)
+                            end_time = time.perf_counter()
+                            self.propagate_status_label.setText(f"Status: Running until stopped... ({end_time - start_time:.3f} s)")
+                        
                 except Exception as e:
                     print(f"Error in on_prompt_update_event: {e}")
                     print(f"Traceback: {traceback.format_exc()}")
@@ -259,7 +271,7 @@ class InteractiveSegmentationWidget2DTSAM(InteractiveSegmentationWidget2DSAM):
             except:
                 pass
 
-        self.predictor.load_first_frame(current_frame)
+            self.predictor.load_first_frame(current_frame)
 
         if self.preview_layer is None:
             show_warning(
@@ -290,7 +302,7 @@ class InteractiveSegmentationWidget2DTSAM(InteractiveSegmentationWidget2DSAM):
                 obj_mask = (current_mask == object_id).astype(np.uint8)
                 _, out_obj_ids, out_mask_logits = self.predictor.add_new_mask(
                     frame_idx=0, obj_id=object_id, mask=obj_mask)
-    
+
         out_obj_ids, out_mask_logits = self.predictor.track(next_frame)
 
         out_mask_masks = (
