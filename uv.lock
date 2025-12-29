@@ -11,13 +11,14 @@ resolution-markers = [
 [manifest]
 members = [
     "core-tool",
+    "core-tool-apps",
     "napari-edit-log",
-    "napari-interactive",
-    "napari-interactive-nni",
-    "napari-interactive-sam2",
-    "napari-interactive-sam3",
     "napari-label-metrics",
     "napari-merge-labels",
+    "napari-promptable",
+    "napari-promptable-nni",
+    "napari-promptable-sam2",
+    "napari-promptable-sam3",
     "napari-quick-view",
     "napari-shape-based-interpolation",
     "napari-shifted-labels",
@@ -519,10 +520,12 @@ name = "core-tool"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "core-tool-apps" },
     { name = "napari", extra = ["optional", "pyqt6"] },
     { name = "napari-edit-log" },
-    { name = "napari-interactive" },
-    { name = "napari-interactive-sam2" },
+    { name = "napari-promptable" },
+    { name = "napari-promptable-nni" },
+    { name = "napari-promptable-sam2" },
     { name = "napari-quick-view" },
     { name = "napari-shape-based-interpolation" },
     { name = "napari-shifted-labels" },
@@ -534,10 +537,12 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "core-tool-apps", editable = "core_tool_apps" },
     { name = "napari", extras = ["pyqt6", "optional"] },
     { name = "napari-edit-log", editable = "packages/napari-edit-log" },
-    { name = "napari-interactive", editable = "packages/napari-interactive" },
-    { name = "napari-interactive-sam2", editable = "packages/napari-interactive-sam2" },
+    { name = "napari-promptable", editable = "packages/napari-promptable" },
+    { name = "napari-promptable-nni", editable = "packages/napari-promptable-nni" },
+    { name = "napari-promptable-sam2", editable = "packages/napari-promptable-sam2" },
     { name = "napari-quick-view", editable = "packages/napari-quick-view" },
     { name = "napari-shape-based-interpolation", editable = "packages/napari-shape-based-interpolation" },
     { name = "napari-shifted-labels", editable = "packages/napari-shifted-labels" },
@@ -545,6 +550,23 @@ requires-dist = [
     { name = "napari-toolkit" },
     { name = "opencv-python-headless" },
     { name = "simpleitk" },
+]
+
+[[package]]
+name = "core-tool-apps"
+version = "0.1.0"
+source = { editable = "core_tool_apps" }
+dependencies = [
+    { name = "napari-toolkit" },
+    { name = "numpy" },
+    { name = "qtpy" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "napari-toolkit" },
+    { name = "numpy" },
+    { name = "qtpy" },
 ]
 
 [[package]]
@@ -1609,127 +1631,6 @@ requires-dist = [
 ]
 
 [[package]]
-name = "napari-interactive"
-version = "0.1.0"
-source = { editable = "packages/napari-interactive" }
-dependencies = [
-    { name = "hydra-core" },
-    { name = "iopath" },
-    { name = "napari-toolkit" },
-    { name = "nninteractive" },
-    { name = "numpy" },
-    { name = "qtpy" },
-    { name = "torch" },
-    { name = "torchvision" },
-    { name = "tqdm" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "hydra-core" },
-    { name = "iopath" },
-    { name = "napari-toolkit" },
-    { name = "nninteractive" },
-    { name = "numpy" },
-    { name = "qtpy" },
-    { name = "torch", specifier = ">=2.5.1" },
-    { name = "torchvision" },
-    { name = "tqdm" },
-]
-
-[[package]]
-name = "napari-interactive-nni"
-version = "0.1.0"
-source = { editable = "packages/napari-interactive-nni" }
-dependencies = [
-    { name = "napari-toolkit" },
-    { name = "nninteractive" },
-    { name = "numpy" },
-    { name = "qtpy" },
-    { name = "torch" },
-    { name = "tqdm" },
-]
-
-[package.optional-dependencies]
-testing = [
-    { name = "napari" },
-    { name = "pyqt5" },
-    { name = "pytest" },
-    { name = "pytest-cov" },
-    { name = "pytest-qt" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "napari", marker = "extra == 'testing'" },
-    { name = "napari-toolkit" },
-    { name = "nninteractive" },
-    { name = "numpy" },
-    { name = "pyqt5", marker = "extra == 'testing'" },
-    { name = "pytest", marker = "extra == 'testing'" },
-    { name = "pytest-cov", marker = "extra == 'testing'" },
-    { name = "pytest-qt", marker = "extra == 'testing'" },
-    { name = "qtpy" },
-    { name = "torch", specifier = ">=2.5.1" },
-    { name = "tqdm" },
-]
-provides-extras = ["testing"]
-
-[[package]]
-name = "napari-interactive-sam2"
-version = "0.1.0"
-source = { editable = "packages/napari-interactive-sam2" }
-dependencies = [
-    { name = "hydra-core" },
-    { name = "iopath" },
-    { name = "napari-toolkit" },
-    { name = "numpy" },
-    { name = "qtpy" },
-    { name = "torch" },
-    { name = "torchvision" },
-    { name = "tqdm" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "hydra-core" },
-    { name = "iopath" },
-    { name = "napari-toolkit" },
-    { name = "numpy" },
-    { name = "qtpy" },
-    { name = "torch", specifier = ">=2.5.1" },
-    { name = "torchvision" },
-    { name = "tqdm" },
-]
-
-[[package]]
-name = "napari-interactive-sam3"
-version = "0.1.0"
-source = { editable = "packages/napari-interactive-sam3" }
-dependencies = [
-    { name = "hydra-core" },
-    { name = "iopath" },
-    { name = "napari-toolkit" },
-    { name = "numpy" },
-    { name = "qtpy" },
-    { name = "torch" },
-    { name = "torchvision" },
-    { name = "tqdm" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "hydra-core" },
-    { name = "iopath" },
-    { name = "napari-toolkit" },
-    { name = "numpy" },
-    { name = "qtpy" },
-    { name = "torch", specifier = ">=2.5.1" },
-    { name = "torchvision" },
-    { name = "tqdm" },
-]
-
-[[package]]
 name = "napari-label-metrics"
 version = "0.1.0"
 source = { editable = "packages/napari-label-metrics" }
@@ -1786,6 +1687,127 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/df/16/5e26b5bacb6aab961894a1cc3e510dd058b3763baf2550228362eb13b217/napari_plugin_manager-0.1.9.tar.gz", hash = "sha256:d1d599e32b8dbf665e33e59cee58bce138a163f58252e32db255ec72a3141df1", size = 1784798, upload-time = "2025-12-12T21:19:17.595Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/76/20/346995cc3d780ad783411ea07a7e3747643878005bb7b1acd17123128932/napari_plugin_manager-0.1.9-py3-none-any.whl", hash = "sha256:11556096b881a6f66a11178b0e98438444cec94fbe0d56f4bb38e968cda2d7b4", size = 47828, upload-time = "2025-12-12T21:19:16.104Z" },
+]
+
+[[package]]
+name = "napari-promptable"
+version = "0.1.0"
+source = { editable = "packages/napari-promptable" }
+dependencies = [
+    { name = "hydra-core" },
+    { name = "iopath" },
+    { name = "napari-toolkit" },
+    { name = "nninteractive" },
+    { name = "numpy" },
+    { name = "qtpy" },
+    { name = "torch" },
+    { name = "torchvision" },
+    { name = "tqdm" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "hydra-core" },
+    { name = "iopath" },
+    { name = "napari-toolkit" },
+    { name = "nninteractive" },
+    { name = "numpy" },
+    { name = "qtpy" },
+    { name = "torch", specifier = ">=2.5.1" },
+    { name = "torchvision" },
+    { name = "tqdm" },
+]
+
+[[package]]
+name = "napari-promptable-nni"
+version = "0.1.0"
+source = { editable = "packages/napari-promptable-nni" }
+dependencies = [
+    { name = "napari-toolkit" },
+    { name = "nninteractive" },
+    { name = "numpy" },
+    { name = "qtpy" },
+    { name = "torch" },
+    { name = "tqdm" },
+]
+
+[package.optional-dependencies]
+testing = [
+    { name = "napari" },
+    { name = "pyqt5" },
+    { name = "pytest" },
+    { name = "pytest-cov" },
+    { name = "pytest-qt" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "napari", marker = "extra == 'testing'" },
+    { name = "napari-toolkit" },
+    { name = "nninteractive" },
+    { name = "numpy" },
+    { name = "pyqt5", marker = "extra == 'testing'" },
+    { name = "pytest", marker = "extra == 'testing'" },
+    { name = "pytest-cov", marker = "extra == 'testing'" },
+    { name = "pytest-qt", marker = "extra == 'testing'" },
+    { name = "qtpy" },
+    { name = "torch", specifier = ">=2.5.1" },
+    { name = "tqdm" },
+]
+provides-extras = ["testing"]
+
+[[package]]
+name = "napari-promptable-sam2"
+version = "0.1.0"
+source = { editable = "packages/napari-promptable-sam2" }
+dependencies = [
+    { name = "hydra-core" },
+    { name = "iopath" },
+    { name = "napari-toolkit" },
+    { name = "numpy" },
+    { name = "qtpy" },
+    { name = "torch" },
+    { name = "torchvision" },
+    { name = "tqdm" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "hydra-core" },
+    { name = "iopath" },
+    { name = "napari-toolkit" },
+    { name = "numpy" },
+    { name = "qtpy" },
+    { name = "torch", specifier = ">=2.5.1" },
+    { name = "torchvision" },
+    { name = "tqdm" },
+]
+
+[[package]]
+name = "napari-promptable-sam3"
+version = "0.1.0"
+source = { editable = "packages/napari-promptable-sam3" }
+dependencies = [
+    { name = "hydra-core" },
+    { name = "iopath" },
+    { name = "napari-toolkit" },
+    { name = "numpy" },
+    { name = "qtpy" },
+    { name = "torch" },
+    { name = "torchvision" },
+    { name = "tqdm" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "hydra-core" },
+    { name = "iopath" },
+    { name = "napari-toolkit" },
+    { name = "numpy" },
+    { name = "qtpy" },
+    { name = "torch", specifier = ">=2.5.1" },
+    { name = "torchvision" },
+    { name = "tqdm" },
 ]
 
 [[package]]

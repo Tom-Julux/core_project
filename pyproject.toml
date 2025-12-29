@@ -5,24 +5,28 @@ requires-python = ">=3.12,<3.14"
 dependencies = [
     "napari[pyqt6,optional]", "opencv-python-headless", "napari_toolkit", "SimpleITK",
     # dependencies for plugins in the workspace
-    "napari-interactive", 
-    "napari-interactive-sam2", 
+    "napari-promptable", 
+    "napari-promptable-sam2", 
+    "napari-promptable-nni", 
     "napari-shape-based-interpolation",
     "napari-shifted-labels", 
     "napari-size-estimator", 
     "napari-edit-log", 
-    "napari-quick-view"
+    "napari-quick-view",
+    "core-tool-apps"
 ]
 
 [tool.uv.sources]
-napari-interactive = { workspace = true }
-napari-interactive-sam2 = { workspace = true }
+napari-promptable = { workspace = true }
+napari-promptable-sam2 = { workspace = true }
+napari-promptable-nni = { workspace = true }
 napari-shape-based-interpolation = { workspace = true }
 napari-shifted-labels = { workspace = true }
 napari-size-estimator = { workspace = true }
 napari-edit-log = { workspace = true }
 napari-quick-view = { workspace = true }
+core-tool-apps = { workspace = true }
 
 [tool.uv.workspace]
-members = ["packages/*"]
+members = ["packages/*", "core_tool_apps"]
 exclude = ["packages/napari-camera-stream"]

@@ -8,11 +8,11 @@ CoreTool is a collection of small, documented napari plugins that provide an ext
 
 Main plugin(s) included in this repository:
 
-- **napari-interactive** — the core plugin: an interactive segmentation widget that supports multi-object workflows and serves as the base class for model-specific plugins.
-- **napari-interactive-2d-sam** — 2D plane segmentation using a SAM2-based model.
-- **napari-interactive-2dt-sam** — 2D+t (or 3D) propagation: extends the 2D plugin with mask propagation between adjacent frames.
-- **napari-interactive-3d-sam** — 3D segmentation using up to three orthogonal planes and a simple view-control UI.
-- **napari-interactive-{2d,3d}-noregistration** — lightweight example plugins without ML models; useful for UI testing and as implementation templates.
+- **napari-promptable** — the core plugin: an interactive segmentation widget that supports multi-object workflows and serves as the base class for model-specific plugins.
+- **napari-promptable-2d-sam** — 2D plane segmentation using a SAM2-based model.
+- **napari-promptable-2dt-sam** — 2D+t (or 3D) propagation: extends the 2D plugin with mask propagation between adjacent frames.
+- **napari-promptable-3d-sam** — 3D segmentation using up to three orthogonal planes and a simple view-control UI.
+- **napari-promptable-{2d,3d}-noregistration** — lightweight example plugins without ML models; useful for UI testing and as implementation templates.
 
 Additional helper plugins:
 
@@ -40,7 +40,7 @@ The documentation for these plugins is available in their respective folders.
 - [Development & contributing](#development--contributing)
   - [Development setup](#development-setup)
   - [Adding support for new models](#adding-support-for-new-models)
-  - [Using napari-interactive as a library](#using-napari-interactive-as-a-library)
+  - [Using napari-promptable as a library](#using-napari-promptable-as-a-library)
 - [Roadmap](#roadmap)
 - [License](#license)
 - [Acknowledgments](#acknowledgments)
@@ -240,9 +240,9 @@ We welcome contributions that align with the goals of the project.
 
 1. Follow the local setup guide above.
 
-2. Select what mode/dimensionality your model/plugin should support. The core tool currently supports segmentation in one 2D plane, propagation from one 2D plane to an adjacent one (for 3D or 2D+t segmenation), and segmentation in 3D based on up to three prompts in orthogonal planes. Other modes can be implemented by extending the __view_control__ section of the base widget, see the [3D segmentataion](napari-interactive/src/napari_interactive/_widget_3d_sam.py) widget as an example.
+2. Select what mode/dimensionality your model/plugin should support. The core tool currently supports segmentation in one 2D plane, propagation from one 2D plane to an adjacent one (for 3D or 2D+t segmenation), and segmentation in 3D based on up to three prompts in orthogonal planes. Other modes can be implemented by extending the __view_control__ section of the base widget, see the [3D segmentataion](napari-promptable/src/napari_promptable/_widget_3d_sam.py) widget as an example.
 
-3. Select a comperable widget and clone the respective file in `napari-interactive/src/napari_interactive/`.
+3. Select a comperable widget and clone the respective file in `napari-promptable/src/napari_promptable/`.
 
 4. Rename the copied file, for example `_widget_<mode>_<model>.py`.
 
@@ -265,13 +265,13 @@ We welcome contributions that align with the goals of the project.
 > - Implement `load_model`, `predict`, and `reset_model` following the existing patterns.
 > - Prefer on-demand model download via `huggingface_hub` for large checkpoints, or document where to place local checkpoints (for example `MedSAM2_latest.pt`).
 
-### Using napari-interactive as a library
+### Using napari-promptable as a library
 
-Alternatively, you can import the napari-interactive plugin class and create a new pip package for your model. See [here](https://napari.org/dev/plugins/building_a_plugin/first_plugin.html#your-first-plugin) on how to create a new napari-plugin.
+Alternatively, you can import the napari-promptable plugin class and create a new pip package for your model. See [here](https://napari.org/dev/plugins/building_a_plugin/first_plugin.html#your-first-plugin) on how to create a new napari-plugin.
 
 1. Create a new plugin.
 
-2. Add `napari-interactive` as a dependencie to your `requirements.txt`.
+2. Add `napari-promptable` as a dependencie to your `requirements.txt`.
 
 3. Import whatever widget class you want to use as parent and implement the plugin for your own model.
 

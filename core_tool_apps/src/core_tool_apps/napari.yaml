@@ -1,0 +1,26 @@
+name: core-tool-apps
+display_name: Core Tool Apps
+# use 'hidden' to remove plugin from napari hub search results
+visibility: hidden
+# see https://napari.org/stable/plugins/technical_references/manifest.html#fields for valid categories
+categories: ["Utilities"]
+contributions:
+  commands:
+    - id: "core-tool-apps.QuickSizeWidget"
+      title: "QuickSizeWidget"
+      python_name: "core_tool_apps:QuickSizeWidget"
+      
+    - id: "core-tool-apps.QuickSize3DNNIWidget"
+      title: "QuickSize3DNNIWidget"
+      python_name: "core_tool_apps:QuickSize3DNNIWidget"
+
+    - id: "core-tool-apps.QuickSize3DWidget"
+      title: "QuickSize3DWidget"
+      python_name: "core_tool_apps:QuickSize3DWidget"
+  widgets:
+    - command: "core-tool-apps.QuickSizeWidget"
+      display_name: QuickSizeWidget
+    - command: "core-tool-apps.QuickSize3DNNIWidget"
+      display_name: QuickSize3DNNIWidget
+    - command: "core-tool-apps.QuickSize3DWidget"
+      display_name: QuickSize3DWidget

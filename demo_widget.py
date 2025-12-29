@@ -100,10 +100,10 @@ class DemoWidget(QWidget):
             image_layer.translate = np.array(image_layer.data.shape) * (image_layer.scale * (image_layer.scale !=1))
             self._viewer.dims.current_step = (img.shape[0]//2, img.shape[1]//2, img.shape[2]//2)
 
-            from napari_interactive_nni._widget_3d_nni import InteractiveSegmentationWidget3DNNI
-            widget = InteractiveSegmentationWidget3DNNI(self._viewer)
+            from napari_promptable_nni._widget_3d_nni import PromptableSegmentationWidget3DNNI
+            widget = PromptableSegmentationWidget3DNNI(self._viewer)
             self._viewer.window.add_dock_widget(
-                widget, name="Interactive Segmentation", area="right"
+                widget, name="Promptable Segmentation", area="right"
             )
             self.active_widget = widget
         elif demo_id == "3D NoPredictor":
@@ -130,10 +130,10 @@ class DemoWidget(QWidget):
             image_layer.translate = np.array(image_layer.data.shape) * (image_layer.scale * (image_layer.scale !=1))
             self._viewer.dims.current_step = (img.shape[0]//2, img.shape[1]//2, img.shape[2]//2)
 
-            from napari_interactive._widget_3d_noregistration import InteractiveSegmentationWidget3DNoRegistration
-            widget = InteractiveSegmentationWidget3DNoRegistration(self._viewer)
+            from napari_promptable._widget_3d_noregistration import PromptableSegmentationWidget3DNoRegistration
+            widget = PromptableSegmentationWidget3DNoRegistration(self._viewer)
             self._viewer.window.add_dock_widget(
-                widget, name="Interactive Segmentation", area="right"
+                widget, name="Promptable Segmentation", area="right"
             )
             self.active_widget = widget
         elif demo_id == "2D NoPredictor":
@@ -154,10 +154,10 @@ class DemoWidget(QWidget):
                 colormap='gray'
             )
 
-            from napari_interactive._widget_2d_noregistration import InteractiveSegmentationWidget2DNoRegistration
-            widget = InteractiveSegmentationWidget2DNoRegistration(self._viewer)
+            from napari_promptable._widget_2d_noregistration import PromptableSegmentationWidget2DNoRegistration
+            widget = PromptableSegmentationWidget2DNoRegistration(self._viewer)
             self._viewer.window.add_dock_widget(
-                widget, name="Interactive Segmentation", area="right"
+                widget, name="Promptable Segmentation", area="right"
             )
             self.active_widget = widget
         elif demo_id == "SAM2 2D":
@@ -178,10 +178,10 @@ class DemoWidget(QWidget):
                 colormap='gray'
             )
 
-            from napari_interactive_sam2._widget_2d_sam import InteractiveSegmentationWidget2DSAM
-            widget = InteractiveSegmentationWidget2DSAM(self._viewer)
+            from napari_promptable_sam2._widget_2d_sam import PromptableSegmentationWidget2DSAM
+            widget = PromptableSegmentationWidget2DSAM(self._viewer)
             self._viewer.window.add_dock_widget(
-                widget, name="Interactive Segmentation", area="right"
+                widget, name="Promptable Segmentation", area="right"
             )
             self.active_widget = widget
 
@@ -203,10 +203,10 @@ class DemoWidget(QWidget):
                 colormap='gray'
             )
 
-            from napari_interactive_sam2._widget_2dt_sam import InteractiveSegmentationWidget2DTSAM
-            widget = InteractiveSegmentationWidget2DTSAM(self._viewer)
+            from napari_promptable_sam2._widget_2dt_sam import PromptableSegmentationWidget2DTSAM
+            widget = PromptableSegmentationWidget2DTSAM(self._viewer)
             self._viewer.window.add_dock_widget(
-                widget, name="Interactive Segmentation", area="right"
+                widget, name="Promptable Segmentation", area="right"
             )
             self.active_widget = widget
         elif demo_id == "shifted labels":
@@ -346,10 +346,10 @@ class DemoWidget(QWidget):
                 colormap='gray'
             )
 
-            from napari_interactive._widget_2d_noregistration import InteractiveSegmentationWidget2DNoRegistration
-            widget = InteractiveSegmentationWidget2DNoRegistration(self._viewer)
+            from napari_promptable._widget_2d_noregistration import PromptableSegmentationWidget2DNoRegistration
+            widget = PromptableSegmentationWidget2DNoRegistration(self._viewer)
             self._viewer.window.add_dock_widget(
-                widget, name="Interactive Segmentation", area="right"
+                widget, name="Promptable Segmentation", area="right"
             )
             self.active_widget = widget
             self._viewer.dims.current_step = (34,0,0)
@@ -374,10 +374,10 @@ class DemoWidget(QWidget):
                 colormap='gray'
             )
 
-            from napari_interactive_sam2._widget_2dt_sam import InteractiveSegmentationWidget2DTSAM
-            widget = InteractiveSegmentationWidget2DTSAM(self._viewer)
+            from napari_promptable_sam2._widget_2dt_sam import PromptableSegmentationWidget2DTSAM
+            widget = PromptableSegmentationWidget2DTSAM(self._viewer)
             self._viewer.window.add_dock_widget(
-                widget, name="Interactive Segmentation", area="right"
+                widget, name="Promptable Segmentation", area="right"
             )
             self._viewer.dims.current_step = (34,0,0)
             self.active_widget = widget
@@ -400,10 +400,10 @@ class DemoWidget(QWidget):
                 colormap='gray'
             )
 
-            from napari_interactive_sam2._widget_3d_sam import InteractiveSegmentationWidget3DSAM
-            widget = InteractiveSegmentationWidget3DSAM(self._viewer)
+            from napari_promptable_sam2._widget_3d_sam import PromptableSegmentationWidget3DSAM
+            widget = PromptableSegmentationWidget3DSAM(self._viewer)
             self._viewer.window.add_dock_widget(
-                widget, name="Interactive Segmentation", area="right"
+                widget, name="Promptable Segmentation", area="right"
             )
             self.active_widget = widget
         
@@ -425,10 +425,10 @@ class DemoWidget(QWidget):
                 colormap='gray'
             )
 
-            from napari_interactive_sam2._widget_2dt_sam import InteractiveSegmentationWidget2DTSAM
-            widget = InteractiveSegmentationWidget2DTSAM(self._viewer)
+            from napari_promptable_sam2._widget_2dt_sam import PromptableSegmentationWidget2DTSAM
+            widget = PromptableSegmentationWidget2DTSAM(self._viewer)
             self._viewer.window.add_dock_widget(
-                widget, name="Interactive Segmentation", area="right"
+                widget, name="Promptable Segmentation", area="right"
             )
             self.active_widget = widget
             
