@@ -5,10 +5,10 @@
         "**/.hg": true,
         "**/.DS_Store": true,
         "**/Thumbs.db": true,
-        "napari-*/.gitignore": true,
-        "napari-*/.napari-hub/": true,
-        "napari-*/LICENSE/": true,
-        "napari-*/MANIFEST.in/": true,
-        "napari-*/src/*.egg-info/": true,
+        "packages/napari-*/.gitignore": true,
+        "packages/napari-*/.napari-hub": true,
+        "packages/napari-*/LICENSE": true,
+        "packages/napari-*/MANIFEST.in": true,
+        "packages/napari-*/src/*.egg-info/": true,
     }
 }
