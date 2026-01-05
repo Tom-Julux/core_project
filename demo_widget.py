@@ -35,9 +35,10 @@ class DemoWidget(QWidget):
             "SAM2 3D (3D case with 3 2d masks)": "Promptable segmentation in 3D using SAM2 (in 3 orthogonal views)",
             # "nnInteractive 3D NNI"
             "--- Utilities ---": None,
-            "Shifted labels": "Plugin that adds a preview of shifted labels based on current slice",
-            "Size estimator": "Plugin to quickliy view the volume of a label",
-            "Shape-based interpolation": "Plugin to interpolate shapes between slices",
+            "Shifted labels": "Preview labels shifted along the time axis",
+            "Size estimator": "Quickly view the volume of a label",
+            "Shape-based interpolation": "Interpolate shapes/labels between slices",
+            "Edit log": "Log interactions with the editor"
         }
 
         self.active_widget = None
@@ -295,6 +296,30 @@ class DemoWidget(QWidget):
             widget = ShapeBasedInterpolationWidget(self._viewer)
             self._viewer.window.add_dock_widget(
                 widget, name="napari-shape-based-interpolation", area="right"
+            )
+            self.active_widget = widget
+        elif demo_id == "Edit log":
+            img = sitk.ReadImage(
+                f'{base_path}/example_data/2d+t_trackrad/A_003_frames_8bit.mha'
+            )
+
+            img = sitk.GetArrayFromImage(img)
+
+            img = np.rot90(img, k=1, axes=(1, 2))
+            img = img[None]
+            img = img.repeat(2, axis=0)  # 
+            image_layer = self._viewer.add_image(
+                img, name='Example Image', colormap='gray')
+
+            labels_layer = self._viewer.add_labels(
+                np.zeros_like(img, dtype=np.uint8),
+                name='Example Label'
+            )
+
+            from napari_edit_log import EditLogWidget
+            widget = EditLogWidget(self._viewer)
+            self._viewer.window.add_dock_widget(
+                widget, name="Edit log", area="right"
             )
             self.active_widget = widget
 
