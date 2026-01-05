@@ -7,11 +7,8 @@ import torch
 import numpy as np
 import cv2
 from magicgui import magicgui
-from napari.layers import Image
 from typing import TYPE_CHECKING
 from contextlib import nullcontext
-from functools import partial
-import numpy as np
 from napari.utils.notifications import show_info, show_warning, show_error, show_console_notification
 from napari import Viewer
 from napari.layers import Labels, Shapes, Points, Image, Layer
@@ -29,8 +26,6 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-
-from napari.layers import Shapes, Points, Labels
 
 from napari_promptable import BaseWidget2D
 from ._widget_2d_sam import PromptableSegmentationWidget2DSAM

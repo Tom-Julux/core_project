@@ -7,9 +7,7 @@ import torch
 import os
 import cv2
 from magicgui import magicgui
-from napari.layers import Image
 from typing import TYPE_CHECKING
-from functools import partial
 import numpy as np
 from napari.utils.colormaps import CyclicLabelColormap, DirectLabelColormap, label_colormap
 from napari.utils.notifications import show_info, show_warning, show_error, show_console_notification
@@ -41,7 +39,6 @@ import glob
 from napari._qt.layer_controls.qt_layer_controls_container import layer_to_controls
 
 from napari.utils.notifications import show_info, show_warning, show_error, show_console_notification
-from napari import Viewer
 import SimpleITK as sitk
 from scipy.interpolate import interpn
 from ._widget_file_list import FileListWidget
@@ -68,18 +65,14 @@ class QuickViewWidget(QWidget):
         self.transpose_selection = setup_combobox(
             _layout, ["0,1,2", "2,1,0", "2,0,1", "1,2,0", "0,2,1"], "0,1,2",)
 
-        self.sam2d_widget = None
-        self.size_estimator_widget = None
         self.image_layer = None
     
     def on_file_selected(self, file_path):
         print("Selected file:", file_path)
 
-        # Remove existing layers to avoid confusion
-        for layer in self._viewer.layers:
-            self._viewer.layers.remove(layer)
-
+        # Remove existing layer to avoid confusion
         if self.image_layer is not None:
+            self._viewer.layers.remove(self.image_layer)
             self.image_layer = None
 
         import SimpleITK as sitk
@@ -89,8 +82,6 @@ class QuickViewWidget(QWidget):
         )
 
         img = sitk.GetArrayFromImage(img_sitk)
-
-        #img = np.transpose(img, transpose_order)
 
         self.image_layer = self._viewer.add_image(
             img,

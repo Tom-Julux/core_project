@@ -7,9 +7,7 @@ import torch
 import os
 import cv2
 from magicgui import magicgui
-from napari.layers import Image
 from typing import TYPE_CHECKING
-from functools import partial
 import numpy as np
 from napari.utils.colormaps import CyclicLabelColormap, DirectLabelColormap, label_colormap
 from napari.utils.notifications import show_info, show_warning, show_error, show_console_notification
@@ -24,7 +22,6 @@ from napari_toolkit.widgets import *
 from .layer_select import setup_layerselect
 from napari.utils.action_manager import action_manager
 from napari.utils.events.event import WarningEmitter
-from napari.utils.notifications import show_info
 from napari.qt.threading import thread_worker
 from qtpy.QtWidgets import (
     QFileDialog,
@@ -40,7 +37,6 @@ import traceback
 from napari._qt.layer_controls.qt_layer_controls_container import layer_to_controls
 
 from napari.utils.notifications import show_info, show_warning, show_error, show_console_notification
-from napari import Viewer
 import SimpleITK as sitk
 from scipy.interpolate import interpn
 

@@ -3,52 +3,65 @@ import numpy as np
 from napari.utils.notifications import show_info, show_warning
 from napari import Viewer
 from napari_toolkit.containers.boxlayout import hstack
+from napari_toolkit.containers import setup_vcollapsiblegroupbox
 from napari_toolkit.utils.widget_getter import get_value
 from napari_toolkit.widgets import setup_combobox, setup_iconbutton, setup_label
 from qtpy.QtWidgets import QVBoxLayout, QWidget
 import SimpleITK as sitk
 
-class DemoWidget(QWidget):    
+
+class DemoWidget(QWidget):
     def __init__(self, viewer: Viewer):
         super().__init__()
         self._viewer = viewer  # type: Viewer
-        
+
         # list of all available demos
         # add new demos here and in the load_demo function below
-        self.DEMOS = [
-            "Select a demo...",
-            "shifted labels",
-            "Import",
-            "Size Estimator",
-            "QuickView",
-            "QuickSize",
-            "QuickSize3D",
-            "QuickSize3DNNI",
-            "napari-shape-based-interpolation",
-            "---",
-            "2D NoPredictor",
-            "SAM2 2D",
-            "---",
-            "SAM2 2D+t CineMRI",
-            "SAM2 3D (3D case with one 2d masks)",
-            "Fetal Tracking SAM2 3D+t",
-            "---"
-            "3D NoPredictor",
-            "SAM2 3D (3D case with 3 2d masks)",
-            #"nnInteractive 3D NNI"
-        ]
+        # format: "Demo Name": "Description"
+        self.DEMOS = {
+            "Select a demo...": None,
+            "--- CoreToolApps ---": None,
+            "QuickView":"Quickly cycle through image files in a directory",
+            "QuickSize": "Quickly estimate size of objects in 2D images",
+            "QuickSize3D": "Quickly estimate size of objects in 3D images",
+            "QuickSize3DNNI": "Quickly estimate size of objects in 3D images using NNI",
+            "--- Interactive Segmentation ---": None,
+            "2D NoPredictor": "Promptable segmentation in 2D without registration",
+            "SAM2 2D": "Promptable segmentation in 2D using SAM2",
+            "SAM2 2D+t CineMRI": "Promptable segmentation in 2D+t using SAM2",
+            "SAM2 3D (3D case with one 2d masks)": "Promptable segmentation in 3D using SAM2 (axial view) 2D mask",
+            "--- Othogonal masks ---": None,
+            "3D NoPredictor": "Promptable segmentation in 3D without registration",
+            "SAM2 3D (3D case with 3 2d masks)": "Promptable segmentation in 3D using SAM2 (in 3 orthogonal views)",
+            # "nnInteractive 3D NNI"
+            "--- Utilities ---": None,
+            "Shifted labels": "Plugin that adds a preview of shifted labels based on current slice",
+            "Size estimator": "Plugin to quickliy view the volume of a label",
+            "Shape-based interpolation": "Plugin to interpolate shapes between slices",
+        }
 
         self.active_widget = None
 
         main_layout = QVBoxLayout(self)
-        # the demo selection does not need to scroll
+
+        # the demo selection does not need to scroll, so the main layout is fine
         _scroll_layout = main_layout
 
-        setup_label(_scroll_layout, "Select a demo to load:")        
+        setup_label(_scroll_layout, "Select a demo to load:")
+
+        def update_demo_description():
+            demo_id = get_value(self.demo_select)[0]
+            description = self.DEMOS.get(demo_id, None)
+            self.demo_description.setText(description if description is not None else "- Not available -")
 
         self.demo_select = setup_combobox(
-            _scroll_layout, self.DEMOS, "QComboBox", function=lambda: None
+            _scroll_layout, list(self.DEMOS.keys()), "QComboBox", function=lambda: update_demo_description()
         )
+
+        self.demo_description_container, _layout = setup_vcollapsiblegroupbox(
+            _scroll_layout, "Description:", collapsed=True)
+
+        self.demo_description = setup_label(_layout, "Select a demo to see its description here.")
 
         # setup run and reset buttons
         self.run_button = setup_iconbutton(
@@ -58,7 +71,8 @@ class DemoWidget(QWidget):
             self._viewer.theme,
             function=lambda: self.load_demo()
         )
-
+        update_demo_description()
+        
         self.reset_button = setup_iconbutton(
             None,
             "Reset",
@@ -67,7 +81,8 @@ class DemoWidget(QWidget):
             function=lambda: self.reset_viewer()
         )
         hstack(_scroll_layout, [self.run_button, self.reset_button])
-        # initial reset
+        
+        # initial reset to clear viewer from any previous widgets/layers
         self.reset_viewer()
 
     def load_demo(self, demo_id=None):
@@ -79,29 +94,98 @@ class DemoWidget(QWidget):
 
         self.reset_viewer()
         base_path = os.path.dirname(os.path.abspath(__file__))
-        if demo_id == "Mask 3D NNI":
-            if os.path.exists("/app/example_data/3d mrlinac/aumc_lung_patient031__GTV.mha"):
-                img = sitk.ReadImage(
-                    "/app/example_data/3d mrlinac/aumc_lung_patient031__GTV.mha"
-                )
-            else:
-                 img = sitk.ReadImage(
-                    f'{base_path}/example_data/3d mrlinac/aumc_lung_patient031__GTV.mha'
-                )
+        if demo_id == "QuickView":
+            from napari_quick_view import QuickViewWidget
+            widget = QuickViewWidget(self._viewer)
+            self._viewer.window.add_dock_widget(
+                widget, name="QuickView", area="right"
+            )
+            self.active_widget = widget
+        elif demo_id == "QuickSize":
+            from core_tool_apps._widget_quick_view import QuickSizeWidget
+            widget = QuickSizeWidget(self._viewer)
+            self._viewer.window.add_dock_widget(
+                widget, name="QuickSizeWidget", area="right"
+            )
+            self.active_widget = widget
+        elif demo_id == "QuickSize3D":
+            from core_tool_apps._widget_quick_view import QuickSize3DWidget
+            widget = QuickSize3DWidget(self._viewer)
+            self._viewer.window.add_dock_widget(
+                widget, name="QuickSize3DWidget", area="right"
+            )
+            self.active_widget = widget
+        elif demo_id == "QuickSize3DNNI":
+            from core_tool_apps._widget_quick_view import QuickSize3DNNIWidget
+            widget = QuickSize3DNNIWidget(self._viewer)
+            self._viewer.window.add_dock_widget(
+                widget, name="QuickSize3DNNI", area="right"
+            )
+            self.active_widget = widget
+        elif demo_id == "2D NoPredictor":
+            img = sitk.ReadImage(
+                f'{base_path}/example_data/3d mrlinac/aumc_lung_patient031__GTV.mha'
+            )
+
+            img = sitk.GetArrayFromImage(img)
+            img = img[img.shape[0]//2]
+            image_layer = self._viewer.add_image(
+                img, name='Example Image', colormap='gray')
+
+            from napari_promptable._widget_2d_noregistration import PromptableSegmentationWidget2DNoRegistration
+            widget = PromptableSegmentationWidget2DNoRegistration(self._viewer)
+            self._viewer.window.add_dock_widget(
+                widget, name="Promptable Segmentation", area="right"
+            )
+            self.active_widget = widget
+        elif demo_id == "SAM2 2D":
+            img = sitk.ReadImage(
+                f'{base_path}/example_data/3d mrlinac/aumc_lung_patient031__GTV.mha'
+            )
+
+            img = sitk.GetArrayFromImage(img)
+            img = img = img[img.shape[0]//2-16:img.shape[0]//2+32]
+            image_layer = self._viewer.add_image(
+                img, name='Example Image', colormap='gray')
+
+            from napari_promptable_sam2._widget_2d_sam import PromptableSegmentationWidget2DSAM
+            widget = PromptableSegmentationWidget2DSAM(self._viewer)
+            self._viewer.window.add_dock_widget(
+                widget, name="Promptable Segmentation", area="right"
+            )
+            self.active_widget = widget
+        elif demo_id == "SAM2 2D+t CineMRI":
+            img = sitk.ReadImage(
+                f'{base_path}/example_data/2d+t_trackrad/A_003_frames_8bit.mha'
+            )
 
             img = sitk.GetArrayFromImage(img)
 
-            image_layer = self._viewer.add_image(
-                img,
-                name='Example Image',
-                colormap='gray'
-            )
-            image_layer.scale = [-2, 1, 1]
-            image_layer.translate = np.array(image_layer.data.shape) * (image_layer.scale * (image_layer.scale !=1))
-            self._viewer.dims.current_step = (img.shape[0]//2, img.shape[1]//2, img.shape[2]//2)
+            img = np.rot90(img, k=1, axes=(1, 2))
 
-            from napari_promptable_nni._widget_3d_nni import PromptableSegmentationWidget3DNNI
-            widget = PromptableSegmentationWidget3DNNI(self._viewer)
+            image_layer = self._viewer.add_image(
+                img, name='Example Image', colormap='gray')
+
+            from napari_promptable_sam2._widget_2dt_sam import PromptableSegmentationWidget2DTSAM
+            widget = PromptableSegmentationWidget2DTSAM(self._viewer)
+            self._viewer.window.add_dock_widget(
+                widget, name="Promptable Segmentation", area="right"
+            )
+            self._viewer.dims.current_step = (34, 0, 0)
+            self.active_widget = widget
+
+        elif demo_id == "SAM2 3D (3D case with one 2d masks)":
+            img = sitk.ReadImage(
+                f'{base_path}/example_data/3d mrlinac/aumc_lung_patient031__GTV.mha'
+            )
+
+            img = sitk.GetArrayFromImage(img)
+            img = img = img[img.shape[0]//2-16:img.shape[0]//2+32]
+            image_layer = self._viewer.add_image(
+                img, name='Example Image', colormap='gray')
+
+            from napari_promptable_sam2._widget_2dt_sam import PromptableSegmentationWidget2DTSAM
+            widget = PromptableSegmentationWidget2DTSAM(self._viewer)
             self._viewer.window.add_dock_widget(
                 widget, name="Promptable Segmentation", area="right"
             )
@@ -132,102 +216,36 @@ class DemoWidget(QWidget):
 
             from napari_promptable._widget_3d_noregistration import PromptableSegmentationWidget3DNoRegistration
             widget = PromptableSegmentationWidget3DNoRegistration(self._viewer)
-            self._viewer.window.add_dock_widget(
-                widget, name="Promptable Segmentation", area="right"
+
+        elif demo_id == "SAM2 3D (3D case with 3 2d masks)":
+            img = sitk.ReadImage(
+                f'{base_path}/example_data/3d mrlinac/aumc_lung_patient031__GTV.mha'
             )
-            self.active_widget = widget
-        elif demo_id == "2D NoPredictor":
-            if os.path.exists("/app/example_data/3d mrlinac/aumc_lung_patient031__GTV.mha"):
-                img = sitk.ReadImage(
-                    "/app/example_data/3d mrlinac/aumc_lung_patient031__GTV.mha"
-                )
-            else:
-                 img = sitk.ReadImage(
-                    f'{base_path}/example_data/3d mrlinac/aumc_lung_patient031__GTV.mha'
-                )
 
             img = sitk.GetArrayFromImage(img)
-            img = img[img.shape[0]//2]
+            img = img[img.shape[0]//2-16:img.shape[0]//2+32]
             image_layer = self._viewer.add_image(
-                img,
-                name='Example Image',
-                colormap='gray'
-            )
+                img, name='Example Image', colormap='gray')
 
-            from napari_promptable._widget_2d_noregistration import PromptableSegmentationWidget2DNoRegistration
-            widget = PromptableSegmentationWidget2DNoRegistration(self._viewer)
-            self._viewer.window.add_dock_widget(
-                widget, name="Promptable Segmentation", area="right"
-            )
-            self.active_widget = widget
-        elif demo_id == "SAM2 2D":
-            if os.path.exists("/app/example_data/3d mrlinac/aumc_lung_patient031__GTV.mha"):
-                img = sitk.ReadImage(
-                    "/app/example_data/3d mrlinac/aumc_lung_patient031__GTV.mha"
-                )
-            else:
-                 img = sitk.ReadImage(
-                    f'{base_path}/example_data/3d mrlinac/aumc_lung_patient031__GTV.mha'
-                )
-
-            img = sitk.GetArrayFromImage(img)
-            img = img = img[img.shape[0]//2-16:img.shape[0]//2+32]
-            image_layer = self._viewer.add_image(
-                img,
-                name='Example Image',
-                colormap='gray'
-            )
-
-            from napari_promptable_sam2._widget_2d_sam import PromptableSegmentationWidget2DSAM
-            widget = PromptableSegmentationWidget2DSAM(self._viewer)
+            from napari_promptable_sam2._widget_3d_sam import PromptableSegmentationWidget3DSAM
+            widget = PromptableSegmentationWidget3DSAM(self._viewer)
             self._viewer.window.add_dock_widget(
                 widget, name="Promptable Segmentation", area="right"
             )
             self.active_widget = widget
 
-        elif demo_id == "SAM2 3D (3D case with one 2d masks)":
-            if os.path.exists("/app/example_data/3d mrlinac/aumc_lung_patient031__GTV.mha"):
-                img = sitk.ReadImage(
-                    "/app/example_data/3d mrlinac/aumc_lung_patient031__GTV.mha"
-                )
-            else:
-                 img = sitk.ReadImage(
-                    f'{base_path}/example_data/3d mrlinac/aumc_lung_patient031__GTV.mha'
-                )
-
-            img = sitk.GetArrayFromImage(img)
-            img = img = img[img.shape[0]//2-16:img.shape[0]//2+32]
-            image_layer = self._viewer.add_image(
-                img,
-                name='Example Image',
-                colormap='gray'
+        # Utilities
+        elif demo_id == "Shifted labels":
+            img = sitk.ReadImage(
+                f'{base_path}/example_data/2d+t_trackrad/A_003_frames_8bit.mha'
             )
-
-            from napari_promptable_sam2._widget_2dt_sam import PromptableSegmentationWidget2DTSAM
-            widget = PromptableSegmentationWidget2DTSAM(self._viewer)
-            self._viewer.window.add_dock_widget(
-                widget, name="Promptable Segmentation", area="right"
-            )
-            self.active_widget = widget
-        elif demo_id == "shifted labels":
-            if os.path.exists("/app/example_data/2d+t_trackrad/A_003_frames_8bit.mha"):
-                img = sitk.ReadImage(
-                    "/app/example_data/2d+t_trackrad/A_003_frames_8bit.mha"
-                )
-            else:
-                 img = sitk.ReadImage(
-                    f'{base_path}/example_data/2d+t_trackrad/A_003_frames_8bit.mha'
-                )
 
             img = sitk.GetArrayFromImage(img)
 
-            img = np.rot90(img, k=1, axes=(1,2))
+            img = np.rot90(img, k=1, axes=(1, 2))
 
             image_layer = self._viewer.add_image(
-                img,
-                name='Example Image',
-                colormap='gray'
-            )
+                img, name='Example Image', colormap='gray')
 
             labels_layer = self._viewer.add_labels(
                 np.zeros_like(img, dtype=np.uint8),
@@ -240,23 +258,15 @@ class DemoWidget(QWidget):
                 widget, name="ShiftedLabel", area="right"
             )
             self.active_widget = widget
-        elif demo_id == "Size Estimator":
-            if os.path.exists("/app/example_data/3d mrlinac/aumc_lung_patient031__GTV.mha"):
-                img = sitk.ReadImage(
-                    "/app/example_data/3d mrlinac/aumc_lung_patient031__GTV.mha"
-                )
-            else:
-                 img = sitk.ReadImage(
-                    f'{base_path}/example_data/3d mrlinac/aumc_lung_patient031__GTV.mha'
-                )
+        elif demo_id == "Size estimator":
+            img = sitk.ReadImage(
+                f'{base_path}/example_data/3d mrlinac/aumc_lung_patient031__GTV.mha'
+            )
 
             img = sitk.GetArrayFromImage(img)
             img = img = img[img.shape[0]//2-16:img.shape[0]//2+32]
             image_layer = self._viewer.add_image(
-                img,
-                name='Example Image',
-                colormap='gray'
-            )
+                img, name='Example Image', colormap='gray')
 
             from napari_size_estimator import SizeEstimatorWidget
             widget = SizeEstimatorWidget(self._viewer)
@@ -264,55 +274,17 @@ class DemoWidget(QWidget):
                 widget, name="Size Estimator", area="right"
             )
             self.active_widget = widget
-        elif demo_id == "QuickView":
-           
-
-            from napari_quick_view import QuickViewWidget
-            widget = QuickViewWidget(self._viewer)
-            self._viewer.window.add_dock_widget(
-                widget, name="QuickView", area="right"
+        elif demo_id == "Shape-based interpolation":
+            img = sitk.ReadImage(
+                f'{base_path}/example_data/2d+t_trackrad/A_003_frames_8bit.mha'
             )
-            self.active_widget = widget
-        elif demo_id == "QuickSize":
-            from napari_quick_view import QuickSizeWidget
-            widget = QuickSizeWidget(self._viewer)
-            self._viewer.window.add_dock_widget(
-                widget, name="QuickSizeWidget", area="right"
-            )
-            self.active_widget = widget
-        elif demo_id == "QuickSize3D":
-            from napari_quick_view import QuickSize3DWidget
-            widget = QuickSize3DWidget(self._viewer)
-            self._viewer.window.add_dock_widget(
-                widget, name="QuickSize3DWidget", area="right"
-            )
-            self.active_widget = widget
-        elif demo_id == "QuickSize3DNNI":
-            from napari_quick_view import QuickSize3DNNIWidget
-            widget = QuickSize3DNNIWidget(self._viewer)
-            self._viewer.window.add_dock_widget(
-                widget, name="QuickSize3DNNI", area="right"
-            )
-            self.active_widget = widget
-        elif demo_id == "napari-shape-based-interpolation":
-            if os.path.exists("/app/example_data/2d+t_trackrad/A_003_frames_8bit.mha"):
-                img = sitk.ReadImage(
-                    "/app/example_data/2d+t_trackrad/A_003_frames_8bit.mha"
-                )
-            else:
-                img = sitk.ReadImage(
-                    f'{base_path}/example_data/2d+t_trackrad/A_003_frames_8bit.mha'
-                )
 
             img = sitk.GetArrayFromImage(img)
 
-            img = np.rot90(img, k=1, axes=(1,2))
+            img = np.rot90(img, k=1, axes=(1, 2))
 
             image_layer = self._viewer.add_image(
-                img,
-                name='Example Image',
-                colormap='gray'
-            )
+                img, name='Example Image', colormap='gray')
 
             labels_layer = self._viewer.add_labels(
                 np.zeros_like(img, dtype=np.uint8),
@@ -324,120 +296,13 @@ class DemoWidget(QWidget):
             self._viewer.window.add_dock_widget(
                 widget, name="napari-shape-based-interpolation", area="right"
             )
-            self.active_widget = widget 
-                
-        elif demo_id == "Import":
-            if os.path.exists("/app/example_data/2d+t_trackrad/A_003_frames_8bit.mha"):
-                img = sitk.ReadImage(
-                    "/app/example_data/2d+t_trackrad/A_003_frames_8bit.mha"
-                )
-            else:
-                 img = sitk.ReadImage(
-                    f'{base_path}/example_data/2d+t_trackrad/A_003_frames_8bit.mha'
-                )
-            
-            img = sitk.GetArrayFromImage(img)
-
-            img = np.rot90(img, k=1, axes=(1,2))
-
-            image_layer = self._viewer.add_image(
-                img,
-                name='Example Image',
-                colormap='gray'
-            )
-
-            from napari_promptable._widget_2d_noregistration import PromptableSegmentationWidget2DNoRegistration
-            widget = PromptableSegmentationWidget2DNoRegistration(self._viewer)
-            self._viewer.window.add_dock_widget(
-                widget, name="Promptable Segmentation", area="right"
-            )
             self.active_widget = widget
-            self._viewer.dims.current_step = (34,0,0)
 
-        elif demo_id == "SAM2 2D+t CineMRI":
-            if os.path.exists("/app/example_data/2d+t_trackrad/A_003_frames_8bit.mha"):
-                img = sitk.ReadImage(
-                    "/app/example_data/2d+t_trackrad/A_003_frames_8bit.mha"
-                )
-            else:
-                 img = sitk.ReadImage(
-                    f'{base_path}/example_data/2d+t_trackrad/A_003_frames_8bit.mha'
-                )
-            
-            img = sitk.GetArrayFromImage(img)
-
-            img = np.rot90(img, k=1, axes=(1,2))
-
-            image_layer = self._viewer.add_image(
-                img,
-                name='Example Image',
-                colormap='gray'
-            )
-
-            from napari_promptable_sam2._widget_2dt_sam import PromptableSegmentationWidget2DTSAM
-            widget = PromptableSegmentationWidget2DTSAM(self._viewer)
-            self._viewer.window.add_dock_widget(
-                widget, name="Promptable Segmentation", area="right"
-            )
-            self._viewer.dims.current_step = (34,0,0)
-            self.active_widget = widget
-            
-        elif demo_id == "SAM2 3D (3D case with 3 2d masks)":
-            if os.path.exists("/app/example_data/3d mrlinac/aumc_lung_patient031__GTV.mha"):
-                img = sitk.ReadImage(
-                    "/app/example_data/3d mrlinac/aumc_lung_patient031__GTV.mha"
-                )
-            else:
-                 img = sitk.ReadImage(
-                    f'{base_path}/example_data/3d mrlinac/aumc_lung_patient031__GTV.mha'
-                )
-
-            img = sitk.GetArrayFromImage(img)
-            img = img[img.shape[0]//2-16:img.shape[0]//2+32]
-            image_layer = self._viewer.add_image(
-                img,
-                name='Example Image',
-                colormap='gray'
-            )
-
-            from napari_promptable_sam2._widget_3d_sam import PromptableSegmentationWidget3DSAM
-            widget = PromptableSegmentationWidget3DSAM(self._viewer)
-            self._viewer.window.add_dock_widget(
-                widget, name="Promptable Segmentation", area="right"
-            )
-            self.active_widget = widget
-        
-        elif demo_id == "Fetal Tracking SAM2 3D+t":
-            if os.path.exists("/app/example_data/3d+t fetal tracking/fm0116_3_e1.nii.gz"):
-                img = sitk.ReadImage(
-                    "/app/example_data/3d+t fetal tracking/fm0116_3_e1.nii.gz"
-                )
-            else:
-                 img = sitk.ReadImage(
-                    f'{base_path}/example_data/3d+t fetal tracking/fm0116_3_e1.nii.gz'
-                )
-
-            img = sitk.GetArrayFromImage(img)
-            #img = img[img.shape[0]//2:img.shape[0]//2+16]
-            image_layer = self._viewer.add_image(
-                img,
-                name='Example Image',
-                colormap='gray'
-            )
-
-            from napari_promptable_sam2._widget_2dt_sam import PromptableSegmentationWidget2DTSAM
-            widget = PromptableSegmentationWidget2DTSAM(self._viewer)
-            self._viewer.window.add_dock_widget(
-                widget, name="Promptable Segmentation", area="right"
-            )
-            self.active_widget = widget
-            
         elif demo_id == "Select a demo...":
             pass
         else:
             # No such demo exists
             show_warning(f"Demo '{demo_id}' not found.")
-
 
     def reset_viewer(self):
         # this function tries to remove all layers and widgets from the viewer
@@ -451,7 +316,7 @@ class DemoWidget(QWidget):
                 self._viewer.layers.remove(layer)
             except:
                 pass
-        
+
         # remove active widget
         if self.active_widget is not None:
             try:
@@ -465,12 +330,12 @@ class DemoWidget(QWidget):
                 pass
 
             # hopefully the widget removes all its resources in the close event
-            # if not, garbage collection maybe takes care of it    
+            # if not, garbage collection maybe takes care of it
             self.active_widget = None
             # if this also does not work, napari might close to free all resources
             # this might look like a crash, but is actually intended ;)
             # otherwise memory leaks might occur, especially with machine learning models
-        
+
         # unload all dock widgets except the demo loader
         for name, widget in list(self._viewer.window.dock_widgets.items()):
             try:

@@ -7,10 +7,8 @@ import torch
 import numpy as np
 import cv2
 from magicgui import magicgui
-from napari.layers import Image
 from typing import TYPE_CHECKING
 from contextlib import nullcontext
-from functools import partial
 import numpy as np
 from napari.utils.notifications import show_info, show_warning, show_error, show_console_notification
 from napari import Viewer
@@ -18,7 +16,6 @@ from napari.layers import Labels, Shapes, Points, Image, Layer
 from napari_toolkit.containers import setup_scrollarea, setup_vcollapsiblegroupbox, setup_vgroupbox, setup_vscrollarea
 from napari_toolkit.containers.boxlayout import hstack
 from napari_toolkit.utils import set_value
-from napari_toolkit.data_structs import setup_list
 from napari_toolkit.utils.widget_getter import get_value
 from napari_toolkit.widgets import *
 import traceback

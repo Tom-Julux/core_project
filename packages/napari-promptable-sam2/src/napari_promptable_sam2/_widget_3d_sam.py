@@ -7,9 +7,7 @@ import torch
 import os
 import cv2
 from magicgui import magicgui
-from napari.layers import Image
 from typing import TYPE_CHECKING
-from functools import partial
 import numpy as np
 from napari.utils.notifications import show_info, show_warning, show_error, show_console_notification
 from napari import Viewer
@@ -28,8 +26,6 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 import traceback
-
-from napari.layers import Shapes, Points, Labels
 
 from napari_promptable import BaseWidget3D
 
