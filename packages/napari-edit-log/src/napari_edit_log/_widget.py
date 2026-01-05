@@ -71,31 +71,31 @@ class EditLogWidget(QWidget):
         main_layout = QVBoxLayout(self)
 
         _scroll_widget, _scroll_layout = setup_vscrollarea(main_layout)
+
+
+        # buttons for recording and exporting
+        _container, _layout = setup_vgroupbox(_scroll_layout, "")
+
+        self.toogle_recording_btn = setup_pushbutton(_layout, "Start Recording", function=self.toogle_recording)
+        
         # log view
         _container, _layout = setup_vcollapsiblegroupbox(_scroll_layout, "Log", False)
 
-
-        self.past_state_list = setup_list(_layout, ["A"], True, function=lambda: print("QListWidget"))
+        self.past_state_list = setup_list(_layout, [], True, function=lambda: print("QListWidget"))
         _ = setup_iconbutton(
             _layout, "Clear Log", "erase", self._viewer.theme, self.clear_log
         )
-        # buttons for recording and exporting
-        _container, _layout = setup_vgroupbox(_scroll_layout, "Edit Log Controls")
-
-        self.toogle_recording_btn = setup_pushbutton(None, "Start Recording", function=self.toogle_recording)
-        _ = hstack(_layout, [self.toogle_recording_btn])
-        
 
         _container, _layout = setup_vcollapsiblegroupbox(_scroll_layout, "Edit log settings", False)
 
         self.clear_log_on_export_ckbx = setup_checkbox(_layout, "Clear log on export", True)
         self.continue_recording_after_export_ckbx  = setup_checkbox(_layout, "Continue recording after export", True)
 
-        self.import_dir_select = setup_dirselect(
-            _layout,
-            "Folder:",
-            function=lambda: print("QDirSelect")
-        )
+        #self.import_dir_select = setup_dirselect(
+        #    _layout,
+        #    "Folder:",
+        #    function=lambda: print("QDirSelect")
+        #)
 
         _container, _layout = setup_vgroupbox(_scroll_layout, "")
         _ = setup_iconbutton(
@@ -141,6 +141,7 @@ class EditLogWidget(QWidget):
     def clear_log(self):
         self.edit_log = []
         self.past_state_list.clear()
+        self.current_edit_series = None
         print("Edit log cleared")
 
     def toogle_recording(self, force_stop=False):
@@ -150,6 +151,7 @@ class EditLogWidget(QWidget):
         else:
             self.toogle_recording_btn.setText("Pause Recording")
             self.recording = True
+        self.current_edit_series = None
 
     # Setting up event listeners
     def connect_dims_signals(self):
@@ -186,6 +188,7 @@ class EditLogWidget(QWidget):
         self._viewer.layers.selection.events.active.connect(self.on_layer_event)
 
     def on_labels_tool_event(self, event):
+        print(f"Labels Tool Event: {event.type}, Data: {event}")
         # Changing the active layer ends any current edit series
         self.current_edit_series = None
             
@@ -194,12 +197,20 @@ class EditLogWidget(QWidget):
 
         self.past_state_list.addItem(f"Labels Tool Event: {event.type}, Data: {event}")
 
+        if event.type == "selected_label" and len(self.edit_log) > 1 and self.edit_log[-1]['event_type'] == 'selected_label':
+            # when repeatedly changing selected label - update last event
+            self.edit_log[-1]['data'] = str(event)
+            self.edit_log[-1]['timestamp'] = time.time()
+            self.edit_log[-1]['selected_label'] = event._sources[0].selected_label
+            self.edit_log[-1]['mode'] = event._sources[0].mode
+            return
+        
         self.edit_log.append({
             'event_group': 'labels_tool',
             'event_type': event.type,
+            'layer_name': event._sources[0].name,
             'selected_label': event._sources[0].selected_label,
             'mode': event._sources[0].mode,
-            'brush_size': event._sources[0].brush_size,
             'data': str(event),
             'timestamp': time.time()
         })
@@ -209,8 +220,8 @@ class EditLogWidget(QWidget):
         if isinstance(layer, Labels):
             # Labels layer has a specific event for label updates
             layer.events.labels_update.connect(self.on_labels_update_event)
-            layer.events.selected_label.disconnect(self.on_labels_tool_event)
-            layer.events.mode.disconnect(self.on_labels_tool_event)
+            layer.events.selected_label.connect(self.on_labels_tool_event)
+            layer.events.mode.connect(self.on_labels_tool_event)
 
 
     def disconnect_layer_signals(self, layer):
@@ -262,7 +273,7 @@ class EditLogWidget(QWidget):
         # add event to the widget for debugging -> access via napari console etc.
         # self.labels_update_event = event
 
-        if current_edit_series is not None:
+        if self.current_edit_series is not None:
             #event.type == "labels_update" and self.edit_log and self.edit_log[-1]['event_type'] == 'labels_update':
             # skip logging if the last event was also a label layer update
             # add new edit
@@ -278,7 +289,7 @@ class EditLogWidget(QWidget):
     
         transposed_step = np.array(self._viewer.dims.current_step)[np.array(self._viewer.dims.order)]
         transposed_data = self._viewer.layers[1].data.transpose(self._viewer.dims.order)
-        current_view = transposed_data[tuple(transposed_step)[:2]]
+        current_view = transposed_data[tuple(transposed_step)[:-2]]
 
         changed = np.zeros_like(current_view)
         changed[event.offset[0]:event.offset[0]+event.data.shape[0],

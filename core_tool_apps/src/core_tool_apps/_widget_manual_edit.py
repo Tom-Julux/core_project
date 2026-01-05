@@ -90,7 +90,7 @@ class QuickManualEditWidget(QWidget):
         for widget_class_name, widget_class in self.expected_widgets.items():
             found_widget = self.active_widgets.get(widget_class_name, None)
             if found_widget is None:
-                self.active_widgets[widget_class_name] = found_widget(self._viewer)
+                self.active_widgets[widget_class_name] = widget_class(self._viewer)
                 self._viewer.window.add_dock_widget(
                     self.active_widgets[widget_class_name], name=widget_class_name, area="right")
         

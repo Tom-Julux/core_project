@@ -22,6 +22,7 @@ class DemoWidget(QWidget):
             "Select a demo...": None,
             "--- CoreToolApps ---": None,
             "QuickView":"Quickly cycle through image files in a directory",
+            "ManualEdit":"Edit images with painting and erasing tools and logging",
             "QuickSize": "Quickly estimate size of objects in 2D images",
             "QuickSize3D": "Quickly estimate size of objects in 3D images",
             "QuickSize3DNNI": "Quickly estimate size of objects in 3D images using NNI",
@@ -100,6 +101,13 @@ class DemoWidget(QWidget):
             widget = QuickViewWidget(self._viewer)
             self._viewer.window.add_dock_widget(
                 widget, name="QuickView", area="right"
+            )
+            self.active_widget = widget
+        elif demo_id == "ManualEdit":
+            from core_tool_apps import QuickManualEditWidget
+            widget = QuickManualEditWidget(self._viewer)
+            self._viewer.window.add_dock_widget(
+                widget, name="QuickManualEditWidget", area="right"
             )
             self.active_widget = widget
         elif demo_id == "QuickSize":
