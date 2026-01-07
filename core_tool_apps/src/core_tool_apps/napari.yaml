@@ -17,6 +17,10 @@ contributions:
     - id: "core-tool-apps.QuickSize3DWidget"
       title: "QuickSize3DWidget"
       python_name: "core_tool_apps:QuickSize3DWidget"
+    
+    - id: "core-tool-apps.QuickManualEditWidget"
+      title: "QuickView with manual edit and edit log"
+      python_name: "core_tool_apps:QuickManualEditWidget"
   widgets:
     - command: "core-tool-apps.QuickSizeWidget"
       display_name: QuickSizeWidget
@@ -24,3 +28,5 @@ contributions:
       display_name: QuickSize3DNNIWidget
     - command: "core-tool-apps.QuickSize3DWidget"
       display_name: QuickSize3DWidget
+    - command: "core-tool-apps.QuickManualEditWidget"
+      display_name: QuickView with manual edit and edit log
