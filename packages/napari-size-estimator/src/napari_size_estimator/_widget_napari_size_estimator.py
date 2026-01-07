@@ -120,6 +120,11 @@ class SizeEstimatorWidget(QWidget):
             function=lambda: self.run_size_estimation(),
         )
         
+        self.autorun_checkbox = setup_checkbox(
+            _scroll_layout,
+            "Autorun",
+            False)
+        
         _ = setup_label(
             _scroll_layout, "Output:")
               
@@ -129,11 +134,6 @@ class SizeEstimatorWidget(QWidget):
             readonly=True,
         )
 
-        #self.autorun_checkbox = setup_checkbox(
-        #    _scroll_layout,
-        #    "Auto Run",
-        #    False)
-        
         self.setup_connections()
 
     def run_size_estimation(self):
@@ -202,7 +202,7 @@ class SizeEstimatorWidget(QWidget):
         if hasattr(event, 'action') and event.action in ['adding', 'removing', 'changing']:
             return
 
-        if self.silence_events:
+        if self.silence_events or not get_value(self.autorun_checkbox):
             return
 
         self.run_size_estimation()
@@ -213,7 +213,7 @@ class SizeEstimatorWidget(QWidget):
         if hasattr(event, 'action') and event.action in ['adding', 'removing', 'changing']:
             return
 
-        if self.silence_events:
+        if self.silence_events or not get_value(self.autorun_checkbox):
             return
         
         #if self.is_running:

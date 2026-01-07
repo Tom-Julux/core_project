@@ -188,7 +188,7 @@ class ShapeBasedInterpolationWidget(QWidget):
             non_empty_labels = self.manual_frames
         else:
             non_empty_labels = np.where(new_labels.sum(axis=(1,2)) == label_layer.selected_label)[0]
-            self.manual_frames = non_empty_labels.tolist()
+            self.manual_frames = non_empty_labels.tolist().sort()
 
         if len(non_empty_labels) < 2:
             if np.where(new_labels.sum(axis=(1,2)) >= 0)[0].shape[0] < 2:

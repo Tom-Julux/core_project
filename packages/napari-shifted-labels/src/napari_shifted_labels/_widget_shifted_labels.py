@@ -98,6 +98,8 @@ class ShiftedLabelsWidget(QWidget):
         main_layout = QVBoxLayout(self)
 
         _scroll_widget, _scroll_layout = setup_vscrollarea(main_layout)
+        
+        setup_label(_scroll_layout, "Select label layer:")
 
         # layer select for image layer
         self.layerselect_a = setup_layerselect(
@@ -123,6 +125,8 @@ class ShiftedLabelsWidget(QWidget):
         )
 
         self.setup_connections()
+        # setup on start
+        self.on_layer_change()
 
     def clear(self):
         if self.preview_layer is not None and self.preview_layer in self._viewer.layers:
