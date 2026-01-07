@@ -162,12 +162,12 @@ class PromptableSegmentationWidget3DNNI(BaseWidget3D):
             mask_2 = mask_prompt_layer.data[:, prompt_frames[1]]
             mask_3 = mask_prompt_layer.data[:, :, prompt_frames[2]]
 
-            save_preview(
-                img_data[prompt_frames[0]], mask_prompt_layer.data[prompt_frames[0]], "view1.png")
-            save_preview(img_data[:, prompt_frames[1]],
-                            mask_prompt_layer.data[:, prompt_frames[1]], "view2.png")
-            save_preview(img_data[:, :, prompt_frames[2]],
-                            mask_prompt_layer.data[:, :, prompt_frames[2]], "view3.png")
+            #save_preview(
+            #    img_data[prompt_frames[0]], mask_prompt_layer.data[prompt_frames[0]], "view1.png")
+            #save_preview(img_data[:, prompt_frames[1]],
+            #                mask_prompt_layer.data[:, prompt_frames[1]], "view2.png")
+            #save_preview(img_data[:, :, prompt_frames[2]],
+            #                mask_prompt_layer.data[:, :, prompt_frames[2]], "view3.png")
 
             print("USING NNI")
 

@@ -41,6 +41,10 @@ class PromptableSegmentationWidget3DSAM(BaseWidget3D):
         self.threshold_slider = setup_editdoubleslider(
             _layout, 2, -3, 3.0, 0.5, function=lambda: self.on_hyperparameter_update(), include_buttons=False
         )
+
+        self.autocast_cbk = setup_checkbox(
+            _layout, "Autocast to bfloat16", False, function=lambda: self.on_hyperparameter_update()
+        )
         pass
 
     def setup_model_selection_gui(self, _scroll_layout):
@@ -145,15 +149,15 @@ class PromptableSegmentationWidget3DSAM(BaseWidget3D):
             mask_2 = mask_prompt_layer.data[:, prompt_frames[1]]
             mask_3 = mask_prompt_layer.data[:, :, prompt_frames[2]]
 
-            save_preview(
-                img_data[prompt_frames[0]], mask_prompt_layer.data[prompt_frames[0]], "view1.png")
-            save_preview(img_data[:, prompt_frames[1]],
-                            mask_prompt_layer.data[:, prompt_frames[1]], "view2.png")
-            save_preview(img_data[:, :, prompt_frames[2]],
-                            mask_prompt_layer.data[:, :, prompt_frames[2]], "view3.png")
+            #save_preview(
+            #    img_data[prompt_frames[0]], mask_prompt_layer.data[prompt_frames[0]], "view1.png")
+            #save_preview(img_data[:, prompt_frames[1]],
+            #                mask_prompt_layer.data[:, prompt_frames[1]], "view2.png")
+            #save_preview(img_data[:, :, prompt_frames[2]],
+            #                mask_prompt_layer.data[:, :, prompt_frames[2]], "view3.png")
 
             print("USING SAM2")
-            from napari_promptable.sam2_utils import propagate_along_path, merge_results, view_1_to_view_2, view_1_to_view_3, mask_view_2_to_view_1, center_of_mass, mask_view_3_to_view_1
+            from napari_promptable_sam2.sam2_utils import propagate_along_path, merge_results, view_1_to_view_2, view_1_to_view_3, mask_view_2_to_view_1, center_of_mass, mask_view_3_to_view_1
             
             volume_labels = mask_prompt_layer.data
             volume_data = img_data

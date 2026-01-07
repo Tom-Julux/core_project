@@ -327,6 +327,9 @@ class BaseWidget(QWidget):
                 self.preview_layer.selected_label = get_value(
                     self.object_id_spinbox)
 
+            # reset prompt layers to avoid confusion
+            self.clear_prompt_layer_content()
+
             self.run_predict_in_thread()
         self.object_id_spinbox = setup_spinbox(
             None, 1, 255, 1, function=on_spin_box_change)
@@ -564,9 +567,9 @@ class BaseWidget(QWidget):
 
         if prompt_type == "Points":
             point_layer_positive = PointPromptLayer(
-                name='Point Point Layer (Positive)', ndim=len(img_layer_shape))
+                name='Point Prompt Layer (Positive)', ndim=len(img_layer_shape))
             point_layer_negative = PointPromptLayer(
-                name='Point Point Layer (Negative)', ndim=len(img_layer_shape))
+                name='Point Prompt Layer (Negative)', ndim=len(img_layer_shape))
 
             self._viewer.add_layer(point_layer_positive)
             self._viewer.add_layer(point_layer_negative)

@@ -60,27 +60,28 @@ git clone <repo-url> core_project
 cd core_project
 
 
+# alternative 1: using uv (recommended)
 # install uv
 # curl -LsSf https://astral.sh/uv/install.sh | sh
-
 # sync dependencies 
 uv sync
-# alternatively, you can create a venv and install packages manually:
+# run the startup script. This opens napari with a demo loading plugin on the bottom left.
+uv run startup.py
+
+# alternative 2: using venv and pip:
 # python3 -m venv .venv
 # source .venv/bin/activate 
 # for d in ./packages/napari-*/; do pip install -e "$d"; done
 # pip install -e core_tool_apps/
+# python3 startup.py
 
-# run the startup script. This opens napari with a demo loading plugin on the bottom left.
-uv run startup.py
-
-# alternatively you can activate the venv and start the demo directly
-source .venv/bin/activate
-python3 startup.py
-
-# you can also start napari and load the plugins from the plugins menu
+# alternative 3: starting napari manually and load the plugins from the plugins menu
 napari
 ```
+
+### In napari
+
+In theory, you can also install the plugins directly from napari's plugin manager. However, this was not yet tested and will only be made available once the plugins are published to the napari hub.
 
 ### Docker
 
