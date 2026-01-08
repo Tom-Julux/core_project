@@ -13,7 +13,9 @@ dependencies = [
     "napari-size-estimator", 
     "napari-edit-log", 
     "napari-quick-view",
-    "core-tool-apps"
+    "core-tool-apps",
+    "napari-nninteractive",
+    "napari-voxtell"
 ]
 
 [tool.uv.sources]
@@ -26,7 +28,9 @@ napari-size-estimator = { workspace = true }
 napari-edit-log = { workspace = true }
 napari-quick-view = { workspace = true }
 core-tool-apps = { workspace = true }
+napari-nninteractive = { workspace = true }
+napari-voxtell = { workspace = true }
 
 [tool.uv.workspace]
-members = ["packages/*", "core_tool_apps"]
+members = ["packages/*","packages-imported/*", "core_tool_apps"]
 exclude = ["packages/napari-camera-stream"]
