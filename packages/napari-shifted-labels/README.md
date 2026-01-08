@@ -4,7 +4,7 @@ This plugin for [napari](https://napari.org/) visualizes labels across frames to
 
 The idea is that when segmenting objects that move slowly across frames, it is helpful to see the labels from previous/future frames as a reference, to maintain consistent labeling of objects over time.
 
-<img src="./shifted-labels-screenshot.png" loading="lazy" alt="CoreTool screenshot" width="500"/>
+<img src="./shifted-labels-screenshot.png" loading="lazy" alt="Shifted labels screenshot" width="500"/>
 
 ## Usage
 

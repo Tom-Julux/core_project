@@ -1,4 +1,5 @@
-*.nclr
+demo_data/
+src/napari_nninteractive/playground_model.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
