@@ -38,6 +38,7 @@ class DemoWidget(QWidget):
             "--- Utilities ---": None,
             "Shifted labels": "Preview labels shifted along the time axis",
             "Size estimator": "Quickly view the volume of a label",
+            "View Switch": "Quickly cycle through axial, coronal, and saggitla views",
             "Shape-based interpolation": "Interpolate shapes/labels between slices",
             "Edit log": "Log interactions with the editor"
         }
@@ -283,6 +284,22 @@ class DemoWidget(QWidget):
                 widget, name="Size Estimator", area="right"
             )
             self.active_widget = widget
+        elif demo_id == "View Switch":
+            img = sitk.ReadImage(
+                f'{base_path}/example_data/3d mrlinac/aumc_lung_patient031__GTV.mha'
+            )
+
+            img = sitk.GetArrayFromImage(img)
+            image_layer = self._viewer.add_image(
+                img, name='Example Image', colormap='gray')
+            image_layer = scale
+            from napari_view_switch import ViewSwitchWidget
+            widget = ViewSwitchWidget(self._viewer)
+            self._viewer.window.add_dock_widget(
+                widget, name="Size Estimator", area="left"
+            )
+            self.active_widget = widget
+            
         elif demo_id == "Shape-based interpolation":
             img = sitk.ReadImage(
                 f'{base_path}/example_data/2d+t_trackrad/A_003_frames_8bit.mha'

@@ -21,6 +21,7 @@ members = [
     "napari-shape-based-interpolation",
     "napari-shifted-labels",
     "napari-size-estimator",
+    "napari-view-switch",
     "napari-voxtell",
 ]
 
@@ -473,6 +474,7 @@ dependencies = [
     { name = "napari-shifted-labels" },
     { name = "napari-size-estimator" },
     { name = "napari-toolkit" },
+    { name = "napari-view-switch" },
     { name = "napari-voxtell" },
     { name = "opencv-python-headless" },
     { name = "simpleitk" },
@@ -492,6 +494,7 @@ requires-dist = [
     { name = "napari-shifted-labels", editable = "packages/napari-shifted-labels" },
     { name = "napari-size-estimator", editable = "packages/napari-size-estimator" },
     { name = "napari-toolkit" },
+    { name = "napari-view-switch", editable = "packages/napari-view-switch" },
     { name = "napari-voxtell", editable = "packages-imported/napari-voxtell" },
     { name = "opencv-python-headless" },
     { name = "simpleitk" },
@@ -1824,6 +1827,40 @@ sdist = { url = "https://files.pythonhosted.org/packages/1b/8c/378222a082149a845
 wheels = [
     { url = "https://files.pythonhosted.org/packages/6a/4b/e16f418d39b9433f79030dac4b17df24d27ea8357148be3d87ec02485de6/napari_toolkit-0.0.9-py3-none-any.whl", hash = "sha256:046d0f611d79803ee7e20affc3ab22f91f43ec96b519f0ee532de61188fd8adb", size = 124881, upload-time = "2025-10-14T12:56:19.038Z" },
 ]
+
+[[package]]
+name = "napari-view-switch"
+version = "0.1.0"
+source = { editable = "packages/napari-view-switch" }
+dependencies = [
+    { name = "napari-toolkit" },
+    { name = "numpy" },
+    { name = "qtpy" },
+    { name = "tqdm" },
+]
+
+[package.optional-dependencies]
+testing = [
+    { name = "napari" },
+    { name = "pyqt5" },
+    { name = "pytest" },
+    { name = "pytest-cov" },
+    { name = "pytest-qt" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "napari", marker = "extra == 'testing'" },
+    { name = "napari-toolkit" },
+    { name = "numpy" },
+    { name = "pyqt5", marker = "extra == 'testing'" },
+    { name = "pytest", marker = "extra == 'testing'" },
+    { name = "pytest-cov", marker = "extra == 'testing'" },
+    { name = "pytest-qt", marker = "extra == 'testing'" },
+    { name = "qtpy" },
+    { name = "tqdm" },
+]
+provides-extras = ["testing"]
 
 [[package]]
 name = "napari-voxtell"

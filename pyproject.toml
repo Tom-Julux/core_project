@@ -15,7 +15,8 @@ dependencies = [
     "napari-quick-view",
     "core-tool-apps",
     "napari-nninteractive",
-    "napari-voxtell"
+    "napari-voxtell",
+    "napari-view-switch",
 ]
 
 [tool.uv.sources]
@@ -27,6 +28,7 @@ napari-shifted-labels = { workspace = true }
 napari-size-estimator = { workspace = true }
 napari-edit-log = { workspace = true }
 napari-quick-view = { workspace = true }
+napari-view-switch = { workspace = true }
 core-tool-apps = { workspace = true }
 napari-nninteractive = { workspace = true }
 napari-voxtell = { workspace = true }

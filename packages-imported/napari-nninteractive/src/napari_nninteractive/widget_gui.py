@@ -230,6 +230,7 @@ class BaseGUI(QWidget):
         self.auto_refine = setup_checkbox(
             _layout, "Auto refine", False, tooltips="Auto Refine the Initial Mask"
         )
+        self.auto_refine.setHidden(True)
 
         _txt = setup_label(
             _layout, "<b>Warning:</b> This will reset all interactions<br>for the current object"
