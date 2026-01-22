@@ -17,10 +17,17 @@ from napari_nninteractive.controls.bbox_controls import CustomQtBBoxControls
 from napari_nninteractive.controls.lasso_controls import CustomQtLassoControls
 from napari_nninteractive.controls.point_controls import CustomQtPointsControls
 from napari_nninteractive.controls.scribble_controls import CustomQtScribbleControls
+from napari_nninteractive.controls.preview_labels_controls import CustomQtPreviewLabelsControls
+from napari_nninteractive.controls.manual_labels_control import CustomQtManualLabelsControls
+from napari_nninteractive.controls.fixed_image_controls import CustomQtFixedImageControls
 from napari_nninteractive.layers.bbox_layer import BBoxLayer
 from napari_nninteractive.layers.lasso_layer import LassoLayer
 from napari_nninteractive.layers.point_layer import SinglePointLayer
 from napari_nninteractive.layers.scribble_layer import ScribbleLayer
+from napari_nninteractive.layers.preview_labels_layer import PreviewLabelsLayer
+from napari_nninteractive.layers.manual_labels_layer import ManualLabelsLayer
+from napari_nninteractive.layers.fixed_image_layer import FixedImageLayer
+
 from napari_nninteractive.utils.affine import is_orthogonal
 from napari_nninteractive.utils.utils import ColorMapper, determine_layer_index
 from napari_nninteractive.widget_gui import BaseGUI
@@ -29,6 +36,9 @@ layer_to_controls[SinglePointLayer] = CustomQtPointsControls
 layer_to_controls[BBoxLayer] = CustomQtBBoxControls
 layer_to_controls[ScribbleLayer] = CustomQtScribbleControls
 layer_to_controls[LassoLayer] = CustomQtLassoControls
+layer_to_controls[PreviewLabelsLayer] = CustomQtPreviewLabelsControls
+layer_to_controls[ManualLabelsLayer] = CustomQtManualLabelsControls
+layer_to_controls[FixedImageLayer] = CustomQtFixedImageControls
 
 
 class LayerControls(BaseGUI):
@@ -145,6 +155,30 @@ class LayerControls(BaseGUI):
         lasso_layer.events.data.connect(self.on_interaction)
         self._viewer.add_layer(lasso_layer)
 
+    def add_preview_label_layer(self, data, name) -> None:
+        """
+        Check if a layer with the layer_name already exists. If yes rename this by adding an index
+        and afterward create the layer
+        :return:
+        :rtype:
+        """
+        label_layer = PreviewLabelsLayer(
+            data,
+            name=name,
+            opacity=0.3,
+            affine=self.session_cfg["affine"],
+            scale=self.session_cfg["scale"],
+            translate=self.session_cfg["translate"],
+            rotate=self.session_cfg["rotate"],
+            shear=self.session_cfg["shear"],
+            # colormap=self.colormap[index],
+            metadata=self.session_cfg["metadata"],
+        )
+    
+        label_layer._source = self.session_cfg["source"]
+
+        self._viewer.add_layer(label_layer)
+
     def add_label_layer(self, data, name) -> None:
         """
         Check if a layer with the layer_name already exists. If yes rename this by adding an index
@@ -153,7 +187,7 @@ class LayerControls(BaseGUI):
         :rtype:
         """
 
-        label_layer = Labels(
+        label_layer = ManualLabelsLayer(
             data,
             # self._data_result,
             name=name,
@@ -334,7 +368,7 @@ class LayerControls(BaseGUI):
         self.object_index = 0
         if self.label_layer_name in self._viewer.layers:
             self._viewer.layers.remove(self.label_layer_name)
-        self.add_label_layer(self._data_result, self.label_layer_name)
+        self.add_preview_label_layer(self._data_result, self.label_layer_name)
 
         # Lock the Session
         self._lock_session()

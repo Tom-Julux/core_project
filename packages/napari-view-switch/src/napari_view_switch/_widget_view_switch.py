@@ -114,3 +114,4 @@ class ViewSwitchWidget(QWidget):
 
     def showEvent(self, event):
         self._viewer.dims.events.order.connect(self.on_dims_event)
+

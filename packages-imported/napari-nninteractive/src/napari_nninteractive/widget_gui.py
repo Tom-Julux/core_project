@@ -39,7 +39,7 @@ class BaseGUI(QWidget):
 
     def __init__(self, viewer: Viewer, parent: Optional[QWidget] = None):
         super().__init__(parent)
-        self._width = 300
+        self._width = 250
         self.setMinimumWidth(self._width)
         self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
         self._viewer = viewer
@@ -59,7 +59,7 @@ class BaseGUI(QWidget):
         _scroll_layout.addWidget(self._init_run_button())  # Run Button
         _scroll_layout.addWidget(self._init_export_button())  # Run Button
 
-        _ = setup_acknowledgements(_scroll_layout, width=self._width)  # Acknowledgements
+        #_ = setup_acknowledgements(_scroll_layout, width=self._width)  # Acknowledgements
 
         self._unlock_session()
         self._viewer.bind_key("Ctrl+Q", self._close, overwrite=True)
@@ -154,6 +154,7 @@ class BaseGUI(QWidget):
         )
 
         _group_box.setLayout(_layout)
+        _group_box.setHidden(True)
         return _group_box
 
     def _init_control_buttons(self) -> QGroupBox:
@@ -168,6 +169,7 @@ class BaseGUI(QWidget):
             self.on_init,
             tooltips="Initialize the Model and Image Pair",
         )
+        #self.init_button.setHidden(True)
 
         self.reset_interaction_button = setup_iconbutton(
             _layout,
@@ -195,6 +197,7 @@ class BaseGUI(QWidget):
             tooltips="If checked: Add all objects to a single layer. In the case of overlap newer objects overwrite older objects.\n"
             "Otherwise: Create a separate layer for each object. ",
         )
+        self.instance_aggregation_ckbx.setHidden(True)
 
         _group_box.setLayout(_layout)
         return _group_box
@@ -237,7 +240,7 @@ class BaseGUI(QWidget):
         )
         _group_box.setLayout(_layout)
 
-        _group_box.setLayout(_layout)
+        _group_box.setHidden(True)
         return _group_box
 
     def _init_prompt_selection(self) -> QGroupBox:
@@ -279,6 +282,7 @@ class BaseGUI(QWidget):
             True,
             function=self.on_propagate_ckbx,
         )
+        self.propagate_ckbx.setHidden(True)
 
         for i, shortcut in enumerate(["P", "B", "S", "L"]):
             key = QShortcut(QKeySequence(shortcut), self.interaction_button.buttons[i])
@@ -337,6 +341,7 @@ class BaseGUI(QWidget):
             _layout, "Export", "pop_out", self._viewer.theme, self._export
         )
         _group_box.setLayout(_layout)
+        _group_box.setHidden(True)
         return _group_box
 
     # Event Handlers
