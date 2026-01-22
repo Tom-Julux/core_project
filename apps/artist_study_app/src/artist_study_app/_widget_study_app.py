@@ -57,6 +57,7 @@ from napari_quick_view.layer_select import setup_layerselect
 from napari_nninteractive.layers.fixed_image_layer import FixedImageLayer
 from napari_nninteractive.layers.manual_labels_layer import ManualLabelsLayer
 from napari_nninteractive.widget_manual import ManualSegmentationWidget
+from napari_nninteractive.utils.utils import ColorMapper, determine_layer_index
 
 class StudyAppWidget(QWidget):
     def __init__(self, viewer: Viewer):
@@ -105,6 +106,8 @@ class StudyAppFullWidget(QWidget):
 
         self.user_id = user_id
         self.study_protocol_path = study_protocol_path
+        
+        self.colormap = ColorMapper(49, seed=0.5, background_value=0)
 
         # read study
         with open(study_protocol_path, 'r') as f:
@@ -196,6 +199,7 @@ class StudyAppFullWidget(QWidget):
         self.task_counter_label.setText(
             f"Task: {self.current_task_index+1} / {len(self.study_tasks)} ({len(self.completed_study_tasks)} completed)"
         )
+
     def load_next_task(self):
         if self.current_task_index < len(self.study_tasks) - 1:
             self.current_task_index += 1
@@ -246,10 +250,10 @@ class StudyAppFullWidget(QWidget):
         # load approved segmentations if existing
         output_folder = self.study_protocol.get("output_folder", "")
         if output_folder != "":
-            for file in glob.glob(os.path.join(
+            for i, file in enumerate(sorted(glob.glob(os.path.join(
                 output_folder,
                 f"{self.user_id}_case{case_id}_method{method}_layer*.mha"
-            )):
+            )))):
                 layer_name = os.path.basename(file).split(f"{self.user_id}_case{case_id}_method{method}_layer")[-1].replace(".mha", "")
                 seg_sitk = sitk.ReadImage(file)
                 seg = sitk.GetArrayFromImage(seg_sitk)
@@ -257,9 +261,13 @@ class StudyAppFullWidget(QWidget):
                     seg,
                     name=f"{layer_name}",
                 )
+                seg_layer.colormap = self.colormap[i]
+                seg_layer.contour = 1
                 seg_layer.scale = np.array([-1,1,1]) * np.array(img_sitk.GetSpacing()[::-1])  # reverse for napari xyz vs sitk zyx
 
                 self._viewer.add_layer(seg_layer)
+        
+        # setup segmentation method widget
         if method == "manual":
             if self.automatic_segmentation_widget is not None:
                 self.automatic_segmentation_widget.parent().hide()

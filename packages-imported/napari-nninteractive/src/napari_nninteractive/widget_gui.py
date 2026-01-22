@@ -47,8 +47,9 @@ class BaseGUI(QWidget):
 
         _main_layout = QVBoxLayout()
         self.setLayout(_main_layout)
-
+        _main_layout.setContentsMargins(0,0,0,0)
         _scroll_widget, _scroll_layout = setup_vscrollarea(_main_layout)
+        _scroll_layout.setContentsMargins(0,0,0,0)
 
         _scroll_layout.addWidget(self._init_model_selection())  # Model Selection
         _scroll_layout.addWidget(self._init_image_selection())  # Image Selection
