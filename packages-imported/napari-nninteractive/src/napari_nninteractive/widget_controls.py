@@ -174,6 +174,8 @@ class LayerControls(BaseGUI):
             # colormap=self.colormap[index],
             metadata=self.session_cfg["metadata"],
         )
+        label_layer.contour = 1
+        label_layer.editable = False
     
         label_layer._source = self.session_cfg["source"]
 
@@ -200,6 +202,7 @@ class LayerControls(BaseGUI):
             # colormap=self.colormap[index],
             metadata=self.session_cfg["metadata"],
         )
+        label_layer.contour = 1
         label_layer._source = self.session_cfg["source"]
 
         self._viewer.add_layer(label_layer)

@@ -55,9 +55,12 @@ from napari_quick_view._widget_file_list import FileListWidget
 from napari_quick_view.file_select import setup_dirselect
 from napari_quick_view.layer_select import setup_layerselect
 from napari_nninteractive.layers.fixed_image_layer import FixedImageLayer
+from napari_nninteractive.layers.preview_labels_layer import PreviewLabelsLayer
 from napari_nninteractive.layers.manual_labels_layer import ManualLabelsLayer
 from napari_nninteractive.widget_manual import ManualSegmentationWidget
 from napari_nninteractive.utils.utils import ColorMapper, determine_layer_index
+
+from napari_edit_log.edit_log import NapariEditLog
 
 class StudyAppWidget(QWidget):
     def __init__(self, viewer: Viewer):
@@ -122,6 +125,8 @@ class StudyAppFullWidget(QWidget):
         if cases_root_dir != "":
             for case in study_cases:
                 case["file"] = os.path.join(cases_root_dir, case["file"])
+                if "mask" in case:
+                    case["mask"] = os.path.join(cases_root_dir, case.get("mask", ""))
 
         order = self.study_protocol.get("order", "random")
         output_folder = self.study_protocol.get("output_folder")
@@ -136,7 +141,8 @@ class StudyAppFullWidget(QWidget):
                 "task_id": f"{method}_{case['id']}",
                 "method": method,
                 "file": case["file"],
-                "case_id": case["id"]
+                "case_id": case["id"],
+                "mask_file": case.get("mask", None)
             }) 
 
             # check if there are existing approved segmentations
@@ -167,14 +173,15 @@ class StudyAppFullWidget(QWidget):
 
         self.current_task_index = 0
         self.image_layer = None
+        self.guidance_layer = None
 
         self.manual_segmentation_widget = None
         self.automatic_segmentation_widget = None
 
         _layout = main_layout
 
-        self.task_counter_label = setup_label(
-            _layout, f"Task: {self.current_task_index+1} / {len(self.study_tasks)} ({len(self.completed_study_tasks)} completed)")
+        self.task_counter_label = setup_label(_layout, f"")
+        self.update_task_counter()
 
         hstack(_layout, [ 
             setup_iconbutton(
@@ -193,11 +200,16 @@ class StudyAppFullWidget(QWidget):
         self.approve_button.setToolTip("Approve current segmentation and move to next case.")
 
         self.modify_napari_ui()
+
+        self.edit_log = NapariEditLog(viewer)
+
         self.load_task(self.study_tasks[self.current_task_index])
+
     
     def update_task_counter(self):
+        current_task = self.study_tasks[self.current_task_index]
         self.task_counter_label.setText(
-            f"Task: {self.current_task_index+1} / {len(self.study_tasks)} ({len(self.completed_study_tasks)} completed)"
+            f"Task: {current_task['method']} - {current_task['case_id']}  ({self.current_task_index+1}/{len(self.study_tasks)})"
         )
 
     def load_next_task(self):
@@ -213,9 +225,14 @@ class StudyAppFullWidget(QWidget):
             self.load_task(self.study_tasks[self.current_task_index])
 
     def clear_task(self):
+        self.edit_log.stop()
         if self.image_layer is not None:
             self._viewer.layers.remove(self.image_layer)
             self.image_layer = None
+        
+        if self.guidance_layer is not None:
+            self._viewer.layers.remove(self.guidance_layer)
+            self.guidance_layer = None
         
         # remove other labels layers
         for layer in self._viewer.layers:
@@ -225,8 +242,11 @@ class StudyAppFullWidget(QWidget):
         if self.manual_segmentation_widget is not None:
             self.manual_segmentation_widget.allow_close = True
             self.manual_segmentation_widget.parent().hide()
+        
         if self.automatic_segmentation_widget is not None:
             self.automatic_segmentation_widget.parent().hide()
+
+        self.edit_log.clear()
 
     def load_task(self, task):
         method = task["method"]
@@ -234,18 +254,36 @@ class StudyAppFullWidget(QWidget):
         case_id = task["case_id"]
 
         img_sitk = sitk.ReadImage(path)
-
         img = sitk.GetArrayFromImage(img_sitk)
-
         self.image_layer = FixedImageLayer(
             img,
             name=f'Image {case_id}',
             colormap='gray'
         )
-        print(img_sitk.GetSpacing())
-        self.image_layer.scale = np.array([-1,1,1]) *np.array(img_sitk.GetSpacing()[::-1])  # reverse for napari xyz vs sitk zyx
 
+        self.image_layer.scale = np.array([-1,1,1]) *np.array(img_sitk.GetSpacing()[::-1])  # reverse for napari xyz vs sitk zyx
         self._viewer.add_layer(self.image_layer)
+
+        # load guidance mask if provided
+        if (task["mask_file"] is not None) and self.study_protocol.get("guidance", False):
+            mask_sitk = sitk.ReadImage(task["mask_file"])
+            mask = sitk.GetArrayFromImage(mask_sitk)
+
+            from scipy.ndimage import center_of_mass
+            com = center_of_mass(mask)
+            print("Guidance center of mass:", com)
+            print("Guidance center of mass:", np.array(com)[np.newaxis, :])
+            self.guidance_layer = Points(
+                np.array(com)[np.newaxis, :].astype(np.int32),
+                name=f'Guidance {case_id}',
+                size=10,
+                face_color='red'
+            )
+            
+            self.guidance_layer.scale = np.array([-1,1,1]) * np.array(mask_sitk.GetSpacing()[::-1])  # reverse for napari xyz vs sitk zyx
+            self.guidance_layer.opacity = 0.3
+            self.guidance_layer.editable = False
+            self._viewer.add_layer(self.guidance_layer)
 
         # load approved segmentations if existing
         output_folder = self.study_protocol.get("output_folder", "")
@@ -296,6 +334,24 @@ class StudyAppFullWidget(QWidget):
         
         self.update_task_counter()
 
+        # reload edit log if existing
+        with self.edit_log.events.cleared.blocker():
+            self.edit_log.clear()
+
+        if output_folder != "":
+            edit_log_path = os.path.join(
+                output_folder,
+                f"{self.user_id}_case{case_id}_method{method}_edit_log.json"
+            )
+            try:
+                if os.path.exists(edit_log_path):
+                    with open(edit_log_path, 'r') as f:
+                        self.edit_log._log = json.load(f)
+            except Exception as e:
+                pass
+
+        self.edit_log.start()
+
     def approve(self):
         show_info(f"Approved task {self.study_tasks[self.current_task_index]['task_id']}. Saving results...")
         # write all label layers to disk
@@ -311,12 +367,55 @@ class StudyAppFullWidget(QWidget):
                 )
                 layer_data = layer.data.astype(np.uint8)
                 sitk_img = sitk.GetImageFromArray(layer_data)
-                sitk.WriteImage(sitk_img, output_path)
+                sitk.WriteImage(sitk_img, output_path, useCompression=True)
+                
                 #show_info(f"Saved layer {layer.name} to {output_path}")
         
         show_info(f"Saved results for task {self.study_tasks[self.current_task_index]['task_id']}.")
         self.completed_study_tasks[self.study_tasks[self.current_task_index]["task_id"]] = True
         
+        #self.edit_log.stop()
+
+        self.edit_log.record({
+            'event_group': 'study',
+            'event_type': "approve",
+            'timestamp': time.time()
+        })
+
+        # output edit log to disk
+        if output_folder != "":
+            edit_log_path = os.path.join(
+                output_folder,
+                f"{self.user_id}_case{case_id}_method{method}_edit_log.json"
+            )
+            with open(edit_log_path, 'w') as f:
+                json.dump(self.edit_log.log, f, indent=4)
+            #show_info(f"Saved edit log to {edit_log_path}")
+        
+        #self.edit_log.clear()
+
+        # reveal if specified in protocol
+        if self.study_protocol.get("reveal_mask_on_approve", False):
+            if self.guidance_layer is not None:
+                self._viewer.layers.remove(self.guidance_layer)
+                self.guidance_layer = None
+
+            mask_file = self.study_tasks[self.current_task_index].get("mask_file", None)
+            if mask_file is not None:
+                mask_sitk = sitk.ReadImage(mask_file)
+                mask = sitk.GetArrayFromImage(mask_sitk)
+
+                self.guidance_layer = PreviewLabelsLayer(
+                    mask,
+                    name=f'Ground Truth {case_id}',
+                )
+                self.guidance_layer.contour = 1
+                #self.guidance_layer.colormap = self.colormap[len(self._viewer.layers)%len(self.colormap)]
+                self.guidance_layer.scale = np.array([-1,1,1]) * np.array(mask_sitk.GetSpacing()[::-1])  # reverse for napari xyz vs sitk zyx
+                self.guidance_layer.opacity = 1.0
+                self.guidance_layer.editable = False
+                self._viewer.add_layer(self.guidance_layer)
+
         self.update_task_counter()
     
     def modify_napari_ui(self):
@@ -414,12 +513,18 @@ class StudyAppFullWidget(QWidget):
         if self.image_layer is not None:
             self._viewer.layers.remove(self.image_layer)
             self.image_layer = None
+
+        if self.guidance_layer is not None:
+            self._viewer.layers.remove(self.guidance_layer)
+            self.guidance_layer = None
+        
         if self.manual_segmentation_widget is not None:
             self.manual_segmentation_widget.allow_close = True
             self._viewer.window.remove_dock_widget(self.manual_segmentation_widget)
             self.manual_segmentation_widget.close()
             self.manual_segmentation_widget = None
             self.manual_segmentation_widget.deleteLater()
+        
         if self.automatic_segmentation_widget is not None:
             self._viewer.window.remove_dock_widget(self.automatic_segmentation_widget)
             self.automatic_segmentation_widget.close()
@@ -436,3 +541,4 @@ class StudyAppFullWidget(QWidget):
         # ignore
         event.ignore()
         pass
+

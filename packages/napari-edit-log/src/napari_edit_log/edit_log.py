@@ -45,7 +45,7 @@ class NapariEditLog():
 
     # Properties    
     @property
-    def log() -> list:
+    def log(self) -> list:
         return self._log
         
     @property

@@ -1,14 +1,26 @@
-output_folder: /Users/tomjulius/Developer/core_project/apps/artist_study_app/testoutput
+# output folder for saving results
+output_folder: ./apps/artist_study_app/testoutput
+
+# order tasks presented to the user
+# the order is consistent between runs, by seeding with the user id
 order: random # possible values: sequential-methods, sequential-cases, random
+
+reveal_mask_on_approve: True # possible values: True, False
+
+# guidance type presented to the user based on existing segmentation masks
+guidance: True # possible values: True, False
 
 methods:
   - manual
   - nnInteractive
 
-cases_root_dir: /Users/tomjulius/Developer/core_project/example_data/3d mrlinac
+cases_root_dir: ./example_data/3d mrlinac
 cases:
-  - file: aumc_lung_patient026__GTV.mha
-    id: lung26
-  - file: aumc_lung_patient031__GTV.mha
-    id: lung31
+  - id: lung26 # case id
+    file: aumc_lung_patient026__GTV.mha # image file
+    mask: aumc_lung_patient026__GTV__mask.mha # optional mask to guide the user
+  - id: lung31
+    file: aumc_lung_patient031__GTV.mha
+    mask: aumc_lung_patient031__GTV__mask.mha # optional mask to guide the user
+    
   

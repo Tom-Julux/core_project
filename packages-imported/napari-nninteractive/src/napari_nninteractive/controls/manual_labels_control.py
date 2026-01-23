@@ -37,7 +37,7 @@ class CustomQtManualLabelsControls(QtLabelsControls):
         # We don't need all these button -> hide and disable tem + remove key binding
         buttons_to_hide = [
             {"button": self.pick_button, "shortcut": "napari:activate_labels_picker_mode"},
-            #{"button": self.fill_button, "shortcut": "napari:activate_labels_fill_mode"},
+            {"button": self.fill_button, "shortcut": "napari:activate_labels_fill_mode"},
             {"button": self.transform_button, "shortcut": "napari:activate_labels_transform_mode"},
         ]
 

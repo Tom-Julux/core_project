@@ -124,7 +124,7 @@ class EditLogWidget(QWidget):
         show_info(f"Edit log saved to {file_path}")
 
     def clear_log(self):
-        self.edit_log.clear_log()
+        self.edit_log.clear()
         self.past_state_list.clear()
 
     def toogle_recording(self):
