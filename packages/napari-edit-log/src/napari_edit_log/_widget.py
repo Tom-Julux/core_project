@@ -45,27 +45,46 @@ from qtpy.QtWidgets import (
 
 from napari_edit_log.utils import encode_labels_event_data, decode_labels_event_data
 
+from napari_edit_log.utils import encode_labels_event_data, decode_labels_event_data
+from napari.utils.events import EventEmitter, EmitterGroup, Event, EventedList
+from napari_edit_log.edit_log import NapariEditLog
+
 class EditLogWidget(QWidget):
     def __init__(self, viewer: Viewer):
         super().__init__()
         self._viewer = viewer
 
-
         self.metadata = {}
-        self.edit_log = []
-        self.recording = False
+        self.edit_log = NapariEditLog(viewer)
+
+        self.edit_log.events.recorded.connect(self._on_log_recorded)
+        self.edit_log.events.updated.connect(self._on_log_updated)
+        self.edit_log.events.cleared.connect(self._on_log_cleared)
 
         self.build_gui()
 
-        # All event listeners are always connected, but only log events when recording is True
-        self.connect_layerlist_signals()
-        for layer in self._viewer.layers:
-            self.connect_layer_signals(layer)
-        self._viewer.layers.events.inserted.connect(self.on_layer_added)
-        self._viewer.layers.events.removed.connect(self.on_layer_removed)
-        self.connect_dims_signals()
+    def _on_log_recorded(self):
+        # update log view
+        log_entry = self.edit_log.log[-1]
+        timestamp = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(log_entry['timestamp']))
+        item_text = f"{i+1}. [{timestamp}] {log_entry['event_group']} - {log_entry['event_type']}"
+        self.past_state_list.addItem(item_text)
 
-        self.current_edit_series = None
+    def _on_log_updated(self):
+        # update log view
+        log_entry = self.edit_log.log[-1]
+        timestamp = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(log_entry['timestamp']))
+        item_text = f"{len(self.edit_log.log)}. [{timestamp}] {log_entry['event_group']} - {log_entry['event_type']}"
+        self.past_state_list.item(self.past_state_list.count()-1).setText(item_text)
+
+    def _on_log_cleared(self):
+        # update log view
+        self.past_state_list.clear()
+        
+    @property
+    def recording(self):
+        return self.edit_log.is_recording
+
     # GUI
     def build_gui(self):
         main_layout = QVBoxLayout(self)
@@ -86,41 +105,13 @@ class EditLogWidget(QWidget):
             _layout, "Clear Log", "erase", self._viewer.theme, self.clear_log
         )
 
-        _container, _layout = setup_vcollapsiblegroupbox(_scroll_layout, "Edit log settings", False)
-
-        self.clear_log_on_export_ckbx = setup_checkbox(_layout, "Clear log on export", True)
-        self.continue_recording_after_export_ckbx  = setup_checkbox(_layout, "Continue recording after export", True)
-
-        #self.import_dir_select = setup_dirselect(
-        #    _layout,
-        #    "Folder:",
-        #    function=lambda: print("QDirSelect")
-        #)
-
         _container, _layout = setup_vgroupbox(_scroll_layout, "")
         _ = setup_iconbutton(
             _layout, "Export", "pop_out", self._viewer.theme, self.export_log
         )
 
-    def setup_log_label_update_worker(self):
-        @thread_worker()
-        def worker():
-            while self.recording:
-                next_event = yield
-                print("Log event:", next_event)
-            return
-        
-        self.log_worker = worker()
-
-        self.log_worker.started.connect(lambda: print("Log worker started"))
-        self.log_worker.yielded.connect(lambda event: print("Log worker yielded:", event))
-        self.log_worker.finished.connect(lambda: print("Log worker finished"))
-
     def export_log(self):
         print("Exporting edit log...")
-
-        if self.edit_log and not self.edit_log[-1]['event_type'] == 'labels_update':
-            pass
 
         file_path, _ = QFileDialog.getSaveFileName(self, "Save Edit Log", "", "JSON Files (*.json)")
 
@@ -128,222 +119,19 @@ class EditLogWidget(QWidget):
             return
 
         with open(file_path, 'w') as f:
-            json.dump(self.edit_log, f, indent=2)
+            json.dump(self.edit_log.log, f, indent=2)
         
         show_info(f"Edit log saved to {file_path}")
 
-        if not self.continue_recording_after_export_ckbx.isChecked():
-            self.toogle_recording(force_stop=True)
-
-        if self.clear_log_on_export_ckbx.isChecked():
-            self.clear_log()
-
     def clear_log(self):
-        self.edit_log = []
+        self.edit_log.clear_log()
         self.past_state_list.clear()
-        self.current_edit_series = None
-        print("Edit log cleared")
 
-    def toogle_recording(self, force_stop=False):
-        if self.recording or force_stop is True:
+    def toogle_recording(self):
+        self.edit_log.toggle()
+        if self.recording == False:
             self.toogle_recording_btn.setText("Start Recording")
-            self.recording = False
         else:
             self.toogle_recording_btn.setText("Pause Recording")
-            self.recording = True
-        self.current_edit_series = None
 
-    # Setting up event listeners
-    def connect_dims_signals(self):
-        # Connect signals to the viewer
-        self._viewer.dims.events.order.connect(self.on_dims_event)
-        self._viewer.dims.events.point.connect(self.on_dims_event)
-        #self._viewer.layers.selection.events.changed.connect(self.on_layer_event)
-
-        # Changing dims ends any current edit series
-        self.current_edit_series = None
-
-    # Event handlers that log events
-    def on_dims_event(self, event):
-        if not self.recording:
-            return
-        
-        self.past_state_list.addItem(f"Dims Event - Order: {self._viewer.dims.order}, Steps: {self._viewer.dims.current_step}")
-
-        self.edit_log.append({
-            'event_group': 'dims',
-            'event_type': event.type,
-            'order': self._viewer.dims.order,
-            'current_step': self._viewer.dims.current_step,
-            'timestamp': time.time()
-        })
-    
-    # Setting up event listeners
-    def connect_layerlist_signals(self):
-        # Connect signals to the viewer
-        self._viewer.layers.events.inserted.connect(self.on_layer_event)
-        self._viewer.layers.events.moved.connect(self.on_layer_event)
-        self._viewer.layers.events.removed.connect(self.on_layer_event)
-        self._viewer.layers.events.reordered.connect(self.on_layer_event)
-        self._viewer.layers.selection.events.active.connect(self.on_layer_event)
-
-    def on_labels_tool_event(self, event):
-        print(f"Labels Tool Event: {event.type}, Data: {event}")
-        # Changing the active layer ends any current edit series
-        self.current_edit_series = None
-            
-        if not self.recording:
-            return
-
-        self.past_state_list.addItem(f"Labels Tool Event: {event.type}, Data: {event}")
-
-        if event.type == "selected_label" and len(self.edit_log) > 1 and self.edit_log[-1]['event_type'] == 'selected_label':
-            # when repeatedly changing selected label - update last event
-            self.edit_log[-1]['data'] = str(event)
-            self.edit_log[-1]['timestamp'] = time.time()
-            self.edit_log[-1]['selected_label'] = event._sources[0].selected_label
-            self.edit_log[-1]['mode'] = event._sources[0].mode
-            return
-        
-        self.edit_log.append({
-            'event_group': 'labels_tool',
-            'event_type': event.type,
-            'layer_name': event._sources[0].name,
-            'selected_label': event._sources[0].selected_label,
-            'mode': event._sources[0].mode,
-            'data': str(event),
-            'timestamp': time.time()
-        })
-
-    def connect_layer_signals(self, layer):
-        layer.events.data.connect(self.on_data_event)
-        if isinstance(layer, Labels):
-            # Labels layer has a specific event for label updates
-            layer.events.labels_update.connect(self.on_labels_update_event)
-            layer.events.selected_label.connect(self.on_labels_tool_event)
-            layer.events.mode.connect(self.on_labels_tool_event)
-
-
-    def disconnect_layer_signals(self, layer):
-        layer.events.data.disconnect(self.on_data_event)
-        if isinstance(layer, Labels):
-            # Disconnect the specific label update event
-            layer.events.labels_update.disconnect(self.on_labels_update_event)
-            layer.events.selected_label.disconnect(self.on_labels_tool_event)
-            layer.events.mode.disconnect(self.on_labels_tool_event)
-
-    def on_layer_added(self, event):
-        self.connect_layer_signals(event.value)
-
-    def on_layer_removed(self, event):
-        self.disconnect_layer_signals(event.value)
-        
-    # Event handlers that log events
-    def on_layer_event(self, event):
-
-        # Changing the active layer ends any current edit series
-        self.current_edit_series = None
-
-        if not self.recording:
-            return
-
-        #print(f"Layer Event: {event.type}, Data: {event}")
-        if hasattr(event, 'value'):
-            self.past_state_list.addItem(f"Layer Event: {event.type}, Data: {event.value}")
-        else:
-            self.past_state_list.addItem(f"Layer Event: {event.type}, Data: {event}")
-        
-        #print(f"Layer Event: {event.type}, Data: {event}")
-        #print(event.__dict__.keys())
-        self.edit_log.append({
-            'event_group': 'layer',
-            'event_type': event.type,
-            'data': str(event),
-            'timestamp': time.time()
-        })
-    
-
-    def on_labels_update_event(self, event):
-        if not self.recording:
-            return        
-        
-        # add current time to the event for logging
-        event.time = time.time()
-        
-        # add event to the widget for debugging -> access via napari console etc.
-        # self.labels_update_event = event
-
-        if self.current_edit_series is not None:
-            #event.type == "labels_update" and self.edit_log and self.edit_log[-1]['event_type'] == 'labels_update':
-            # skip logging if the last event was also a label layer update
-            # add new edit
-            self.edit_log[-1]['data_edits'].append(encode_labels_event_data(event, base64=True))
-            # store time of final labels update in this series of edits
-            self.edit_log[-1]["last_event"] = time.time()
-            return
-
-        self.past_state_list.addItem(f"Edit Event: {event.type}, {event}")
-
-        # compute state before edits    
-        source_layer = event._sources[0]
-    
-        transposed_step = np.array(self._viewer.dims.current_step)[np.array(self._viewer.dims.order)]
-        transposed_data = self._viewer.layers[1].data.transpose(self._viewer.dims.order)
-        current_view = transposed_data[tuple(transposed_step)[:-2]]
-
-        changed = np.zeros_like(current_view)
-        changed[event.offset[0]:event.offset[0]+event.data.shape[0],
-                event.offset[1]:event.offset[1]+event.data.shape[1]] = event.data
-
-        before_change = np.logical_xor(current_view, changed)
-
-        self.current_edit_series = {
-            'event_group': 'edit',
-            'event_type': "labels_update",
-            'timestamp': time.time(), # time of the first labels update in a series of edits
-            'last_event': time.time(), # time of the last labels update in a series of edits
-            'layer_name': source_layer.name, # name of the layer being edited
-            'layer_shape': source_layer.data.shape, # shape of the layer being edited
-            "viewer_dims_order": self._viewer.dims.order, # current viewer dims order
-            "viewer_dims_current_step": self._viewer.dims.current_step, # current viewer dims step
-            'data_edits': [encode_labels_event_data(event, base64=True)], # list of encoded edits
-            'data_initial': before_change.dtype.char + base64.b64encode(zlib.compress(before_change.tobytes())).decode('utf-8')
-        }
-
-        self.edit_log.append(self.current_edit_series)
-
-    def on_data_event(self, event):
-        # Event for when the data of any layer changes
-        if not self.recording:
-            return
-
-        # Ignore in progress events like adding, removing, changing
-        if hasattr(event, 'action') and event.action in ['adding', 'removing', 'changing']:
-            return
-
-        # Preview all attributes of the event
-        for key, value in event.__dict__.items():
-            if key.startswith('_'):
-                continue
-            print(f"{key}: {value}")
-
-        
-        if hasattr(event, 'action') and event.action in ['added', 'removed', 'changed']:
-            self.past_state_list.addItem(f"Edit Event: {event.type}, {event.action}")
-            self.edit_log.append({
-                'event_group': 'edit',
-                'event_type': "data",
-                'action': event.action,
-                'value': event.value,
-                'timestamp': time.time()
-            })
-            return
-        
-        #print(f"Edit Event: {event.type}, Data: {event}")
-        self.past_state_list.addItem(f"Edit Event: {event.type}, {event}")
-        self.edit_log.append({
-            'event_group': 'edit',
-            'event_type': event.type,
-            'data': str(event),
-            'timestamp': time.time()
-        })
+   
