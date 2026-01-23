@@ -205,4 +205,8 @@ __marimo__/
 # checkpoints
 **/*.pt
 
+# example data files
 example_data
+
+# macOS system files
+.DS_Store

@@ -85,7 +85,7 @@ In theory, you can also install the plugins directly from napari's plugin manage
 
 ### Docker
 
-As an alternative to the local installation, the tool can be run inside a container. Note to make sure to mount any datasets and (when needed) model checkpoints into the container. The example below mounts a `/project_data/` folder from the host into the container. You also need to run the container with access to display devices (X11 or similar) to see the napari GUI.
+As an alternative to the local installation, napari can be run inside a container. Note to make sure to mount any datasets and (when needed) model checkpoints into the container. The example below mounts the `/project_data/` folder from the host into the container. You also need to run the container with access to display devices (X11 or similar) to see the napari GUI.
 
 ```bash
 # clone the repository
@@ -99,7 +99,7 @@ docker run --rm -it --gpus=all -v /project_data/:/project_data/ --device=/dev/dr
 <details>
  <summary>Using the tool in the browser:</summary>
   
-  Alternatively, for example if no display devices are available, [xpra](https://github.com/Xpra-org/xpra?tab=readme-ov-file#usage) can be used to strean the application to a browser.
+  Alternatively, for example if no display devices are available, [xpra](https://github.com/Xpra-org/xpra?tab=readme-ov-file#usage) can be used to stream the application to a browser.
 
   ```bash
   docker build -f ./Dockerfile.web -t napari_core_web .
@@ -109,7 +109,11 @@ docker run --rm -it --gpus=all -v /project_data/:/project_data/ --device=/dev/dr
 
 ## Usage overview
 
-Work in progress...
+To learn how to use napari and the various plugins provided in this repository, please make use of the demos provided in the demo widget (loaded to the bottom left when starting the tool with `startup.py`).
+
+To start using the tool directly, load one of the core tool apps from the plugins menu (e.g. Plugins -> Core Tool Apps -> QuickView).
+
+Additionally please refer to the [Guide](./Guide.md) for video tutorials covering installation and usage of the tool. Finally, the individual plugins also contain documentation on their usage in their respective folders.
 
 ## Development & contributing
 
@@ -130,7 +134,6 @@ We welcome any contributions that align with the goals of the project.
 Planned short- and mid-term improvements:
 
 - Better developer documentation and examples.
-- Additional windowing and visualization plugins.
 - Integration of more segmentation models.
 - Advanced label-management tools and edit-log replay/analysis.
 - Improved testing and CI/CD.

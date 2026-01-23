@@ -14,6 +14,7 @@ dependencies = [
     "napari-edit-log", 
     "napari-quick-view",
     "core-tool-apps",
+    "artist_study_app",
     "napari-nninteractive",
     "napari-voxtell",
     "napari-view-switch",
@@ -29,10 +30,11 @@ napari-size-estimator = { workspace = true }
 napari-edit-log = { workspace = true }
 napari-quick-view = { workspace = true }
 napari-view-switch = { workspace = true }
+artist-study-app = { workspace = true }
 core-tool-apps = { workspace = true }
 napari-nninteractive = { workspace = true }
 napari-voxtell = { workspace = true }
 
 [tool.uv.workspace]
-members = ["packages/*","packages-imported/*", "core_tool_apps"]
+members = ["packages/*","packages-imported/*", "apps/*"]
 exclude = ["packages/napari-camera-stream"]

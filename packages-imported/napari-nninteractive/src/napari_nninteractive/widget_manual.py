@@ -108,7 +108,7 @@ class ManualSegmentationWidget(QWidget):
         self.reset_button.setDisabled(True)
 
     # Layer Handling
-    def add_label_layer(self, data, name) -> None:
+    def add_label_layer(self, data, name) -> Labels:
         """
         Check if a layer with the layer_name already exists. If yes rename this by adding an index
         and afterward create the layer
@@ -243,8 +243,12 @@ class ManualSegmentationWidget(QWidget):
         # Add Layer
         self.object_index = 1
         _name = f"object {self.object_index} - {self.session_cfg['name']}"
-        self.add_label_layer(np.zeros(self.session_cfg["shape"], dtype=np.uint8), _name)
-        self.labels_layer = self._viewer.layers[_name]
+
+        while _name in self._viewer.layers:
+            self.object_index += 1
+            _name = f"object {self.object_index} - {self.session_cfg['name']}"
+            
+        self.labels_layer = self.add_label_layer(np.zeros(self.session_cfg["shape"], dtype=np.uint8), _name)
         self.labels_layer.colormap = self.colormap[self.object_index]
         self.labels_layer.refresh()
 
@@ -275,6 +279,11 @@ class ManualSegmentationWidget(QWidget):
 
         self.object_index += 1
         _name = f"object {self.object_index} - {self.session_cfg['name']}"
+
+        while _name in self._viewer.layers:
+            self.object_index += 1
+            _name = f"object {self.object_index} - {self.session_cfg['name']}"
+
         self.labels_layer = self.add_label_layer(np.zeros(self.session_cfg["shape"], dtype=np.uint8), _name)
         self.labels_layer.colormap = self.colormap[self.object_index]
 

@@ -116,8 +116,6 @@ class StudyAppFullWidget(QWidget):
         with open(study_protocol_path, 'r') as f:
             self.study_protocol = safe_load(f)
         
-        print("Loaded study protocol:", self.study_protocol)
-
         study_methods = self.study_protocol.get("methods", [])
         study_cases = self.study_protocol.get("cases", [])
         cases_root_dir = self.study_protocol.get("cases_root_dir", "")
@@ -270,11 +268,10 @@ class StudyAppFullWidget(QWidget):
             mask = sitk.GetArrayFromImage(mask_sitk)
 
             from scipy.ndimage import center_of_mass
-            com = center_of_mass(mask)
+            com = np.array(center_of_mass(mask)).astype(np.int32)
             print("Guidance center of mass:", com)
-            print("Guidance center of mass:", np.array(com)[np.newaxis, :])
             self.guidance_layer = Points(
-                np.array(com)[np.newaxis, :].astype(np.int32),
+                com[np.newaxis, :],
                 name=f'Guidance {case_id}',
                 size=10,
                 face_color='red'
@@ -284,6 +281,7 @@ class StudyAppFullWidget(QWidget):
             self.guidance_layer.opacity = 0.3
             self.guidance_layer.editable = False
             self._viewer.add_layer(self.guidance_layer)
+            self._viewer.dims.set_current_step(0, img.shape[0] - com[0] -1)
 
         # load approved segmentations if existing
         output_folder = self.study_protocol.get("output_folder", "")
@@ -299,7 +297,7 @@ class StudyAppFullWidget(QWidget):
                     seg,
                     name=f"{layer_name}",
                 )
-                seg_layer.colormap = self.colormap[i]
+                seg_layer.colormap = self.colormap[i%self.colormap.num_colors]
                 seg_layer.contour = 1
                 seg_layer.scale = np.array([-1,1,1]) * np.array(img_sitk.GetSpacing()[::-1])  # reverse for napari xyz vs sitk zyx
 
@@ -371,7 +369,6 @@ class StudyAppFullWidget(QWidget):
                 
                 #show_info(f"Saved layer {layer.name} to {output_path}")
         
-        show_info(f"Saved results for task {self.study_tasks[self.current_task_index]['task_id']}.")
         self.completed_study_tasks[self.study_tasks[self.current_task_index]["task_id"]] = True
         
         #self.edit_log.stop()
@@ -410,14 +407,16 @@ class StudyAppFullWidget(QWidget):
                     name=f'Ground Truth {case_id}',
                 )
                 self.guidance_layer.contour = 1
-                #self.guidance_layer.colormap = self.colormap[len(self._viewer.layers)%len(self.colormap)]
+                self.guidance_layer.colormap = self.colormap[len(self._viewer.layers)%self.colormap.num_colors]
                 self.guidance_layer.scale = np.array([-1,1,1]) * np.array(mask_sitk.GetSpacing()[::-1])  # reverse for napari xyz vs sitk zyx
                 self.guidance_layer.opacity = 1.0
                 self.guidance_layer.editable = False
                 self._viewer.add_layer(self.guidance_layer)
 
         self.update_task_counter()
-    
+        
+        show_info(f"Saved results for task {self.study_tasks[self.current_task_index]['task_id']}.")
+
     def modify_napari_ui(self):
         viewer = self._viewer
 
