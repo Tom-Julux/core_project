@@ -32,6 +32,7 @@ dependencies = [
     "napari_toolkit"
 ]
 
+# No plugin contributions for now
 #[project.entry-points."napari.manifest"]
 #napari-custom-layers = "napari_custom_layers:napari.yaml"
 

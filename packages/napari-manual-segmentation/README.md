@@ -1,3 +1,3 @@
-# napari-custom-layers
+# napari-manual-segmentation
 
-A collection of custom napari layers for specialized visualization and interaction within the napari viewer.
+A napari plugin to streamline manual segmentation tasks by providing opinionated labels layer and a helper UI for switching between objects, inspiered by [nnInteractive](https://github.com/MIC-DKFZ/napari-nninteractive).

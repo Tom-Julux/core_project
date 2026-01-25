@@ -1,5 +1,5 @@
 name: napari-manual-segmentation
-display_name: nnInteractive
+display_name: Manual Segmentation
 # use 'hidden' to remove plugin from napari hub search results
 visibility: public
 # see https://napari.org/stable/plugins/manifest.html for valid categories
