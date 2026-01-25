@@ -35,6 +35,7 @@ dependencies = [
     "hf_transfer",
     "nnInteractive>=1.0.0",
     "napari_toolkit",
+    "napari-custom-layers",
 ]
 
 [project.optional-dependencies]

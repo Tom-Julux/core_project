@@ -17,16 +17,10 @@ from napari_nninteractive.controls.bbox_controls import CustomQtBBoxControls
 from napari_nninteractive.controls.lasso_controls import CustomQtLassoControls
 from napari_nninteractive.controls.point_controls import CustomQtPointsControls
 from napari_nninteractive.controls.scribble_controls import CustomQtScribbleControls
-from napari_nninteractive.controls.preview_labels_controls import CustomQtPreviewLabelsControls
-from napari_nninteractive.controls.manual_labels_control import CustomQtManualLabelsControls
-from napari_nninteractive.controls.fixed_image_controls import CustomQtFixedImageControls
 from napari_nninteractive.layers.bbox_layer import BBoxLayer
 from napari_nninteractive.layers.lasso_layer import LassoLayer
 from napari_nninteractive.layers.point_layer import SinglePointLayer
 from napari_nninteractive.layers.scribble_layer import ScribbleLayer
-from napari_nninteractive.layers.preview_labels_layer import PreviewLabelsLayer
-from napari_nninteractive.layers.manual_labels_layer import ManualLabelsLayer
-from napari_nninteractive.layers.fixed_image_layer import FixedImageLayer
 
 from napari_nninteractive.utils.affine import is_orthogonal
 from napari_nninteractive.utils.utils import ColorMapper, determine_layer_index
@@ -36,10 +30,8 @@ layer_to_controls[SinglePointLayer] = CustomQtPointsControls
 layer_to_controls[BBoxLayer] = CustomQtBBoxControls
 layer_to_controls[ScribbleLayer] = CustomQtScribbleControls
 layer_to_controls[LassoLayer] = CustomQtLassoControls
-layer_to_controls[PreviewLabelsLayer] = CustomQtPreviewLabelsControls
-layer_to_controls[ManualLabelsLayer] = CustomQtManualLabelsControls
-layer_to_controls[FixedImageLayer] = CustomQtFixedImageControls
 
+from napari_custom_layers import ManualLabelsLayer, PreviewLabelsLayer, FixedImageLayer
 
 class LayerControls(BaseGUI):
     """

@@ -5,6 +5,9 @@ import numpy as np
 from napari.layers import Image
 from napari.layers.base._base_constants import ActionType
 
+from napari._qt.layer_controls.qt_layer_controls_container import layer_to_controls
+from napari_custom_layers.controls.fixed_image_controls import CustomQtFixedImageControls
+
 class FixedImageLayer(Image):
     """
     A bounding box layer class that extends `BaseLayerClass` and `Shapes` with specific color
@@ -14,3 +17,6 @@ class FixedImageLayer(Image):
 
     def __init__(self, data, *args, **kwargs):
         super().__init__(data, *args, **kwargs)
+
+# register the custom layer controls
+layer_to_controls[FixedImageLayer] = CustomQtFixedImageControls

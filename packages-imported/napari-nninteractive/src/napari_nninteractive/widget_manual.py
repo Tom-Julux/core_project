@@ -22,12 +22,7 @@ from qtpy.QtCore import Qt  # type: ignore[attr-defined]
 from napari_toolkit.containers import setup_scrollarea, setup_vcollapsiblegroupbox, setup_vgroupbox, setup_vscrollarea
 from napari_toolkit.widgets import setup_iconbutton, setup_label
 
-from napari_nninteractive.controls.manual_labels_control import CustomQtManualLabelsControls
-from napari_nninteractive.controls.fixed_image_controls import CustomQtFixedImageControls
-from napari_nninteractive.layers.manual_labels_layer import ManualLabelsLayer
-from napari_nninteractive.layers.fixed_image_layer import FixedImageLayer
-layer_to_controls[ManualLabelsLayer] = CustomQtManualLabelsControls
-layer_to_controls[FixedImageLayer] = CustomQtFixedImageControls
+from napari_custom_layers import ManualLabelsLayer, PreviewLabelsLayer, FixedImageLayer
 
 from napari_nninteractive.utils.affine import is_orthogonal
 from napari_nninteractive.utils.utils import ColorMapper, determine_layer_index
