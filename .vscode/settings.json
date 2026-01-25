@@ -5,9 +5,10 @@
         "**/.hg": true,
         "**/.DS_Store": true,
         "**/Thumbs.db": true,
+        ".venv/": true,
         "packages/napari-*/.gitignore": true,
         "packages/napari-*/.napari-hub": true,
-        "packages/napari-*/LICENSE": true,
+        "packages/napari-*/LICENSE": false,
         "packages/napari-*/MANIFEST.in": true,
         "packages/napari-*/src/*.egg-info/": true,
     }
