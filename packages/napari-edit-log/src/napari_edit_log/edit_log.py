@@ -74,9 +74,11 @@ class NapariEditLog():
         else:
             self.start()
 
-    def record(self, event_dict):
-        if not self._is_recording:
+    def record(self, event_dict, force = False):
+        if not self._is_recording and not force:
             return
+
+        print(f"Recording event: {event_dict['event_group']} - {event_dict['event_type']}")
         
         self._log.append(event_dict)
         self.events.recorded()
@@ -95,28 +97,38 @@ class NapariEditLog():
     # Event listener setup
     def connect_layerlist_signals(self):
         # Connect signals to the viewer
-        self._viewer.layers.events.inserted.connect(self.on_layer_event)
-        self._viewer.layers.events.moved.connect(self.on_layer_event)
-        self._viewer.layers.events.removed.connect(self.on_layer_event)
-        self._viewer.layers.events.reordered.connect(self.on_layer_event)
+        self._viewer.layers.events.inserted.connect(self.on_layer_added)
+        self._viewer.layers.events.removed.connect(self.on_layer_removed)
+        #self._viewer.layers.events.inserted.connect(self.on_layer_event)
+        #self._viewer.layers.events.moved.connect(self.on_layer_event)
+        #self._viewer.layers.events.removed.connect(self.on_layer_event)
+        #self._viewer.layers.events.reordered.connect(self.on_layer_event)
         self._viewer.layers.selection.events.active.connect(self.on_layer_event)
 
     def disconnect_layerlist_signals(self):
         # Connect signals to the viewer
-        self._viewer.layers.events.inserted.disconnect(self.on_layer_event)
-        self._viewer.layers.events.moved.disconnect(self.on_layer_event)
-        self._viewer.layers.events.removed.disconnect(self.on_layer_event)
-        self._viewer.layers.events.reordered.disconnect(self.on_layer_event)
+
+        self._viewer.layers.events.inserted.disconnect(self.on_layer_added)
+        self._viewer.layers.events.removed.disconnect(self.on_layer_removed)
+        #self._viewer.layers.events.inserted.disconnect(self.on_layer_event)
+        #self._viewer.layers.events.moved.disconnect(self.on_layer_event)
+        #self._viewer.layers.events.removed.disconnect(self.on_layer_event)
+        #self._viewer.layers.events.reordered.disconnect(self.on_layer_event)
         self._viewer.layers.selection.events.active.disconnect(self.on_layer_event)
 
     def connect_layer_signals(self, layer):
         layer.events.data.connect(self.on_data_event)
+        print(f"Connected edit log to layer: {layer.name}")
+        print(isinstance(layer, Labels))
         if isinstance(layer, Labels):
             # Labels layer has a specific event for label updates
             layer.events.labels_update.connect(self.on_labels_update_event)
             layer.events.selected_label.connect(self.on_labels_tool_event)
             layer.events.mode.connect(self.on_labels_tool_event)
 
+            layer.mouse_drag_callbacks.append(self.on_labels_click_event)
+
+            
     def disconnect_layer_signals(self, layer):
         layer.events.data.disconnect(self.on_data_event)
         if isinstance(layer, Labels):
@@ -124,6 +136,8 @@ class NapariEditLog():
             layer.events.labels_update.disconnect(self.on_labels_update_event)
             layer.events.selected_label.disconnect(self.on_labels_tool_event)
             layer.events.mode.disconnect(self.on_labels_tool_event)
+
+            layer.mouse_drag_callbacks.remove(self.on_labels_click_event)
 
     def on_layer_added(self, event):
         self.connect_layer_signals(event.value)
@@ -140,8 +154,8 @@ class NapariEditLog():
         self.record({
             'event_group': 'dims',
             'event_type': event.type,
-            'order': self._viewer.dims.order,
-            'current_step': self._viewer.dims.current_step,
+            'order': str(self._viewer.dims.order),
+            'current_step': str(self._viewer.dims.current_step),
             'timestamp': time.time()
         })
 
@@ -176,15 +190,26 @@ class NapariEditLog():
 
     # Event handlers that log events
     def on_layer_event(self, event):
+        if not self._is_recording:
+            return     
         self._has_active_edit_series = False
 
         self.record({
             'event_group': 'layer',
             'event_type': event.type,
-            'data': str(event),
+            #'layer': event._sources[0].name,
+            'data': str(event.__dict__),
             'timestamp': time.time()
         })
 
+    def on_labels_click_event(self, layer, event):
+        print(f"Labels click event: {event}")
+        if not self._is_recording:
+            return     
+        if not self._has_active_edit_series:
+            return
+        else:
+            self._log[-1]['clicks'] += 1
 
     def on_labels_update_event(self, event):
         if not self._is_recording:
@@ -211,7 +236,7 @@ class NapariEditLog():
         source_layer = event._sources[0]
 
         transposed_step = np.array(self._viewer.dims.current_step)[np.array(self._viewer.dims.order)]
-        transposed_data = self._viewer.layers[1].data.transpose(self._viewer.dims.order)
+        transposed_data = source_layer.data.transpose(self._viewer.dims.order)
         current_view = transposed_data[tuple(transposed_step)[:-2]]
 
         changed = np.zeros_like(current_view)
@@ -226,12 +251,15 @@ class NapariEditLog():
             'timestamp': time.time(), # time of the first labels update in a series of edits
             'last_event': time.time(), # time of the last labels update in a series of edits
             'layer_name': source_layer.name, # name of the layer being edited
-            'layer_shape': source_layer.data.shape, # shape of the layer being edited
-            "viewer_dims_order": self._viewer.dims.order, # current viewer dims order
-            "viewer_dims_current_step": self._viewer.dims.current_step, # current viewer dims step
+            'layer_shape': str(source_layer.data.shape), # shape of the layer being edited
+            "viewer_dims_order": str(self._viewer.dims.order), # current viewer dims order
+            "viewer_dims_current_step": str(self._viewer.dims.current_step), # current viewer dims step
+            "clicks": 1, # number of clicks/edits in this edit series
             'data_edits': [encode_labels_event_data(event, base64=True)], # list of encoded edits
             'data_initial': before_change.dtype.char + base64.b64encode(zlib.compress(before_change.tobytes())).decode('utf-8')
         })
+
+        self._has_active_edit_series = True
 
     def on_data_event(self, event):
         # Event for when the data of any layer changes

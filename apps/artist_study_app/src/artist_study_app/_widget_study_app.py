@@ -59,6 +59,7 @@ from napari_nninteractive.layers.preview_labels_layer import PreviewLabelsLayer
 from napari_nninteractive.layers.manual_labels_layer import ManualLabelsLayer
 from napari_nninteractive.widget_manual import ManualSegmentationWidget
 from napari_nninteractive.utils.utils import ColorMapper, determine_layer_index
+from .multi_viewer import setup_multiple_viewer_widget, MultipleViewerWidget
 
 from napari_edit_log.edit_log import NapariEditLog
 
@@ -181,6 +182,16 @@ class StudyAppFullWidget(QWidget):
         self.task_counter_label = setup_label(_layout, f"")
         self.update_task_counter()
 
+        self._task_combobox = setup_combobox(
+            _layout,
+            [f"{task['method']} - {task['case_id']}" for task in self.study_tasks],
+            function=lambda: (
+                self.clear_task(),
+                setattr(self, 'current_task_index', get_value(self._task_combobox)[1]),
+                self.load_task(self.study_tasks[self.current_task_index])
+            )
+        )
+
         hstack(_layout, [ 
             setup_iconbutton(
                 _layout, "Previous", "step_left", self._viewer.theme, self.load_previous_task),
@@ -198,12 +209,12 @@ class StudyAppFullWidget(QWidget):
         self.approve_button.setToolTip("Approve current segmentation and move to next case.")
 
         self.modify_napari_ui()
+        self._start_quicksave_timer(interval_seconds=300, check_intervall_seconds=1)
 
         self.edit_log = NapariEditLog(viewer)
 
         self.load_task(self.study_tasks[self.current_task_index])
 
-    
     def update_task_counter(self):
         current_task = self.study_tasks[self.current_task_index]
         self.task_counter_label.setText(
@@ -212,15 +223,18 @@ class StudyAppFullWidget(QWidget):
 
     def load_next_task(self):
         if self.current_task_index < len(self.study_tasks) - 1:
-            self.current_task_index += 1
-            self.clear_task()
-            self.load_task(self.study_tasks[self.current_task_index])
+            self._task_combobox.setCurrentIndex(self.current_task_index + 1)
+            #self.current_task_index += 1
+            #self.clear_task()
+            #self.load_task(self.study_tasks[self.current_task_index])
+            
     
     def load_previous_task(self):
         if self.current_task_index > 0:
-            self.current_task_index -= 1
-            self.clear_task()
-            self.load_task(self.study_tasks[self.current_task_index])
+            self._task_combobox.setCurrentIndex(self.current_task_index - 1)
+            #self.current_task_index -= 1
+            #self.clear_task()
+            #self.load_task(self.study_tasks[self.current_task_index])
 
     def clear_task(self):
         self.edit_log.stop()
@@ -350,6 +364,12 @@ class StudyAppFullWidget(QWidget):
 
         self.edit_log.start()
 
+        self.edit_log.record({
+            'event_group': 'study',
+            'event_type': "load_task",
+            'timestamp': time.time()
+        })
+
     def approve(self):
         show_info(f"Approved task {self.study_tasks[self.current_task_index]['task_id']}. Saving results...")
         # write all label layers to disk
@@ -416,6 +436,58 @@ class StudyAppFullWidget(QWidget):
         self.update_task_counter()
         
         show_info(f"Saved results for task {self.study_tasks[self.current_task_index]['task_id']}.")
+    
+    def _start_quicksave_timer(self, interval_seconds=60, check_intervall_seconds=1):
+        @thread_worker(start_thread=False)
+        def quicksave_periodically():
+            while True:
+                time.sleep(check_intervall_seconds)
+                interval_seconds -= check_intervall_seconds
+                if interval_seconds <= 0:
+                    yield
+                    interval_seconds = 300
+        
+        thread = quicksave_periodically()
+        thread.yielded.connect(self.quicksave)
+        thread.start()
+    
+    def quicksave(self):
+        show_info(f"Quicksaving task {self.study_tasks[self.current_task_index]['task_id']}. Saving results...")
+        # write all label layers to disk
+        method = self.study_tasks[self.current_task_index]["method"]
+        case_id = self.study_tasks[self.current_task_index]["case_id"]
+        output_folder = self.study_protocol.get("output_folder", "")
+
+        # skip if no edits (only loading event)
+        if len(self.edit_log.log) <= 2:
+            return
+        # check if there are any 'edit' events
+        present_event_groups = set([event['event_group'] for event in self.edit_log.log])
+        if "edit" not in present_event_groups:
+            return
+
+        for layer in self._viewer.layers:
+            if isinstance(layer, Labels):
+                output_path = os.path.join(
+                    output_folder,
+                    f"{self.user_id}_case{case_id}_method{method}_layer{layer.name}.mha"
+                )
+                layer_data = layer.data.astype(np.uint8)
+                sitk_img = sitk.GetImageFromArray(layer_data)
+                sitk.WriteImage(sitk_img, output_path, useCompression=True)
+                
+                #show_info(f"Saved layer {layer.name} to {output_path}")
+        
+        if output_folder != "":
+            edit_log_path = os.path.join(
+                output_folder,
+                f"{self.user_id}_case{case_id}_method{method}_edit_log.json"
+            )
+            with open(edit_log_path, 'w') as f:
+                json.dump(self.edit_log.log, f, indent=4)
+            #show_info(f"Saved edit log to {edit_log_path}")
+        
+        #self.edit_log.clear()
 
     def modify_napari_ui(self):
         viewer = self._viewer
@@ -452,6 +524,36 @@ class StudyAppFullWidget(QWidget):
         axial_button = QPushButton()
         axial_button.setText("S")
         axial_button.clicked.connect(set_saggital_view)
+        axial_button.setStyleSheet("""
+            min-width : 28px;
+            max-width : 28px;
+            min-height : 28px;
+            max-height : 28px;
+            padding: 0px;
+            """)
+        viewer.window._qt_viewer._viewerButtons.layout().insertWidget(-1,axial_button)
+
+        def show_multi_view():
+
+            if hasattr(self, 'multi_viewer_widget'):
+                viewer.window.remove_dock_widget(self.multi_viewer_widget)
+                #self.multi_viewer_widget.close()
+                del self.multi_viewer_widget
+            else:
+                self.multi_viewer_widget = MultipleViewerWidget(viewer=viewer, orientation=Qt.Orientation.Vertical)
+                viewer.window.add_dock_widget(
+                    self.multi_viewer_widget, name="Multi-View", area="right"
+                )
+                self.multi_viewer_widget.parent()._close_btn = False
+                self.multi_viewer_widget.parent().title.float_button.setHidden(True)
+
+                #self.multi_viewer_widget.setParent(self, Qt.Window)
+                #self.multi_viewer_widget.setWindowFlags(self.multi_viewer_widget.windowFlags() | Qt.Tool)
+                #self.multi_viewer_widget.show()
+
+        axial_button = QPushButton()
+        axial_button.setText("M")
+        axial_button.clicked.connect(show_multi_view)
         axial_button.setStyleSheet("""
             min-width : 28px;
             max-width : 28px;
