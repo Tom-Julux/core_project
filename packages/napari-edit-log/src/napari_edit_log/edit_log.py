@@ -153,7 +153,7 @@ class NapariEditLog():
         
         self.record({
             'event_group': 'dims',
-            'event_type': event.type,
+            'event_type': str(event.type),
             'order': str(self._viewer.dims.order),
             'current_step': str(self._viewer.dims.current_step),
             'timestamp': time.time()
@@ -168,7 +168,7 @@ class NapariEditLog():
         if not self._is_recording:
             return
 
-        if event.type == "selected_label" and len(self._log) > 1 and self._log[-1]['event_type'] == 'selected_label':
+        if str(event.type) == "selected_label" and len(self._log) > 1 and self._log[-1]['event_type'] == 'selected_label':
             # when repeatedly changing selected label - update last event
             self._log[-1]['data'] = str(event)
             self._log[-1]['timestamp'] = time.time()
@@ -180,7 +180,7 @@ class NapariEditLog():
         
         self.record({
             'event_group': 'labels_tool',
-            'event_type': event.type,
+            'event_type': str(event.type),
             'layer_name': event._sources[0].name,
             'selected_label': event._sources[0].selected_label,
             'mode': event._sources[0].mode,
@@ -196,9 +196,9 @@ class NapariEditLog():
 
         self.record({
             'event_group': 'layer',
-            'event_type': event.type,
+            'event_type': str(event.type),
             #'layer': event._sources[0].name,
-            'data': str(event.__dict__),
+            #'data': str(event.__dict__),
             'timestamp': time.time()
         })
 
@@ -280,14 +280,14 @@ class NapariEditLog():
             self.record({
                 'event_group': 'edit',
                 'event_type': "data",
-                'action': event.action,
-                'value': event.value,
+                'action': str(event.action),
+                'value': str(event.value),
                 'timestamp': time.time()
             })
         else:
             self.record({
                 'event_group': 'edit',
-                'event_type': event.type,
-                'data': str(event),
+                'event_type': str(event.type),
+                #'data': str(event),
                 'timestamp': time.time()
             })

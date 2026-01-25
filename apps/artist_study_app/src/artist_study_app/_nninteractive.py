@@ -36,7 +36,7 @@ class nnInteractiveWidgetMinimal(nnInteractiveWidget):
         label_layer = PreviewLabelsLayer(
             data,
             name=name,
-            opacity=0.3,
+            opacity=0.9,
             affine=self.session_cfg["affine"],
             scale=self.session_cfg["scale"],
             translate=self.session_cfg["translate"],
@@ -67,7 +67,7 @@ class nnInteractiveWidgetMinimal(nnInteractiveWidget):
             data,
             # self._data_result,
             name=name,
-            opacity=0.3,
+            opacity=0.9,
             affine=self.session_cfg["affine"],
             scale=self.session_cfg["scale"],
             translate=self.session_cfg["translate"],
@@ -78,5 +78,7 @@ class nnInteractiveWidgetMinimal(nnInteractiveWidget):
         )
         label_layer.contour = 1
         label_layer._source = self.session_cfg["source"]
+        label_layer.colormap = self.colormap[self.object_index]
+
 
         self._viewer.add_layer(label_layer)

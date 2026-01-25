@@ -76,7 +76,7 @@ class StudyAppWidget(QWidget):
         self.file_select = setup_fileselect(
             _layout, "Select study file", filtering="YAML files (*.yaml *.yml)", function=lambda: None
         )
-        self.file_select.set_file("/Users/tomjulius/Developer/core_project/apps/artist_study_app/study.yaml")
+        self.file_select.set_file("./apps/artist_study_app/study.yaml")
 
         self.init_button = setup_iconbutton(
             _layout, "Initialize", "right_arrow", self._viewer.theme, self.initalize
@@ -285,12 +285,13 @@ class StudyAppFullWidget(QWidget):
             self.guidance_layer = Points(
                 com[np.newaxis, :],
                 name=f'Guidance {case_id}',
-                size=10,
-                face_color='red'
+                size=5,
+                face_color='red',
+                border_color="white"
             )
             
             self.guidance_layer.scale = np.array([-1,1,1]) * np.array(mask_sitk.GetSpacing()[::-1])  # reverse for napari xyz vs sitk zyx
-            self.guidance_layer.opacity = 0.3
+            self.guidance_layer.opacity = 0.8
             self.guidance_layer.editable = False
             self._viewer.add_layer(self.guidance_layer)
             self._viewer.dims.set_current_step(0, img.shape[0] - com[0] -1)
