@@ -333,8 +333,8 @@ class StudyAppFullWidget(QWidget):
                 self.manual_segmentation_widget.allow_close = True
                 self.manual_segmentation_widget.parent().hide()
             if self.automatic_segmentation_widget is None:
-                from napari_nninteractive import nnInteractiveWidget
-                self.automatic_segmentation_widget = nnInteractiveWidget(self._viewer)
+                from ._nninteractive import nnInteractiveWidgetMinimal
+                self.automatic_segmentation_widget = nnInteractiveWidgetMinimal(self._viewer)
                 self._viewer.window.add_dock_widget(
                     self.automatic_segmentation_widget, name="nnInteractive Segmentation", area="right"
                 )

@@ -29,10 +29,9 @@ requires-python = ">=3.9"
 dependencies = [
     "numpy",
     "qtpy",
-    "napari_toolkit"
+    "napari_toolkit",
+    "napari-nninteractive==1.0.6",
 ]
-
-
 
 [project.entry-points."napari.manifest"]
 artist-study-app = "artist_study_app:napari.yaml"

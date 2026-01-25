@@ -13,11 +13,13 @@ dependencies = [
     "napari-size-estimator", 
     "napari-edit-log", 
     "napari-quick-view",
+    "napari-custom-layers",
+    "napari-manual-segmentation",
     "core-tool-apps",
     "artist_study_app",
-    "napari-nninteractive",
-    "napari-voxtell",
     "napari-view-switch",
+    # pinning to specific versions that was developed against
+    "napari-nninteractive==1.0.6"
 ]
 
 [tool.uv.sources]
@@ -30,11 +32,11 @@ napari-size-estimator = { workspace = true }
 napari-edit-log = { workspace = true }
 napari-quick-view = { workspace = true }
 napari-view-switch = { workspace = true }
+napari-custom-layers = { workspace = true }
+napari-manual-segmentation = { workspace = true }
 artist-study-app = { workspace = true }
 core-tool-apps = { workspace = true }
-napari-nninteractive = { workspace = true }
-napari-voxtell = { workspace = true }
 
 [tool.uv.workspace]
-members = ["packages/*","packages-imported/*", "apps/*"]
+members = ["packages/*", "apps/*"]
 exclude = ["packages/napari-camera-stream"]
