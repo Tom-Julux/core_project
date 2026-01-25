@@ -54,11 +54,9 @@ from napari_quick_view._widget_file_list import FileListWidget
 
 from napari_quick_view.file_select import setup_dirselect
 from napari_quick_view.layer_select import setup_layerselect
-from napari_nninteractive.layers.fixed_image_layer import FixedImageLayer
-from napari_nninteractive.layers.preview_labels_layer import PreviewLabelsLayer
-from napari_nninteractive.layers.manual_labels_layer import ManualLabelsLayer
-from napari_nninteractive.widget_manual import ManualSegmentationWidget
-from napari_nninteractive.utils.utils import ColorMapper, determine_layer_index
+from napari_custom_layers import FixedImageLayer, PreviewLabelsLayer, ManualLabelsLayer
+from napari_manual_segmentation import ManualSegmentationWidget
+from napari_manual_segmentation.utils.utils import ColorMapper, determine_layer_index
 from .multi_viewer import setup_multiple_viewer_widget, MultipleViewerWidget
 
 from napari_edit_log.edit_log import NapariEditLog
@@ -209,7 +207,7 @@ class StudyAppFullWidget(QWidget):
         self.approve_button.setToolTip("Approve current segmentation and move to next case.")
 
         self.modify_napari_ui()
-        self._start_quicksave_timer(interval_seconds=300, check_intervall_seconds=1)
+        #self._start_quicksave_timer(interval_seconds=300, check_intervall_seconds=1)
 
         self.edit_log = NapariEditLog(viewer)
 
@@ -440,12 +438,13 @@ class StudyAppFullWidget(QWidget):
     def _start_quicksave_timer(self, interval_seconds=60, check_intervall_seconds=1):
         @thread_worker(start_thread=False)
         def quicksave_periodically():
+            _counter = interval_seconds
             while True:
                 time.sleep(check_intervall_seconds)
-                interval_seconds -= check_intervall_seconds
-                if interval_seconds <= 0:
+                _counter -= check_intervall_seconds
+                if _counter <= 0:
                     yield
-                    interval_seconds = 300
+                    _counter = interval_seconds
         
         thread = quicksave_periodically()
         thread.yielded.connect(self.quicksave)

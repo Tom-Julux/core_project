@@ -9,11 +9,6 @@ contributions:
     - id: napari-nninteractive.nnInteractiveWidget
       python_name: napari_nninteractive:nnInteractiveWidget
       title: nnInteractive
-    - id: napari-nninteractive.ManualSegmentationWidget
-      python_name: napari_nninteractive:ManualSegmentationWidget
-      title: Manual Segmentation
   widgets:
     - command: napari-nninteractive.nnInteractiveWidget
       display_name: nnInteractive
-    - command: napari-nninteractive.ManualSegmentationWidget
-      display_name: Manual Segmentation

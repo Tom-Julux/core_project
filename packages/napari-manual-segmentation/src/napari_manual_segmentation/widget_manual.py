@@ -20,16 +20,11 @@ from qtpy.QtWidgets import (
 )
 from qtpy.QtCore import Qt  # type: ignore[attr-defined]
 from napari_toolkit.containers import setup_scrollarea, setup_vcollapsiblegroupbox, setup_vgroupbox, setup_vscrollarea
-from napari_toolkit.widgets import setup_iconbutton, setup_label
-
+from napari_toolkit.widgets import setup_iconbutton, setup_label, setup_layerselect
 from napari_custom_layers import ManualLabelsLayer, PreviewLabelsLayer, FixedImageLayer
 
-from napari_nninteractive.utils.affine import is_orthogonal
-from napari_nninteractive.utils.utils import ColorMapper, determine_layer_index
-
-from .layer_select import setup_layerselect
-from napari_nninteractive.utils.utils import ColorMapper, determine_layer_index
-from napari_nninteractive.utils.affine import is_orthogonal
+from .utils.utils import ColorMapper, determine_layer_index
+from .utils.affine import is_orthogonal
 from napari.utils.transforms import Affine
 
 class ManualSegmentationWidget(QWidget):
