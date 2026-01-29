@@ -45,13 +45,13 @@ class FixedImageLayer(Image):
             # 1. Calculate the 'Window' (Contrast)
             # Drag Right (Positive delta_x) = Wider Window = Lower Contrast
             initial_width = initial_contrast[1] - initial_contrast[0]
-            new_width = initial_width + (delta_x * viewer.camera.zoom * range_width * SENSITIVITY)
+            new_width = initial_width + (delta_x * range_width * SENSITIVITY)
             new_width = np.clip(new_width, 1, contrast_range[1] - contrast_range[0])
 
             # 2. Calculate the 'Level' (Brightness)
             # Drag Up (Negative delta_y in screen space) = Higher Level = Darker Image
             initial_level = (initial_contrast[1] + initial_contrast[0]) / 2
-            new_level = initial_level + (delta_y * viewer.camera.zoom * range_width * SENSITIVITY)
+            new_level = initial_level + (delta_y * range_width * SENSITIVITY)
             new_level = np.clip(new_level, contrast_range[0], contrast_range[1])
             # 3. Convert Window/Level back to Contrast Limits (min/max)
             new_min = new_level - (new_width / 2)
