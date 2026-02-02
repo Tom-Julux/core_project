@@ -103,7 +103,7 @@ class NapariEditLog():
         #self._viewer.layers.events.moved.connect(self.on_layer_event)
         #self._viewer.layers.events.removed.connect(self.on_layer_event)
         #self._viewer.layers.events.reordered.connect(self.on_layer_event)
-        self._viewer.layers.selection.events.active.connect(self.on_layer_event)
+        #self._viewer.layers.selection.events.active.connect(self.on_layer_event)
 
     def disconnect_layerlist_signals(self):
         # Connect signals to the viewer
@@ -114,7 +114,7 @@ class NapariEditLog():
         #self._viewer.layers.events.moved.disconnect(self.on_layer_event)
         #self._viewer.layers.events.removed.disconnect(self.on_layer_event)
         #self._viewer.layers.events.reordered.disconnect(self.on_layer_event)
-        self._viewer.layers.selection.events.active.disconnect(self.on_layer_event)
+        #self._viewer.layers.selection.events.active.disconnect(self.on_layer_event)
 
     def connect_layer_signals(self, layer):
         layer.events.data.connect(self.on_data_event)
@@ -151,6 +151,25 @@ class NapariEditLog():
         if not self._is_recording:
             return
         
+        if str(event.type) not in ['point', 'order']:
+            return
+        
+        if event.type == 'point' and len(self._log) > 1 and self._log[-1]['event_type'] == 'point':
+            # when repeatedly changing dims point - update last event
+            self._log[-1]['current_step'] = str(self._viewer.dims.current_step)
+            self._log[-1]['timestamp_final'] = time.time()
+            self._log[-1]['count'] = self._log[-1].get('count', 1) + 1
+            self.events.updated()
+            return
+        
+        if event.type == 'order' and len(self._log) > 1 and self._log[-1]['event_type'] == 'order':
+            # when repeatedly changing dims order - update last event
+            self._log[-1]['order'] = str(self._viewer.dims.order)
+            self._log[-1]['timestamp_final'] = time.time()
+            self._log[-1]['count'] = self._log[-1].get('count', 1) + 1
+            self.events.updated()
+            return
+
         self.record({
             'event_group': 'dims',
             'event_type': str(event.type),
@@ -227,7 +246,7 @@ class NapariEditLog():
             # add new edit
             self._log[-1]['data_edits'].append(encode_labels_event_data(event, base64=True))
             # store time of final labels update in this series of edits
-            self._log[-1]["last_event"] = time.time()
+            self._log[-1]["timestamp_final"] = time.time()
 
             self.events.updated()
             return
@@ -249,7 +268,7 @@ class NapariEditLog():
             'event_group': 'edit',
             'event_type': "labels_update",
             'timestamp': time.time(), # time of the first labels update in a series of edits
-            'last_event': time.time(), # time of the last labels update in a series of edits
+            'timestamp_final': time.time(), # time of the last labels update in a series of edits
             'layer_name': source_layer.name, # name of the layer being edited
             'layer_shape': str(source_layer.data.shape), # shape of the layer being edited
             "viewer_dims_order": str(self._viewer.dims.order), # current viewer dims order

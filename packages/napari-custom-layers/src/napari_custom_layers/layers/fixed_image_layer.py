@@ -21,7 +21,7 @@ class FixedImageLayer(Image):
         self.mouse_drag_callbacks.append(self._adjust_contrast_on_drag)
 
     def _adjust_contrast_on_drag(self, layer, event):
-        if not (2 in event._buttons or "Control" in event._modifiers):
+        if not ("Control" in event._modifiers):
             return
 
         yield
@@ -52,15 +52,15 @@ class FixedImageLayer(Image):
             # Drag Up (Negative delta_y in screen space) = Higher Level = Darker Image
             initial_level = (initial_contrast[1] + initial_contrast[0]) / 2
             new_level = initial_level + (delta_y * range_width * SENSITIVITY)
-            new_level = np.clip(new_level, contrast_range[0], contrast_range[1])
+
             # 3. Convert Window/Level back to Contrast Limits (min/max)
             new_min = new_level - (new_width / 2)
             new_max = new_level + (new_width / 2)
 
             # 4. Apply limits and clip to the valid range of the data
             new_contrast_limits = (
-                np.clip(new_min, contrast_range[0], contrast_range[1]),
-                np.clip(new_max, contrast_range[0], contrast_range[1])
+                np.clip(new_min, contrast_range[0], contrast_range[1]-1),
+                np.clip(new_max, contrast_range[0]+1, contrast_range[1])
             )
 
             layer.contrast_limits = new_contrast_limits

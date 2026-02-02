@@ -54,7 +54,7 @@ from napari_quick_view._widget_file_list import FileListWidget
 
 from napari_quick_view.file_select import setup_dirselect
 from napari_quick_view.layer_select import setup_layerselect
-from napari_custom_layers import FixedImageLayer, PreviewLabelsLayer, ManualLabelsLayer
+from napari_custom_layers import FixedImageLayer, PreviewLabelsLayer, ManualLabelsLayer, PreviewPointsLayer
 from napari_manual_segmentation import ManualSegmentationWidget
 from napari_manual_segmentation.utils.utils import ColorMapper, determine_layer_index
 from .multi_viewer import setup_multiple_viewer_widget, MultipleViewerWidget
@@ -282,7 +282,7 @@ class StudyAppFullWidget(QWidget):
             from scipy.ndimage import center_of_mass
             com = np.array(center_of_mass(mask)).astype(np.int32)
             print("Guidance center of mass:", com)
-            self.guidance_layer = Points(
+            self.guidance_layer = PreviewPointsLayer(
                 com[np.newaxis, :],
                 name=f'Guidance {case_id}',
                 size=5,
@@ -295,6 +295,8 @@ class StudyAppFullWidget(QWidget):
             self.guidance_layer.editable = False
             self._viewer.add_layer(self.guidance_layer)
             self._viewer.dims.set_current_step(0, img.shape[0] - com[0] -1)
+            self._viewer.dims.set_current_step(1, com[1])
+            self._viewer.dims.set_current_step(2, com[2])
 
         # load approved segmentations if existing
         output_folder = self.study_protocol.get("output_folder", "")
