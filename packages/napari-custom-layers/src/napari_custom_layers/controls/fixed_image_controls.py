@@ -1,7 +1,10 @@
 from napari._qt.layer_controls.qt_image_controls import QtImageControls
 from napari.utils.action_manager import action_manager
 import napari
-from packaging.version import Version
+
+from napari_toolkit.widgets import setup_combobox
+from napari._qt.layer_controls.widgets.qt_widget_controls_base import QtWrappedLabel
+from napari._qt.layer_controls.widgets.qt_contrast_limits import range_to_decimals
 
 class CustomQtFixedImageControls(QtImageControls):
     """Custom Qt controls for labels layer used for previewing labels.
@@ -32,4 +35,41 @@ class CustomQtFixedImageControls(QtImageControls):
         # Reorder the remaining buttons to not have a sparse layout
         #self.button_grid.addWidget(self.delete_button, 0, 1)
         #self.button_grid.addWidget(self.polygon_lasso_button, 0, 2)
+    
+        # Contrast presets from raystation
+        CONTRAST_PRESETS = {
+            "CT: Bone": (450.0, 1600.0),
+            "CT: Brain": (35.0, 100.0),
+            "CT: Dental": (400.0, 2000.0),
+            "CT: Inner ear": (700.0, 4000.0),
+            "CT: Larynx": (40.0, 250.0),
+            "CT: Liver": (50.0, 350.0),
+            "CT: Lung": (-600.0, 1600.0),
+            "CT: Mediastinum": (40.0, 400.0),
+            "CT: Pelvis": (250.0, 1000.0),
+            "CT: Soft tissue": (40.0, 350.0),
+            "CT: Spine": (35.0, 300.0),
+            "CT: Vertebrae": (350.0, 2000.0),
+        }
 
+        self._contrast_compobox = setup_combobox(None, [*list(CONTRAST_PRESETS.keys()), "Manual"])
+        self._contrast_compobox.setParent(self)
+        self._contrast_compobox.setStyleSheet('font-size: 10px; padding: 3px 10px 3px 8px;')
+        def on_contrast_manual(value):
+            if value in CONTRAST_PRESETS:
+                layer.contrast_limits = CONTRAST_PRESETS[value]
+                layer.contrast_limits_range = CONTRAST_PRESETS[value]
+            elif value == "Manual":
+                layer.reset_contrast_limits()
+                layer.contrast_limits_range = layer.contrast_limits
+                self._contrast_limits_control.show_clim_popup()
+
+                decimals_ = range_to_decimals(
+                    layer.contrast_limits_range, layer.dtype
+                )
+                self._contrast_limits_control.clim_popup.slider.setRange(*layer.contrast_limits_range)
+                self._contrast_limits_control.clim_popup.slider.setDecimals(decimals_)
+                self._contrast_limits_control.clim_popup.slider.setSingleStep(10**-decimals_)
+        self._contrast_compobox.textActivated.connect(on_contrast_manual)  
+
+        self.layout().insertRow(5,QtWrappedLabel("contrast preset:"), self._contrast_compobox)
