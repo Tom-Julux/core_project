@@ -57,6 +57,8 @@ from napari_quick_view.layer_select import setup_layerselect
 from napari_custom_layers import FixedImageLayer, PreviewLabelsLayer, ManualLabelsLayer, PreviewPointsLayer
 from napari_manual_segmentation import ManualSegmentationWidget
 from napari_manual_segmentation.utils.utils import ColorMapper, determine_layer_index
+from napari_nninteractive_minimal import nnInteractiveWidgetMinimal
+
 from .multi_viewer import setup_multiple_viewer_widget, MultipleViewerWidget
 
 from napari_edit_log.edit_log import NapariEditLog
@@ -76,7 +78,7 @@ class StudyAppWidget(QWidget):
         self.file_select = setup_fileselect(
             _layout, "Select study file", filtering="YAML files (*.yaml *.yml)", function=lambda: None
         )
-        self.file_select.set_file("./apps/artist_study_app/study.yaml")
+        self.file_select.set_file("./artist_study/example_study.yaml")
 
         self.init_button = setup_iconbutton(
             _layout, "Initialize", "right_arrow", self._viewer.theme, self.initalize
@@ -122,7 +124,7 @@ class StudyAppFullWidget(QWidget):
         if cases_root_dir != "":
             for case in study_cases:
                 case["file"] = os.path.join(cases_root_dir, case["file"])
-                if "mask" in case:
+                if "mask" in case and case["mask"] is not None:
                     case["mask"] = os.path.join(cases_root_dir, case.get("mask", ""))
 
         order = self.study_protocol.get("order", "random")
@@ -553,17 +555,17 @@ class StudyAppFullWidget(QWidget):
                 #self.multi_viewer_widget.setWindowFlags(self.multi_viewer_widget.windowFlags() | Qt.Tool)
                 #self.multi_viewer_widget.show()
 
-        axial_button = QPushButton()
-        axial_button.setText("M")
-        axial_button.clicked.connect(show_multi_view)
-        axial_button.setStyleSheet("""
-            min-width : 28px;
-            max-width : 28px;
-            min-height : 28px;
-            max-height : 28px;
-            padding: 0px;
-            """)
-        viewer.window._qt_viewer._viewerButtons.layout().insertWidget(-1,axial_button)
+        #axial_button = QPushButton()
+        #axial_button.setText("M")
+        #axial_button.clicked.connect(show_multi_view)
+        #axial_button.setStyleSheet("""
+        #    min-width : 28px;
+        #    max-width : 28px;
+        #    min-height : 28px;
+        #    max-height : 28px;
+        #    padding: 0px;
+        #    """)
+        #viewer.window._qt_viewer._viewerButtons.layout().insertWidget(-1,axial_button)
 
         # Hide viewer buttons since we offer our own functionality
         viewer.window._qt_viewer._viewerButtons.rollDimsButton.setHidden(True)

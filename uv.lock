@@ -18,6 +18,7 @@ members = [
     "napari-label-metrics",
     "napari-manual-segmentation",
     "napari-merge-labels",
+    "napari-nninteractive-minimal",
     "napari-promptable",
     "napari-promptable-nni",
     "napari-promptable-sam2",
@@ -188,7 +189,8 @@ name = "artist-study-app"
 version = "0.1.0"
 source = { editable = "apps/artist_study_app" }
 dependencies = [
-    { name = "napari-nninteractive" },
+    { name = "napari-custom-layers" },
+    { name = "napari-nninteractive-minimal" },
     { name = "napari-toolkit" },
     { name = "numpy" },
     { name = "qtpy" },
@@ -196,7 +198,8 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "napari-nninteractive", specifier = "==1.0.6" },
+    { name = "napari-custom-layers", editable = "packages/napari-custom-layers" },
+    { name = "napari-nninteractive-minimal", editable = "packages/napari-nninteractive-minimal" },
     { name = "napari-toolkit" },
     { name = "numpy" },
     { name = "qtpy" },
@@ -549,6 +552,7 @@ dependencies = [
     { name = "napari-edit-log" },
     { name = "napari-manual-segmentation" },
     { name = "napari-nninteractive" },
+    { name = "napari-nninteractive-minimal" },
     { name = "napari-promptable" },
     { name = "napari-promptable-nni" },
     { name = "napari-promptable-sam2" },
@@ -566,11 +570,13 @@ dependencies = [
 requires-dist = [
     { name = "artist-study-app", editable = "apps/artist_study_app" },
     { name = "core-tool-apps", editable = "apps/core_tool_apps" },
+    { name = "napari", specifier = "==0.6.6" },
     { name = "napari", extras = ["pyqt6", "optional"] },
     { name = "napari-custom-layers", editable = "packages/napari-custom-layers" },
     { name = "napari-edit-log", editable = "packages/napari-edit-log" },
     { name = "napari-manual-segmentation", editable = "packages/napari-manual-segmentation" },
     { name = "napari-nninteractive", specifier = "==1.0.6" },
+    { name = "napari-nninteractive-minimal", editable = "packages/napari-nninteractive-minimal" },
     { name = "napari-promptable", editable = "packages/napari-promptable" },
     { name = "napari-promptable-nni", editable = "packages/napari-promptable-nni" },
     { name = "napari-promptable-sam2", editable = "packages/napari-promptable-sam2" },
@@ -1806,6 +1812,27 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/19/38/78a6998403e3c96da8f1df1d015c7f53006334081ed292898458fb72cca5/napari_nninteractive-1.0.6.tar.gz", hash = "sha256:fa138f66663f314b965abbbbf5130b1e237e37fc08f8957d1dc445832cbd622c", size = 33345, upload-time = "2025-10-06T12:57:23.429Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/1f/c4/0f453a066b6df9093f9d679a3dc2a70ebf0e180ccbb50ee8e19f65ed31db/napari_nninteractive-1.0.6-py3-none-any.whl", hash = "sha256:c1b4b80541b46ac85284d8449bfe2bb85122eda32da70d0c5c3c5d1fb7b95e85", size = 37294, upload-time = "2025-10-06T12:57:21.744Z" },
+]
+
+[[package]]
+name = "napari-nninteractive-minimal"
+version = "0.1.0"
+source = { editable = "packages/napari-nninteractive-minimal" }
+dependencies = [
+    { name = "napari-custom-layers" },
+    { name = "napari-nninteractive" },
+    { name = "napari-toolkit" },
+    { name = "numpy" },
+    { name = "qtpy" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "napari-custom-layers", editable = "packages/napari-custom-layers" },
+    { name = "napari-nninteractive", specifier = "==1.0.6" },
+    { name = "napari-toolkit" },
+    { name = "numpy" },
+    { name = "qtpy" },
 ]
 
 [[package]]

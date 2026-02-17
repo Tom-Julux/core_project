@@ -1,5 +1,5 @@
 # output folder for saving results
-output_folder: ./apps/artist_study_app/testoutput
+output_folder: ./artist_study/example_output # relative to root of the repository
 
 # order tasks presented to the user
 # the order is consistent between runs, by seeding with the user id
@@ -8,19 +8,19 @@ order: random # possible values: sequential-methods, sequential-cases, random
 reveal_mask_on_approve: True # possible values: True, False
 
 # guidance type presented to the user based on existing segmentation masks
-guidance: True # possible values: True, False
+guidance: False # possible values: True, False
 
 methods:
   - manual
   - nnInteractive
 
-cases_root_dir: ./example_data/3d mrlinac
+cases_root_dir: "./example_data/3d mrlinac" # root folder for all cases, relative to root of the repository
 cases:
   - id: lung26 # case id
     file: aumc_lung_patient026__GTV.mha # image file
     mask: aumc_lung_patient026__GTV__mask.mha # optional mask to guide the user
   - id: lung31
     file: aumc_lung_patient031__GTV.mha
-    mask: aumc_lung_patient031__GTV__mask.mha # optional mask to guide the user
+    mask: null # optional mask to guide the user -> no mask provided for this case
     
   

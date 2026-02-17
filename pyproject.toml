@@ -15,6 +15,7 @@ dependencies = [
     "napari-quick-view",
     "napari-custom-layers",
     "napari-manual-segmentation",
+    "napari-nninteractive-minimal",
     "core-tool-apps",
     "artist_study_app",
     "napari-view-switch",
@@ -35,6 +36,7 @@ napari-quick-view = { workspace = true }
 napari-view-switch = { workspace = true }
 napari-custom-layers = { workspace = true }
 napari-manual-segmentation = { workspace = true }
+napari-nninteractive-minimal = { workspace = true }
 artist-study-app = { workspace = true }
 core-tool-apps = { workspace = true }
 
