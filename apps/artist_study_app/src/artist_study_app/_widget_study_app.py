@@ -57,7 +57,6 @@ from napari_quick_view.layer_select import setup_layerselect
 from napari_custom_layers import FixedImageLayer, PreviewLabelsLayer, ManualLabelsLayer, PreviewPointsLayer
 from napari_manual_segmentation import ManualSegmentationWidget
 from napari_manual_segmentation.utils.utils import ColorMapper, determine_layer_index
-from napari_nninteractive_minimal import nnInteractiveWidgetMinimal
 
 from .multi_viewer import setup_multiple_viewer_widget, MultipleViewerWidget
 
@@ -338,7 +337,7 @@ class StudyAppFullWidget(QWidget):
                 self.manual_segmentation_widget.allow_close = True
                 self.manual_segmentation_widget.parent().hide()
             if self.automatic_segmentation_widget is None:
-                from ._nninteractive import nnInteractiveWidgetMinimal
+                from napari_nninteractive_minimal import nnInteractiveWidgetMinimal
                 self.automatic_segmentation_widget = nnInteractiveWidgetMinimal(self._viewer)
                 self._viewer.window.add_dock_widget(
                     self.automatic_segmentation_widget, name="nnInteractive Segmentation", area="right"

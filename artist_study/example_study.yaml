@@ -1,5 +1,5 @@
 # output folder for saving results
-output_folder: ./artist_study/example_output # relative to root of the repository
+output_folder: ./artist_study/example_output # relative to root of the repository or absolute path
 
 # order tasks presented to the user
 # the order is consistent between runs, by seeding with the user id
@@ -14,7 +14,7 @@ methods:
   - manual
   - nnInteractive
 
-cases_root_dir: "./example_data/3d mrlinac" # root folder for all cases, relative to root of the repository
+cases_root_dir: "./example_data/3d mrlinac" # root folder for all cases, relative to root of the repository or absolute path
 cases:
   - id: lung26 # case id
     file: aumc_lung_patient026__GTV.mha # image file
