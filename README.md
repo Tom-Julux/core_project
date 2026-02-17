@@ -92,7 +92,7 @@ As an alternative to the local installation, napari can be run inside a containe
 docker build -f ./Dockerfile -t napari_core_project .
 
 # run the container with access to gpus, the files you want to access, and display devices
-docker run --rm -it --gpus=all -v /project_data/:/project_data/ --device=/dev/dri:/dev/dri -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix:ro napari_core_project
+docker run --rm -it --gpus=all -v /project_data/:/project_data/ -v ./artist_study:/app/artist_study --device=/dev/dri:/dev/dri -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix:ro napari_core_project
 
 ```
 
