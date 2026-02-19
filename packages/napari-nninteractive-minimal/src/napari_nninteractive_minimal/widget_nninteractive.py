@@ -1,6 +1,7 @@
 from qtpy.QtWidgets import QGroupBox
 
 from napari_nninteractive import nnInteractiveWidget
+from napari_nninteractive.layers.point_layer import SinglePointLayer
 
 from napari_custom_layers import ManualLabelsLayer, PreviewLabelsLayer, FixedImageLayer
 
@@ -21,10 +22,6 @@ class nnInteractiveWidgetMinimal(nnInteractiveWidget):
         self.run_ckbx.parent().setHidden(True)
         self.export_button.parent().setHidden(True)
 
-        # Hide the acknowledgements at the bottom which is the last added QGroupBox
-        group_boxes = self.findChildren(QGroupBox)
-        if group_boxes:
-            group_boxes[-1].hide()  
 
     def add_preview_label_layer(self, data, name) -> None:
         """
@@ -82,3 +79,24 @@ class nnInteractiveWidgetMinimal(nnInteractiveWidget):
 
 
         self._viewer.add_layer(label_layer)
+
+
+    def add_point_layer(self) -> None:
+        """Adds a single point layer to the viewer."""
+        point_layer = SinglePointLayer(
+            name=self.point_layer_name,
+            ndim=self.session_cfg["ndim"],
+            affine=self.session_cfg["affine"],
+            scale=self.session_cfg["scale"],
+            translate=self.session_cfg["translate"],
+            rotate=self.session_cfg["rotate"],
+            shear=self.session_cfg["shear"],
+            metadata=self.session_cfg["metadata"],
+            opacity=0.7,
+            size=2,
+            prompt_index=self.prompt_button.index,
+        )
+
+        # point_layer.size = 0.2
+        point_layer.events.finished.connect(self.on_interaction)
+        self._viewer.add_layer(point_layer)

@@ -37,7 +37,7 @@ class CustomQtFixedImageControls(QtImageControls):
         #self.button_grid.addWidget(self.polygon_lasso_button, 0, 2)
     
         # Contrast presets from raystation
-        CONTRAST_PRESETS = {
+        self.CONTRAST_PRESETS = {
             "CT: Bone": (450.0, 1600.0),
             "CT: Brain": (35.0, 100.0),
             "CT: Dental": (400.0, 2000.0),
@@ -52,13 +52,13 @@ class CustomQtFixedImageControls(QtImageControls):
             "CT: Vertebrae": (350.0, 2000.0),
         }
 
-        self._contrast_compobox = setup_combobox(None, [*list(CONTRAST_PRESETS.keys()), "Manual"])
+        self._contrast_compobox = setup_combobox(None, ["Manual", *list(self.CONTRAST_PRESETS.keys())])
         self._contrast_compobox.setParent(self)
         self._contrast_compobox.setStyleSheet('font-size: 10px; padding: 3px 10px 3px 8px;')
         def on_contrast_manual(value):
-            if value in CONTRAST_PRESETS:
-                layer.contrast_limits = CONTRAST_PRESETS[value]
-                layer.contrast_limits_range = CONTRAST_PRESETS[value]
+            if value in self.CONTRAST_PRESETS:
+                layer.contrast_limits = self.CONTRAST_PRESETS[value]
+                layer.contrast_limits_range = self.CONTRAST_PRESETS[value]
             elif value == "Manual":
                 layer.reset_contrast_limits()
                 layer.contrast_limits_range = layer.contrast_limits
@@ -71,5 +71,6 @@ class CustomQtFixedImageControls(QtImageControls):
                 self._contrast_limits_control.clim_popup.slider.setDecimals(decimals_)
                 self._contrast_limits_control.clim_popup.slider.setSingleStep(10**-decimals_)
         self._contrast_compobox.textActivated.connect(on_contrast_manual)  
+        self._contrast_compobox.currentTextChanged.connect(on_contrast_manual)  
 
         self.layout().insertRow(5,QtWrappedLabel("contrast preset:"), self._contrast_compobox)

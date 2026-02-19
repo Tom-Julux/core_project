@@ -5,7 +5,12 @@ output_folder: ./artist_study/example_output # relative to root of the repositor
 # the order is consistent between runs, by seeding with the user id
 order: random # possible values: sequential-methods, sequential-cases, random
 
-reveal_mask_on_approve: True # possible values: True, False
+approve_mode: "NextRemove" # possible values: Reveal, Next, NextRemove
+
+contrast_preset: "CT: Lung" # null or one of the presets defined in packages/napari-custom-layers/src/napari_custom_layers/controls/fixed_image_controls.py
+
+confirm_before_approving: True # whether to ask the user to confirm before approving a segmentation result
+confirm_before_changing_tasks: True # whether to ask the user to confirm before changing tasks (to prevent accidental loss of work)
 
 # guidance type presented to the user based on existing segmentation masks
 guidance: False # possible values: True, False

@@ -35,7 +35,8 @@ from qtpy.QtWidgets import (
     QSizePolicy,
     QVBoxLayout,
     QPushButton,
-    QWidget
+    QWidget,
+    QMessageBox
 )
 from qtpy.QtCore import Qt  # type: ignore[attr-defined]
 
@@ -92,6 +93,11 @@ class StudyAppWidget(QWidget):
         self._viewer.window.add_dock_widget(
             widget, name="ARTIST study", area="left"
         )
+
+        widget.parent()._close_btn = False
+        #widget.parent().title.float_button.setHidden(True)
+        #widget.parent().title.hide_button.setHidden(True)
+
         # close self
         self.close()
         self._viewer.window.remove_dock_widget(self)
@@ -106,7 +112,7 @@ class StudyAppFullWidget(QWidget):
     def __init__(self, viewer: Viewer, user_id, study_protocol_path):
         super().__init__()
         self._viewer = viewer
-
+        
         self.user_id = user_id
         self.study_protocol_path = study_protocol_path
         
@@ -130,9 +136,10 @@ class StudyAppFullWidget(QWidget):
         output_folder = self.study_protocol.get("output_folder")
         if output_folder is not None and output_folder != "":
                 os.makedirs(output_folder, exist_ok=True)
+
+        self.approve_mode = self.study_protocol.get("approve_mode", "Next")
         # cathesian product of methods and cases
         self.study_tasks = []
-        self.completed_study_tasks = {}
 
         for method, case in product(study_methods, study_cases):
             task = ({
@@ -150,7 +157,10 @@ class StudyAppFullWidget(QWidget):
                     f"{self.user_id}_case{case['id']}_method{method}_layer*.mha"
                 ))
                 if len(existing_files) > 0:
-                    self.completed_study_tasks[task["task_id"]] = True
+                    # Do not add approved tasks to the list if approve_mode is NextRemove
+                    #if self.approve_mode == "NextRemove":
+                    #    continue
+                    pass
             
             self.study_tasks.append(task)
 
@@ -181,14 +191,16 @@ class StudyAppFullWidget(QWidget):
         self.task_counter_label = setup_label(_layout, f"")
         self.update_task_counter()
 
+        def on_task_change():
+            self.clear_task()
+            self.current_task_index = get_value(self._task_combobox)[1]
+            if self.current_task_index < len(self.study_tasks) and self.current_task_index >= 0:
+                self.load_task(self.study_tasks[self.current_task_index])
+
         self._task_combobox = setup_combobox(
             _layout,
             [f"{task['method']} - {task['case_id']}" for task in self.study_tasks],
-            function=lambda: (
-                self.clear_task(),
-                setattr(self, 'current_task_index', get_value(self._task_combobox)[1]),
-                self.load_task(self.study_tasks[self.current_task_index])
-            )
+            function=on_task_change
         )
 
         hstack(_layout, [ 
@@ -215,25 +227,26 @@ class StudyAppFullWidget(QWidget):
         self.load_task(self.study_tasks[self.current_task_index])
 
     def update_task_counter(self):
+        if len(self.study_tasks) == 0:
+            self.task_counter_label.setText("All tasks done.")
+            return
         current_task = self.study_tasks[self.current_task_index]
         self.task_counter_label.setText(
             f"Task: {current_task['method']} - {current_task['case_id']}  ({self.current_task_index+1}/{len(self.study_tasks)})"
         )
 
     def load_next_task(self):
+        if self.study_protocol.get("confirm_before_changing_tasks", True) and not self.confirm_dialog("Proceed", "The segmentation was not approved. Are you sure you want to proceed? Any segmentation done on this patient will be lost without approval."):
+            return
         if self.current_task_index < len(self.study_tasks) - 1:
             self._task_combobox.setCurrentIndex(self.current_task_index + 1)
-            #self.current_task_index += 1
-            #self.clear_task()
-            #self.load_task(self.study_tasks[self.current_task_index])
-            
     
     def load_previous_task(self):
+        if self.study_protocol.get("confirm_before_changing_tasks", True) and not self.confirm_dialog("Proceed", "The segmentation was not approved. Are you sure you want to proceed? Any segmentation done on this patient will be lost without approval."):
+            return
+
         if self.current_task_index > 0:
             self._task_combobox.setCurrentIndex(self.current_task_index - 1)
-            #self.current_task_index -= 1
-            #self.clear_task()
-            #self.load_task(self.study_tasks[self.current_task_index])
 
     def clear_task(self):
         self.edit_log.stop()
@@ -275,6 +288,14 @@ class StudyAppFullWidget(QWidget):
         self.image_layer.scale = np.array([-1,1,1]) *np.array(img_sitk.GetSpacing()[::-1])  # reverse for napari xyz vs sitk zyx
         self._viewer.add_layer(self.image_layer)
 
+        contrast_preset = self.study_protocol.get("contrast_preset", None)
+        if contrast_preset is not None:
+            image_layer_controls = self._viewer.window._qt_viewer._controls.widgets[self.image_layer]
+            if contrast_preset in image_layer_controls.CONTRAST_PRESETS:
+                image_layer_controls._contrast_compobox.setCurrentText(contrast_preset)
+            else:
+                show_warning(f"Default contrast preset {contrast_preset} not found. Using full contrast range instead.")
+
         # load guidance mask if provided
         if (task["mask_file"] is not None) and self.study_protocol.get("guidance", False):
             mask_sitk = sitk.ReadImage(task["mask_file"])
@@ -286,7 +307,7 @@ class StudyAppFullWidget(QWidget):
             self.guidance_layer = PreviewPointsLayer(
                 com[np.newaxis, :],
                 name=f'Guidance {case_id}',
-                size=5,
+                size=2,
                 face_color='red',
                 border_color="white"
             )
@@ -373,6 +394,9 @@ class StudyAppFullWidget(QWidget):
         })
 
     def approve(self):
+        if self.study_protocol.get("confirm_before_approving", True) and not self.confirm_dialog("Approve", "Are you sure the target object is delineated correctly? Once you approve this segmentation, you will not be able to edit this patient anymore"):
+            return
+
         show_info(f"Approved task {self.study_tasks[self.current_task_index]['task_id']}. Saving results...")
         # write all label layers to disk
         method = self.study_tasks[self.current_task_index]["method"]
@@ -390,17 +414,14 @@ class StudyAppFullWidget(QWidget):
                 sitk.WriteImage(sitk_img, output_path, useCompression=True)
                 
                 #show_info(f"Saved layer {layer.name} to {output_path}")
-        
-        self.completed_study_tasks[self.study_tasks[self.current_task_index]["task_id"]] = True
-        
-        #self.edit_log.stop()
-
+                
         self.edit_log.record({
             'event_group': 'study',
             'event_type': "approve",
             'timestamp': time.time()
         })
 
+        self.edit_log.stop()
         # output edit log to disk
         if output_folder != "":
             edit_log_path = os.path.join(
@@ -413,8 +434,10 @@ class StudyAppFullWidget(QWidget):
         
         #self.edit_log.clear()
 
+        show_info(f"Saved results for task {self.study_tasks[self.current_task_index]['task_id']}.")
+
         # reveal if specified in protocol
-        if self.study_protocol.get("reveal_mask_on_approve", False):
+        if self.approve_mode == "Reveal":
             if self.guidance_layer is not None:
                 self._viewer.layers.remove(self.guidance_layer)
                 self.guidance_layer = None
@@ -435,10 +458,30 @@ class StudyAppFullWidget(QWidget):
                 self.guidance_layer.editable = False
                 self._viewer.add_layer(self.guidance_layer)
 
+        elif self.approve_mode == "Next":
+            self.clear_task()
+            if self.current_task_index < len(self.study_tasks) - 1:
+                self.current_task_index += 1
+                self.load_task(self.study_tasks[self.current_task_index])
+            else:
+                show_info("No more tasks to load.")
+        elif self.approve_mode == "NextRemove":
+            self.study_tasks.pop(self.current_task_index)
+            self._task_combobox.removeItem(self.current_task_index)
+
+            if self.current_task_index == -1: # All tasks done
+                show_info("All tasks approved. Reopening study selection.")
+                # close self and reopen study app loading widget to reset state
+                self.hide()
+                self.close()
+                self._viewer.window.remove_dock_widget(self)
+
+                self._viewer.window.add_dock_widget(
+                    StudyAppWidget(self._viewer), name="ARTIST study", area="left"
+                )
+                
         self.update_task_counter()
         
-        show_info(f"Saved results for task {self.study_tasks[self.current_task_index]['task_id']}.")
-    
     def _start_quicksave_timer(self, interval_seconds=60, check_intervall_seconds=1):
         @thread_worker(start_thread=False)
         def quicksave_periodically():
@@ -646,3 +689,6 @@ class StudyAppFullWidget(QWidget):
         event.ignore()
         pass
 
+    def confirm_dialog(self, title, message):
+        reply = QMessageBox.question(self, title, message, QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        return reply == QMessageBox.Yes
