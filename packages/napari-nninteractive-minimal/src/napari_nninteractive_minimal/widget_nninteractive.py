@@ -22,6 +22,9 @@ class nnInteractiveWidgetMinimal(nnInteractiveWidget):
         self.run_ckbx.parent().setHidden(True)
         self.export_button.parent().setHidden(True)
 
+        self._scribble_brush_size = 2
+
+
 
     def add_preview_label_layer(self, data, name) -> None:
         """
