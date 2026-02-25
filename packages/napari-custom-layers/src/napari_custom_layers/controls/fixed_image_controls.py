@@ -44,8 +44,8 @@ class CustomQtFixedImageControls(QtImageControls):
             "CT: Inner ear": (700.0, 4000.0),
             "CT: Larynx": (40.0, 250.0),
             "CT: Liver": (50.0, 350.0),
-            "CT: Lung": (-600.0, 1600.0),
-            "CT: Mediastinum": (40.0, 400.0),
+            "CT: Lung": (-600.0, 1600.0), # -1350, 160
+            "CT: Mediastinum": (40.0, 400.0),# should be -300 to 120
             "CT: Pelvis": (250.0, 1000.0),
             "CT: Soft tissue": (40.0, 350.0),
             "CT: Spine": (35.0, 300.0),
@@ -57,8 +57,15 @@ class CustomQtFixedImageControls(QtImageControls):
         self._contrast_compobox.setStyleSheet('font-size: 10px; padding: 3px 10px 3px 8px;')
         def on_contrast_manual(value):
             if value in self.CONTRAST_PRESETS:
-                layer.contrast_limits = self.CONTRAST_PRESETS[value]
-                layer.contrast_limits_range = self.CONTRAST_PRESETS[value]
+                # start = level - window/2
+                # end = level + window/2
+                contrast_settings = self.CONTRAST_PRESETS[value]
+                contrast_limits = [
+                    (contrast_settings[0] - contrast_settings[1] / 2),
+                    (contrast_settings[0] + contrast_settings[1] / 2)
+                ]
+                layer.contrast_limits = contrast_limits
+                layer.contrast_limits_range = contrast_limits
             elif value == "Manual":
                 layer.reset_contrast_limits()
                 layer.contrast_limits_range = layer.contrast_limits

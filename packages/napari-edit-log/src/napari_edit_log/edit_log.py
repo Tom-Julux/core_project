@@ -11,12 +11,13 @@ from napari.utils.events import EventEmitter, EmitterGroup, Event, EventedList
 import fnmatch
 
 class NapariEditLog():
-    def __init__(self, viewer: Viewer):
+    def __init__(self, viewer: Viewer, record_individual_edits = False):
         self._viewer = viewer
 
         self._log = EventedList()
         self._is_recording = False
         self._has_active_edit_series = False
+        self._record_individual_edits = record_individual_edits
 
         # Define events
         self.events = EmitterGroup(self,
@@ -222,7 +223,7 @@ class NapariEditLog():
         })
 
     def on_labels_click_event(self, layer, event):
-        print(f"Labels click event: {event}")
+        #print(f"Labels click event: {event}")
         if not self._is_recording:
             return     
         if not self._has_active_edit_series:
@@ -244,7 +245,8 @@ class NapariEditLog():
             #event.type == "labels_update" and self._log and self._log[-1]['event_type'] == 'labels_update':
             # skip logging if the last event was also a label layer update
             # add new edit
-            self._log[-1]['data_edits'].append(encode_labels_event_data(event, base64=True))
+            if self._record_individual_edits:
+                self._log[-1]['data_edits'].append(encode_labels_event_data(event, base64=True))
             # store time of final labels update in this series of edits
             self._log[-1]["timestamp_final"] = time.time()
 
@@ -274,9 +276,11 @@ class NapariEditLog():
             "viewer_dims_order": str(self._viewer.dims.order), # current viewer dims order
             "viewer_dims_current_step": str(self._viewer.dims.current_step), # current viewer dims step
             "clicks": 1, # number of clicks/edits in this edit series
-            'data_edits': [encode_labels_event_data(event, base64=True)], # list of encoded edits
-            'data_initial': before_change.dtype.char + base64.b64encode(zlib.compress(before_change.tobytes())).decode('utf-8')
         })
+
+        if self._record_individual_edits:
+            self._log[-1]['data_edits'] = [encode_labels_event_data(event, base64=True)]
+            self._log[-1]['data_initial'] = before_change.dtype.char + base64.b64encode(zlib.compress(before_change.tobytes())).decode('utf-8')
 
         self._has_active_edit_series = True
 

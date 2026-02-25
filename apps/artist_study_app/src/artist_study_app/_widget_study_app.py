@@ -226,6 +226,16 @@ class StudyAppFullWidget(QWidget):
 
         self.load_task(self.study_tasks[self.current_task_index])
 
+        def on_windowing_shortcut(preset):
+            if self.image_layer is None:
+                return
+            image_layer_controls = self._viewer.window._qt_viewer._controls.widgets[self.image_layer]
+            image_layer_controls._contrast_compobox.setCurrentText(preset)
+        
+        for shortcut, preset in self.study_protocol.get("contrast_shortcuts", {}).items():
+             self._viewer.bind_key(shortcut, lambda _, p=preset: on_windowing_shortcut(p), overwrite=True)
+
+
     def update_task_counter(self):
         if len(self.study_tasks) == 0:
             self.task_counter_label.setText("All tasks done.")
@@ -281,20 +291,30 @@ class StudyAppFullWidget(QWidget):
         img = sitk.GetArrayFromImage(img_sitk)
         self.image_layer = FixedImageLayer(
             img,
-            name=f'Image {case_id}',
-            colormap='gray'
+            name=f'Image {case_id} {task["name"]}' if "name" in task else f'Image {case_id}',
+            colormap='gray',
+            interpolation2d=self.study_protocol.get("interpolation", "nearest")
         )
 
-        self.image_layer.scale = np.array([-1,1,1]) *np.array(img_sitk.GetSpacing()[::-1])  # reverse for napari xyz vs sitk zyx
+        self.image_layer.scale = np.array([-1,1,1]) \
+            * np.array(img_sitk.GetSpacing()[::-1])  # reverse for napari xyz vs sitk zyx
+        
+        
         self._viewer.add_layer(self.image_layer)
+
+        image_layer_controls = self._viewer.window._qt_viewer._controls.widgets[self.image_layer]
+        if self.study_protocol.get("custom_contrast_presets", False):
+            for name, (center, width) in self.study_protocol.get("custom_contrast_presets", {}).items():
+                image_layer_controls.CONTRAST_PRESETS[name] = (center, width)
+                image_layer_controls._contrast_compobox.addItem(name)
 
         contrast_preset = self.study_protocol.get("contrast_preset", None)
         if contrast_preset is not None:
-            image_layer_controls = self._viewer.window._qt_viewer._controls.widgets[self.image_layer]
             if contrast_preset in image_layer_controls.CONTRAST_PRESETS:
                 image_layer_controls._contrast_compobox.setCurrentText(contrast_preset)
             else:
                 show_warning(f"Default contrast preset {contrast_preset} not found. Using full contrast range instead.")
+
 
         # load guidance mask if provided
         if (task["mask_file"] is not None) and self.study_protocol.get("guidance", False):
@@ -677,6 +697,9 @@ class StudyAppFullWidget(QWidget):
             self.automatic_segmentation_widget.close()
             self.automatic_segmentation_widget = None
             self.automatic_segmentation_widget.deleteLater()
+
+        for shortcut in self.study_protocol.get("contrast_shortcuts", {}).keys():
+            self._viewer.bind_key(shortcut, ..., overwrite=True)
 
         # reopen the study app widget
         widget = StudyAppWidget(self._viewer)
