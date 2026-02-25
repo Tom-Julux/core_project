@@ -62,6 +62,7 @@ from napari_manual_segmentation.utils.utils import ColorMapper, determine_layer_
 from .multi_viewer import setup_multiple_viewer_widget, MultipleViewerWidget
 
 from napari_edit_log.edit_log import NapariEditLog
+from .inverted_scrolling import invert_scrolling, reset_scrolling
 
 class StudyAppWidget(QWidget):
     def __init__(self, viewer: Viewer):
@@ -147,7 +148,8 @@ class StudyAppFullWidget(QWidget):
                 "method": method,
                 "file": case["file"],
                 "case_id": case["id"],
-                "mask_file": case.get("mask", None)
+                "mask_file": case.get("mask", None),
+                "name": case.get("name", None)
             }) 
 
             # check if there are existing approved segmentations
@@ -235,6 +237,8 @@ class StudyAppFullWidget(QWidget):
         for shortcut, preset in self.study_protocol.get("contrast_shortcuts", {}).items():
              self._viewer.bind_key(shortcut, lambda _, p=preset: on_windowing_shortcut(p), overwrite=True)
 
+        if self.study_protocol.get("inverted_scrolling", False):
+            invert_scrolling(self._viewer)
 
     def update_task_counter(self):
         if len(self.study_tasks) == 0:
@@ -700,6 +704,9 @@ class StudyAppFullWidget(QWidget):
 
         for shortcut in self.study_protocol.get("contrast_shortcuts", {}).keys():
             self._viewer.bind_key(shortcut, ..., overwrite=True)
+        
+        if self.study_protocol.get("inverted_scrolling", False):
+            reset_scrolling(self._viewer)
 
         # reopen the study app widget
         widget = StudyAppWidget(self._viewer)

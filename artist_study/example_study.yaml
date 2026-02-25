@@ -24,6 +24,8 @@ contrast_shortcuts:
   "Ctrl+L": "CT: Lung"
   "Ctrl+M": "CT: Mediastinum"
 
+inverted_scrolling: True # whether to invert the zoom and scroll behavior (zoom with Ctrl + scroll, scroll through slices with regular scroll)
+
 interpolation: "bicubic" # default interpolation for the image layer, can be set per case in the cases section, possible values: "nearest", "bilinear", "bicubic", "spline16"  ‘bessel’, ‘bicubic’, ‘bilinear’, ‘blackman’, ‘catrom’, ‘gaussian’, ‘hamming’, ‘hanning’, ‘hermite’, ‘kaiser’, ‘lanczos’, ‘mitchell’, ‘nearest’, ‘spline16’, ‘spline36’
 
 cases_root_dir: "./example_data/3d mrlinac" # root folder for all cases, relative to root of the repository or absolute path

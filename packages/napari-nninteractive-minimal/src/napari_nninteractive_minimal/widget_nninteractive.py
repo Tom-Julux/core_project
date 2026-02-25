@@ -4,6 +4,7 @@ from napari_nninteractive import nnInteractiveWidget
 from napari_nninteractive.layers.point_layer import SinglePointLayer
 
 from napari_custom_layers import ManualLabelsLayer, PreviewLabelsLayer, FixedImageLayer
+from acvl_utils.cropping_and_padding.bounding_boxes import bounding_box_to_slice, crop_and_pad_nd
 
 class nnInteractiveWidgetMinimal(nnInteractiveWidget):
     def __init__(self, *args, **kwargs):
@@ -23,6 +24,9 @@ class nnInteractiveWidgetMinimal(nnInteractiveWidget):
         self.export_button.parent().setHidden(True)
 
         self._scribble_brush_size = 2
+
+        self.label_layer_name = "nnInteractive - Preview Layer"
+        self.semantic_layer_name = "nnInteractive - Preview Layer"
 
 
 
@@ -103,3 +107,36 @@ class nnInteractiveWidgetMinimal(nnInteractiveWidget):
         # point_layer.size = 0.2
         point_layer.events.finished.connect(self.on_interaction)
         self._viewer.add_layer(point_layer)
+    
+    def on_next(self) -> None:
+        """
+        Prepares the next label layer for interactions in the viewer.
+
+        Retrieves the index of the last labeled object, renames the current label layer with
+        this index, unbinds the original data by creating a deep copy, and clears all interaction
+        layers. A new label layer with an updated colormap is then added to the viewer.
+        """
+        # Rename the current layer and add a new one
+        label_layer = self._viewer.layers[self.label_layer_name]
+        if not self.instance_aggregation_ckbx.isChecked():
+
+            _name = f"Segmentation {self.object_index+1}"
+            self.add_label_layer(label_layer.data.copy(), _name)
+            self._viewer.layers[_name].colormap = self.colormap[self.object_index]
+
+        else:
+            _sem_name = f"semantic map - {self.session_cfg['name']}"
+            if _sem_name not in self._viewer.layers:
+                self.add_label_layer(np.zeros_like(label_layer.data), _sem_name)
+
+            sem_layer = self._viewer.layers[_sem_name]
+
+            sem_layer.data[label_layer.data == 1] = self.object_index + 1
+            sem_layer.refresh()
+
+        self.object_index += 1
+        label_layer.colormap = self.colormap[self.object_index]
+
+        self._clear_layers()
+        self.prompt_button._uncheck()
+        self.prompt_button._check(0)
