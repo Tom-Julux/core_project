@@ -119,6 +119,7 @@ class ManualSegmentationWidget(QWidget):
         )
         label_layer._source = self.session_cfg["source"]
         label_layer.contour = 1
+        label_layer.mode = "paint"
 
         self._viewer.add_layer(label_layer)
         return label_layer
@@ -232,11 +233,11 @@ class ManualSegmentationWidget(QWidget):
 
         # Add Layer
         self.object_index = 1
-        _name = f"object {self.object_index} - {self.session_cfg['name']}"
+        _name = f"Segmentation {self.object_index} - {self.session_cfg['name']}"
 
         while _name in self._viewer.layers:
             self.object_index += 1
-            _name = f"object {self.object_index} - {self.session_cfg['name']}"
+            _name = f"Segmentation {self.object_index} - {self.session_cfg['name']}"
             
         self.labels_layer = self.add_label_layer(np.zeros(self.session_cfg["shape"], dtype=np.uint8), _name)
         self.labels_layer.colormap = self.colormap[self.object_index]
@@ -268,11 +269,11 @@ class ManualSegmentationWidget(QWidget):
         # Rename the current layer and add a new one
 
         self.object_index += 1
-        _name = f"object {self.object_index} - {self.session_cfg['name']}"
+        _name = f"Segmentation {self.object_index} - {self.session_cfg['name']}"
 
         while _name in self._viewer.layers:
             self.object_index += 1
-            _name = f"object {self.object_index} - {self.session_cfg['name']}"
+            _name = f"Segmentation {self.object_index} - {self.session_cfg['name']}"
 
         self.labels_layer = self.add_label_layer(np.zeros(self.session_cfg["shape"], dtype=np.uint8), _name)
         self.labels_layer.colormap = self.colormap[self.object_index]

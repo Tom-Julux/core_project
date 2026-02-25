@@ -21,8 +21,8 @@ contrast_preset: "CT: Lung" # null or one of the presets defined in packages/nap
 custom_contrast_presets: # optional custom contrast presets to add to the contrast preset dropdown in the UI, defined as a mapping of preset name to (center, width) values
   "CT: Custom1": [100.0, 400.0]
 contrast_shortcuts:
-  "Ctrl+L": "CT: Lung"
-  "Ctrl+M": "CT: Mediastinum"
+  "Control+L": "CT: Lung"
+  "Control+M": "CT: Mediastinum"
 
 inverted_scrolling: True # whether to invert the zoom and scroll behavior (zoom with Ctrl + scroll, scroll through slices with regular scroll)
 

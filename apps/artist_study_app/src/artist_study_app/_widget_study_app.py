@@ -295,7 +295,7 @@ class StudyAppFullWidget(QWidget):
         img = sitk.GetArrayFromImage(img_sitk)
         self.image_layer = FixedImageLayer(
             img,
-            name=f'Image {case_id} {task["name"]}' if "name" in task else f'Image {case_id}',
+            name=f'Image {case_id} {task["name"]}' if task["name"] is not None else f'Image {case_id}',
             colormap='gray',
             interpolation2d=self.study_protocol.get("interpolation", "nearest")
         )

@@ -98,7 +98,7 @@ class QtAutofillCheckBoxControl(QtWidgetControlsBase):
         super().__init__(parent, layer)
         # Setup widgets
         self.autofill_checkbox = QCheckBox()
-        self.autofill_checkbox.setChecked(False)
+        self.autofill_checkbox.setChecked(layer.autofill)
         self.autofill_checkbox.setToolTip("Fill connected components after painting (only in paint mode)")
         self._callbacks.append(
             attr_to_settr(
