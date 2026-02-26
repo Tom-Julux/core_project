@@ -1,5 +1,5 @@
 [project]
-name = "napari-merge-labels"
+name = "napari-beacon-layers"
 version = "0.1.0"
 description = "Adding ."
 readme = "README.md"
@@ -32,10 +32,9 @@ dependencies = [
     "napari_toolkit"
 ]
 
-
-
-[project.entry-points."napari.manifest"]
-napari-label-metrics = "napari_merge_labels:napari.yaml"
+# No plugin contributions for now
+#[project.entry-points."napari.manifest"]
+#napari-beacon-layers = "napari_beacon_layers:napari.yaml"
 
 [build-system]
 requires = ["uv_build>=0.9.18,<0.10.0"]
@@ -49,3 +48,6 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 "*" = ["*.yaml"]
+
+
+

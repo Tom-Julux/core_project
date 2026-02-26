@@ -30,8 +30,9 @@ dependencies = [
     "numpy",
     "qtpy",
     "napari_toolkit",
-    "napari-custom-layers",
-    "napari-nninteractive-minimal"
+    "napari-beacon-layers",
+    "napari-nninteractive-minimal",
+    "napari-inverted-scrolling"
 ]
 
 [project.entry-points."napari.manifest"]

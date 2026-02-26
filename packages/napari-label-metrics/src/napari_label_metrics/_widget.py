@@ -123,7 +123,7 @@ class LabelMetricsWidget(QWidget):
     def compute_metrics(self):
         layer_a_name, layer_a_index  = get_value(self.layerselect_a)
         layer_b_name, layer_b_index = get_value(self.layerselect_b)
-        print(layer_a_name, layer_a_index, layer_b_name, layer_b_index)
+        #print(layer_a_name, layer_a_index, layer_b_name, layer_b_index)
 
         if layer_a_index is None or layer_b_index is None:
             self.no_labels_selected.setVisible(True)
@@ -142,7 +142,7 @@ class LabelMetricsWidget(QWidget):
         y_true = self._viewer.layers[layer_a_index].data > 0
         y_pred = self._viewer.layers[layer_b_index].data > 0
 
-        print(y_true.shape, y_pred.shape)
+        #print(y_true.shape, y_pred.shape)
         
         # Ensure y_true and y_pred transpose to (Z, H, W)
         y_true = y_true.transpose(*self._viewer.dims.order[::-1])
@@ -150,7 +150,7 @@ class LabelMetricsWidget(QWidget):
         y_pred = y_pred.transpose(*self._viewer.dims.order[::-1])
         y_pred = y_pred.transpose(2,0,1)
 
-        print(y_true.shape, y_pred.shape)
+        #print(y_true.shape, y_pred.shape)
 
         T, H, W = y_true.shape
 

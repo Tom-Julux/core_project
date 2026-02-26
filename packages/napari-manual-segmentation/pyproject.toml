@@ -30,7 +30,7 @@ dependencies = [
     "numpy",
     "qtpy",
     "napari_toolkit",
-    "napari-custom-layers"
+    "napari-beacon-layers"
 ]
 
 [project.entry-points."napari.manifest"]

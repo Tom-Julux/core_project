@@ -13,11 +13,11 @@ members = [
     "artist-study-app",
     "core-tool",
     "core-tool-apps",
-    "napari-custom-layers",
+    "napari-beacon-layers",
     "napari-edit-log",
+    "napari-inverted-scrolling",
     "napari-label-metrics",
     "napari-manual-segmentation",
-    "napari-merge-labels",
     "napari-nninteractive-minimal",
     "napari-promptable",
     "napari-promptable-nni",
@@ -189,7 +189,7 @@ name = "artist-study-app"
 version = "0.1.0"
 source = { editable = "apps/artist_study_app" }
 dependencies = [
-    { name = "napari-custom-layers" },
+    { name = "napari-beacon-layers" },
     { name = "napari-nninteractive-minimal" },
     { name = "napari-toolkit" },
     { name = "numpy" },
@@ -198,7 +198,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "napari-custom-layers", editable = "packages/napari-custom-layers" },
+    { name = "napari-beacon-layers", editable = "packages/napari-beacon-layers" },
     { name = "napari-nninteractive-minimal", editable = "packages/napari-nninteractive-minimal" },
     { name = "napari-toolkit" },
     { name = "numpy" },
@@ -542,14 +542,15 @@ wheels = [
 
 [[package]]
 name = "core-tool"
-version = "0.1.0"
+version = "1.0.0"
 source = { virtual = "." }
 dependencies = [
     { name = "artist-study-app" },
     { name = "core-tool-apps" },
     { name = "napari", extra = ["optional", "pyqt6"] },
-    { name = "napari-custom-layers" },
+    { name = "napari-beacon-layers" },
     { name = "napari-edit-log" },
+    { name = "napari-inverted-scrolling" },
     { name = "napari-manual-segmentation" },
     { name = "napari-nninteractive" },
     { name = "napari-nninteractive-minimal" },
@@ -572,8 +573,9 @@ requires-dist = [
     { name = "core-tool-apps", editable = "apps/core_tool_apps" },
     { name = "napari", specifier = "==0.6.6" },
     { name = "napari", extras = ["pyqt6", "optional"] },
-    { name = "napari-custom-layers", editable = "packages/napari-custom-layers" },
+    { name = "napari-beacon-layers", editable = "packages/napari-beacon-layers" },
     { name = "napari-edit-log", editable = "packages/napari-edit-log" },
+    { name = "napari-inverted-scrolling", editable = "packages/napari-inverted-scrolling" },
     { name = "napari-manual-segmentation", editable = "packages/napari-manual-segmentation" },
     { name = "napari-nninteractive", specifier = "==1.0.6" },
     { name = "napari-nninteractive-minimal", editable = "packages/napari-nninteractive-minimal" },
@@ -1682,6 +1684,23 @@ pyqt6 = [
 ]
 
 [[package]]
+name = "napari-beacon-layers"
+version = "0.1.0"
+source = { editable = "packages/napari-beacon-layers" }
+dependencies = [
+    { name = "napari-toolkit" },
+    { name = "numpy" },
+    { name = "qtpy" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "napari-toolkit" },
+    { name = "numpy" },
+    { name = "qtpy" },
+]
+
+[[package]]
 name = "napari-console"
 version = "0.1.4"
 source = { registry = "https://pypi.org/simple" }
@@ -1697,9 +1716,9 @@ wheels = [
 ]
 
 [[package]]
-name = "napari-custom-layers"
-version = "0.1.0"
-source = { editable = "packages/napari-custom-layers" }
+name = "napari-edit-log"
+version = "1.0.0"
+source = { editable = "packages/napari-edit-log" }
 dependencies = [
     { name = "napari-toolkit" },
     { name = "numpy" },
@@ -1714,9 +1733,9 @@ requires-dist = [
 ]
 
 [[package]]
-name = "napari-edit-log"
-version = "0.1.0"
-source = { editable = "packages/napari-edit-log" }
+name = "napari-inverted-scrolling"
+version = "1.0.0"
+source = { editable = "packages/napari-inverted-scrolling" }
 dependencies = [
     { name = "napari-toolkit" },
     { name = "numpy" },
@@ -1752,7 +1771,7 @@ name = "napari-manual-segmentation"
 version = "0.1.0"
 source = { editable = "packages/napari-manual-segmentation" }
 dependencies = [
-    { name = "napari-custom-layers" },
+    { name = "napari-beacon-layers" },
     { name = "napari-toolkit" },
     { name = "numpy" },
     { name = "qtpy" },
@@ -1760,24 +1779,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "napari-custom-layers", editable = "packages/napari-custom-layers" },
-    { name = "napari-toolkit" },
-    { name = "numpy" },
-    { name = "qtpy" },
-]
-
-[[package]]
-name = "napari-merge-labels"
-version = "0.1.0"
-source = { editable = "packages/napari-merge-labels" }
-dependencies = [
-    { name = "napari-toolkit" },
-    { name = "numpy" },
-    { name = "qtpy" },
-]
-
-[package.metadata]
-requires-dist = [
+    { name = "napari-beacon-layers", editable = "packages/napari-beacon-layers" },
     { name = "napari-toolkit" },
     { name = "numpy" },
     { name = "qtpy" },
@@ -1819,7 +1821,7 @@ name = "napari-nninteractive-minimal"
 version = "0.1.0"
 source = { editable = "packages/napari-nninteractive-minimal" }
 dependencies = [
-    { name = "napari-custom-layers" },
+    { name = "napari-beacon-layers" },
     { name = "napari-nninteractive" },
     { name = "napari-toolkit" },
     { name = "numpy" },
@@ -1828,7 +1830,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "napari-custom-layers", editable = "packages/napari-custom-layers" },
+    { name = "napari-beacon-layers", editable = "packages/napari-beacon-layers" },
     { name = "napari-nninteractive", specifier = "==1.0.6" },
     { name = "napari-toolkit" },
     { name = "numpy" },
@@ -1973,7 +1975,7 @@ requires-dist = [
 
 [[package]]
 name = "napari-shape-based-interpolation"
-version = "0.1.0"
+version = "1.0.0"
 source = { editable = "packages/napari-shape-based-interpolation" }
 dependencies = [
     { name = "napari-toolkit" },
@@ -1990,7 +1992,7 @@ requires-dist = [
 
 [[package]]
 name = "napari-shifted-labels"
-version = "0.1.0"
+version = "1.0.0"
 source = { editable = "packages/napari-shifted-labels" }
 dependencies = [
     { name = "napari-toolkit" },

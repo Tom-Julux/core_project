@@ -178,7 +178,7 @@ class ShiftedLabelsWidget(QWidget):
         label_layer, img_layer_idx = get_value(self.layerselect_a)
         if label_layer is None or img_layer_idx == -1 or label_layer not in self._viewer.layers:
             return
-        print(f"Label layer selected: {label_layer}, idx: {img_layer_idx}")
+        #print(f"Label layer selected: {label_layer}, idx: {img_layer_idx}")
 
         label_layer = self._viewer.layers[label_layer]
         self.copied_layer = label_layer

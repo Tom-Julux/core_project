@@ -3,7 +3,7 @@ from qtpy.QtWidgets import QGroupBox
 from napari_nninteractive import nnInteractiveWidget
 from napari_nninteractive.layers.point_layer import SinglePointLayer
 
-from napari_custom_layers import ManualLabelsLayer, PreviewLabelsLayer, FixedImageLayer
+from napari_beacon_layers import ManualLabelsLayer, PreviewLabelsLayer, FixedImageLayer
 from acvl_utils.cropping_and_padding.bounding_boxes import bounding_box_to_slice, crop_and_pad_nd
 
 class nnInteractiveWidgetMinimal(nnInteractiveWidget):
@@ -27,7 +27,24 @@ class nnInteractiveWidgetMinimal(nnInteractiveWidget):
 
         self.label_layer_name = "nnInteractive - Preview Layer"
         self.semantic_layer_name = "nnInteractive - Preview Layer"
+        self.preview_layer_edited = False
+        # add listener that on manual update of the preview label layer, the point layer is updated as well
+        def on_interaction(event):
+            if self._viewer.layers.selection.active == label_layer:
+                preview_layer_edited = True
+                return
+            if self._viewer.layers.selection.active != label_layer and preview_layer_edited:
+                pass
+                # self.session
+                # crop (as in preprocessing)
+                initial_seg = label_layer.astype(np.uint8)
+                initial_seg = crop_and_pad_nd(initial_seg, self.preprocessed_props['bbox_used_for_cropping'])
 
+                # initial seg is written into initial seg buffer
+                interaction_channel = -7
+                self.interactions[interaction_channel] = initial_seg.to(self.interactions.device)
+
+        self._viewer.layers.selection.events.active.connect(on_interaction)
 
 
     def add_preview_label_layer(self, data, name) -> None:

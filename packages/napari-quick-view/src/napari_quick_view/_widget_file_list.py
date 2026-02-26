@@ -41,6 +41,7 @@ class FileListWidget(QWidget):
         super().__init__()
         self._viewer = viewer
         self.on_file_selected = on_file_selected
+        
         # File input
         _scroll_layout = parent_layout
 
@@ -94,7 +95,7 @@ class FileListWidget(QWidget):
         file_list = glob.glob(os.path.join(base_dir, glob_pattern), recursive=True)
         file_list = sorted(file_list)
         file_list = [os.path.relpath(f, base_dir) for f in file_list]
-        print(file_list)
+        #print(file_list)
         self.file_select.clear()
         self.file_select.addItems(file_list)
         self.file_select.setCurrentIndex(0)
@@ -113,7 +114,7 @@ class FileListWidget(QWidget):
         base_dir = self.import_dir_select.get_dir()
         selected_file = self.file_select.currentText()
         full_path = os.path.join(base_dir, selected_file)
-        print(full_path)
+        #print(full_path)
         self.on_file_selected(full_path)
 
     def load_next_file(self):

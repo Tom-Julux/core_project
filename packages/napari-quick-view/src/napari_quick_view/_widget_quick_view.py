@@ -61,7 +61,7 @@ class QuickViewWidget(QWidget):
         
         # select qbox
         _ = setup_label(
-            _layout, "Select a transpoing:")
+            _layout, "Select a dims order:")
         self.transpose_selection = setup_combobox(
             _layout, ["0,1,2", "2,1,0", "2,0,1", "1,2,0", "0,2,1"], "0,1,2",)
 

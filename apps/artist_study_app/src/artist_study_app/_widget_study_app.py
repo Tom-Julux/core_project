@@ -55,14 +55,14 @@ from napari_quick_view._widget_file_list import FileListWidget
 
 from napari_quick_view.file_select import setup_dirselect
 from napari_quick_view.layer_select import setup_layerselect
-from napari_custom_layers import FixedImageLayer, PreviewLabelsLayer, ManualLabelsLayer, PreviewPointsLayer
+from napari_beacon_layers import FixedImageLayer, PreviewLabelsLayer, ManualLabelsLayer, PreviewPointsLayer
 from napari_manual_segmentation import ManualSegmentationWidget
 from napari_manual_segmentation.utils.utils import ColorMapper, determine_layer_index
 
 from .multi_viewer import setup_multiple_viewer_widget, MultipleViewerWidget
 
 from napari_edit_log.edit_log import NapariEditLog
-from .inverted_scrolling import invert_scrolling, reset_scrolling
+from napari_inverted_scrolling import invert_scrolling, reset_scrolling, is_inverted
 
 class StudyAppWidget(QWidget):
     def __init__(self, viewer: Viewer):
@@ -237,7 +237,7 @@ class StudyAppFullWidget(QWidget):
         for shortcut, preset in self.study_protocol.get("contrast_shortcuts", {}).items():
              self._viewer.bind_key(shortcut, lambda _, p=preset: on_windowing_shortcut(p), overwrite=True)
 
-        if self.study_protocol.get("inverted_scrolling", False):
+        if self.study_protocol.get("inverted_scrolling", False) and not is_inverted(self._viewer):
             invert_scrolling(self._viewer)
 
     def update_task_counter(self):
@@ -705,7 +705,7 @@ class StudyAppFullWidget(QWidget):
         for shortcut in self.study_protocol.get("contrast_shortcuts", {}).keys():
             self._viewer.bind_key(shortcut, ..., overwrite=True)
         
-        if self.study_protocol.get("inverted_scrolling", False):
+        if self.study_protocol.get("inverted_scrolling", False) and is_inverted(self._viewer):
             reset_scrolling(self._viewer)
 
         # reopen the study app widget

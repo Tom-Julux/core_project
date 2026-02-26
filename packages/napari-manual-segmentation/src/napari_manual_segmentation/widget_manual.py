@@ -21,7 +21,7 @@ from qtpy.QtWidgets import (
 from qtpy.QtCore import Qt  # type: ignore[attr-defined]
 from napari_toolkit.containers import setup_scrollarea, setup_vcollapsiblegroupbox, setup_vgroupbox, setup_vscrollarea
 from napari_toolkit.widgets import setup_iconbutton, setup_label, setup_layerselect
-from napari_custom_layers import ManualLabelsLayer, PreviewLabelsLayer, FixedImageLayer
+from napari_beacon_layers import ManualLabelsLayer, PreviewLabelsLayer, FixedImageLayer
 
 from .utils.utils import ColorMapper, determine_layer_index
 from .utils.affine import is_orthogonal
