@@ -17,7 +17,7 @@ confirm_before_changing_tasks: True # whether to ask the user to confirm before 
 guidance: False # possible values: True, False
 
 # contrast control
-contrast_preset: "CT: Lung" # null or one of the presets defined in packages/napari-custom-layers/src/napari_custom_layers/controls/fixed_image_controls.py
+contrast_preset: "CT: Lung" # null or one of the presets defined in packages/napari-beacon-layers/src/napari_beacon_layers/controls/fixed_image_controls.py
 custom_contrast_presets: # optional custom contrast presets to add to the contrast preset dropdown in the UI, defined as a mapping of preset name to (center, width) values
   "CT: Custom1": [100.0, 400.0]
 contrast_shortcuts:

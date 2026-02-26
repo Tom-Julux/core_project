@@ -11,8 +11,8 @@ resolution-markers = [
 [manifest]
 members = [
     "artist-study-app",
-    "core-tool",
     "core-tool-apps",
+    "napari-beacon",
     "napari-beacon-layers",
     "napari-edit-log",
     "napari-inverted-scrolling",
@@ -190,6 +190,7 @@ version = "0.1.0"
 source = { editable = "apps/artist_study_app" }
 dependencies = [
     { name = "napari-beacon-layers" },
+    { name = "napari-inverted-scrolling" },
     { name = "napari-nninteractive-minimal" },
     { name = "napari-toolkit" },
     { name = "numpy" },
@@ -199,6 +200,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "napari-beacon-layers", editable = "packages/napari-beacon-layers" },
+    { name = "napari-inverted-scrolling", editable = "packages/napari-inverted-scrolling" },
     { name = "napari-nninteractive-minimal", editable = "packages/napari-nninteractive-minimal" },
     { name = "napari-toolkit" },
     { name = "numpy" },
@@ -538,58 +540,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/b9/70/f308384a3ae9cd2209e0849f33c913f658d3326900d0ff5d378d6a1422d2/contourpy-1.3.3-cp313-cp313t-win32.whl", hash = "sha256:283edd842a01e3dcd435b1c5116798d661378d83d36d337b8dde1d16a5fc9ba3", size = 196157, upload-time = "2025-07-26T12:02:11.488Z" },
     { url = "https://files.pythonhosted.org/packages/b2/dd/880f890a6663b84d9e34a6f88cded89d78f0091e0045a284427cb6b18521/contourpy-1.3.3-cp313-cp313t-win_amd64.whl", hash = "sha256:87acf5963fc2b34825e5b6b048f40e3635dd547f590b04d2ab317c2619ef7ae8", size = 240570, upload-time = "2025-07-26T12:02:12.754Z" },
     { url = "https://files.pythonhosted.org/packages/80/99/2adc7d8ffead633234817ef8e9a87115c8a11927a94478f6bb3d3f4d4f7d/contourpy-1.3.3-cp313-cp313t-win_arm64.whl", hash = "sha256:3c30273eb2a55024ff31ba7d052dde990d7d8e5450f4bbb6e913558b3d6c2301", size = 199713, upload-time = "2025-07-26T12:02:14.4Z" },
-]
-
-[[package]]
-name = "core-tool"
-version = "1.0.0"
-source = { virtual = "." }
-dependencies = [
-    { name = "artist-study-app" },
-    { name = "core-tool-apps" },
-    { name = "napari", extra = ["optional", "pyqt6"] },
-    { name = "napari-beacon-layers" },
-    { name = "napari-edit-log" },
-    { name = "napari-inverted-scrolling" },
-    { name = "napari-manual-segmentation" },
-    { name = "napari-nninteractive" },
-    { name = "napari-nninteractive-minimal" },
-    { name = "napari-promptable" },
-    { name = "napari-promptable-nni" },
-    { name = "napari-promptable-sam2" },
-    { name = "napari-quick-view" },
-    { name = "napari-shape-based-interpolation" },
-    { name = "napari-shifted-labels" },
-    { name = "napari-size-estimator" },
-    { name = "napari-toolkit" },
-    { name = "napari-view-switch" },
-    { name = "opencv-python-headless" },
-    { name = "simpleitk" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "artist-study-app", editable = "apps/artist_study_app" },
-    { name = "core-tool-apps", editable = "apps/core_tool_apps" },
-    { name = "napari", specifier = "==0.6.6" },
-    { name = "napari", extras = ["pyqt6", "optional"] },
-    { name = "napari-beacon-layers", editable = "packages/napari-beacon-layers" },
-    { name = "napari-edit-log", editable = "packages/napari-edit-log" },
-    { name = "napari-inverted-scrolling", editable = "packages/napari-inverted-scrolling" },
-    { name = "napari-manual-segmentation", editable = "packages/napari-manual-segmentation" },
-    { name = "napari-nninteractive", specifier = "==1.0.6" },
-    { name = "napari-nninteractive-minimal", editable = "packages/napari-nninteractive-minimal" },
-    { name = "napari-promptable", editable = "packages/napari-promptable" },
-    { name = "napari-promptable-nni", editable = "packages/napari-promptable-nni" },
-    { name = "napari-promptable-sam2", editable = "packages/napari-promptable-sam2" },
-    { name = "napari-quick-view", editable = "packages/napari-quick-view" },
-    { name = "napari-shape-based-interpolation", editable = "packages/napari-shape-based-interpolation" },
-    { name = "napari-shifted-labels", editable = "packages/napari-shifted-labels" },
-    { name = "napari-size-estimator", editable = "packages/napari-size-estimator" },
-    { name = "napari-toolkit" },
-    { name = "napari-view-switch", editable = "packages/napari-view-switch" },
-    { name = "opencv-python-headless" },
-    { name = "simpleitk" },
 ]
 
 [[package]]
@@ -1681,6 +1631,58 @@ optional = [
 ]
 pyqt6 = [
     { name = "pyqt6" },
+]
+
+[[package]]
+name = "napari-beacon"
+version = "1.0.0"
+source = { virtual = "." }
+dependencies = [
+    { name = "artist-study-app" },
+    { name = "core-tool-apps" },
+    { name = "napari", extra = ["optional", "pyqt6"] },
+    { name = "napari-beacon-layers" },
+    { name = "napari-edit-log" },
+    { name = "napari-inverted-scrolling" },
+    { name = "napari-manual-segmentation" },
+    { name = "napari-nninteractive" },
+    { name = "napari-nninteractive-minimal" },
+    { name = "napari-promptable" },
+    { name = "napari-promptable-nni" },
+    { name = "napari-promptable-sam2" },
+    { name = "napari-quick-view" },
+    { name = "napari-shape-based-interpolation" },
+    { name = "napari-shifted-labels" },
+    { name = "napari-size-estimator" },
+    { name = "napari-toolkit" },
+    { name = "napari-view-switch" },
+    { name = "opencv-python-headless" },
+    { name = "simpleitk" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "artist-study-app", editable = "apps/artist_study_app" },
+    { name = "core-tool-apps", editable = "apps/core_tool_apps" },
+    { name = "napari", specifier = "==0.6.6" },
+    { name = "napari", extras = ["pyqt6", "optional"] },
+    { name = "napari-beacon-layers", editable = "packages/napari-beacon-layers" },
+    { name = "napari-edit-log", editable = "packages/napari-edit-log" },
+    { name = "napari-inverted-scrolling", editable = "packages/napari-inverted-scrolling" },
+    { name = "napari-manual-segmentation", editable = "packages/napari-manual-segmentation" },
+    { name = "napari-nninteractive", specifier = "==1.0.6" },
+    { name = "napari-nninteractive-minimal", editable = "packages/napari-nninteractive-minimal" },
+    { name = "napari-promptable", editable = "packages/napari-promptable" },
+    { name = "napari-promptable-nni", editable = "packages/napari-promptable-nni" },
+    { name = "napari-promptable-sam2", editable = "packages/napari-promptable-sam2" },
+    { name = "napari-quick-view", editable = "packages/napari-quick-view" },
+    { name = "napari-shape-based-interpolation", editable = "packages/napari-shape-based-interpolation" },
+    { name = "napari-shifted-labels", editable = "packages/napari-shifted-labels" },
+    { name = "napari-size-estimator", editable = "packages/napari-size-estimator" },
+    { name = "napari-toolkit" },
+    { name = "napari-view-switch", editable = "packages/napari-view-switch" },
+    { name = "opencv-python-headless" },
+    { name = "simpleitk" },
 ]
 
 [[package]]
