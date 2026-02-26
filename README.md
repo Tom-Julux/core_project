@@ -1,4 +1,4 @@
-# CoreTool
+# BEACON - **B**zkf int**E**ractive **A**i-based **CON**touring
 
 <img src="images/Screenshot 2025-09-24 at 12.21.15.png" loading="lazy" alt="CoreTool screenshot" width="500"/>
 

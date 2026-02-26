@@ -1,6 +1,6 @@
 [project]
-name = "core_tool"
-version = "0.1.0"
+name = "napari-beacon"
+version = "1.0.0"
 requires-python = ">=3.12,<3.14"
 dependencies = [
     "napari[pyqt6,optional]", "opencv-python-headless", "napari_toolkit", "SimpleITK",
@@ -13,7 +13,8 @@ dependencies = [
     "napari-size-estimator", 
     "napari-edit-log", 
     "napari-quick-view",
-    "napari-custom-layers",
+    "napari-beacon-layers",
+    "napari-inverted-scrolling",
     "napari-manual-segmentation",
     "napari-nninteractive-minimal",
     "core-tool-apps",
@@ -34,7 +35,8 @@ napari-size-estimator = { workspace = true }
 napari-edit-log = { workspace = true }
 napari-quick-view = { workspace = true }
 napari-view-switch = { workspace = true }
-napari-custom-layers = { workspace = true }
+napari-beacon-layers = { workspace = true }
+napari-inverted-scrolling = { workspace = true }
 napari-manual-segmentation = { workspace = true }
 napari-nninteractive-minimal = { workspace = true }
 artist-study-app = { workspace = true }
