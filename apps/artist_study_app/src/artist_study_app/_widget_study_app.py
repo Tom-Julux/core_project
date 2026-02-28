@@ -63,7 +63,7 @@ from .multi_viewer import setup_multiple_viewer_widget, MultipleViewerWidget
 
 from napari_edit_log.edit_log import NapariEditLog
 from napari_inverted_scrolling import invert_scrolling, reset_scrolling, is_inverted
-
+from .acknowledgements import setup_acknowledgements
 class StudyAppWidget(QWidget):
     def __init__(self, viewer: Viewer):
         super().__init__()
@@ -84,6 +84,7 @@ class StudyAppWidget(QWidget):
         self.init_button = setup_iconbutton(
             _layout, "Initialize", "right_arrow", self._viewer.theme, self.initalize
         )
+        setup_acknowledgements(_layout)
         #self.initalize()
 
     def initalize(self):

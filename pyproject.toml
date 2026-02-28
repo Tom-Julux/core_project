@@ -7,7 +7,6 @@ dependencies = [
     # dependencies for plugins in the workspace
     "napari-promptable", 
     "napari-promptable-sam2", 
-    "napari-promptable-nni", 
     "napari-shape-based-interpolation",
     "napari-shifted-labels", 
     "napari-size-estimator", 
@@ -28,7 +27,6 @@ dependencies = [
 [tool.uv.sources]
 napari-promptable = { workspace = true }
 napari-promptable-sam2 = { workspace = true }
-napari-promptable-nni = { workspace = true }
 napari-shape-based-interpolation = { workspace = true }
 napari-shifted-labels = { workspace = true }
 napari-size-estimator = { workspace = true }

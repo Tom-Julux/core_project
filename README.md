@@ -1,40 +1,46 @@
-# BEACON - **B**zkf int**E**ractive **A**i-based **CON**touring
 
-<img src="images/Screenshot 2025-09-24 at 12.21.15.png" loading="lazy" alt="CoreTool screenshot" width="500"/>
+![](images/logos.png)
 
-## What is this "CoreTool"?
+# BEACON - **B**ZKF int**E**ractive **A**i-based **CON**touring
 
-CoreTool is a collection of napari plugins that provide an extensible interactive segmentation workflow for multidimensional images.
+A collection of napari plugins for interactive segmentation of multidimensional images, with a focus on medical imaging applications and high usability for non-technical users. It also contains a number of applications built on top of these plugins, which implement specific workflows for different use cases.
+
 
 <details>
-  <summary>Why "CoreTool" as a name?</summary>
+  <summary>Why "BEACON"?</summary>
 
-  > The name "CoreTool" reflects the project's position at the core of the [BZKF Lighthouse on Local Therapies](https://bzkf.de/fileadmin/local-therapies.pdf) research project. 
-  > The project aims to use promptable foundation models and other AI based tools to improve local therapies. For this purpose, the CoreTool provides a modular and extensible base for segmenting medical images using prompts.
+  > The name "BEACON" reflects the project's origin as core project of the [BZKF Lighthouse on Local Therapies](https://bzkf.de/fileadmin/local-therapies.pdf), which is focused on improving local therapies through the use of AI-based tools.
 </details>
 
+<img src="images/Screenshot 2025-09-24 at 12.21.15.png" loading="lazy" alt="BEACON screenshot" width="500"/>
+
+
 ## Overview
-This repository contains a number of napari plugins centered around interactive segmentation:
+
+This repository contains a number of napari plugins.
+
 
 - [**napari-promptable**](./packages/napari-promptable/) — the core plugin: an interactive segmentation widget that supports multi-object workflows and serves as the base class for model-specific plugins.
-
 Based on this core plugin, several model-backed segmentation plugins are provided:
 - [**napari-promptable-sam2**](packages/napari-promptable-sam2/) — segmentation in 2D, 2D+t, or 3D using a [sam2](https://github.com/facebookresearch/sam2)-based model
 - [**napari-promptable-nnI**](packages/napari-promptable-nni/) — segmentation in 3D using a [nnInteractive](https://github.com/MIC-DKFZ/nnInteractive)-based model
+
+
+- [**napari-nninteractive-minimal**](./packages/napari-nninteractive-minimal/) — a simplified version of the excelent [napari-nninteractive](https://github.com/MIC-DKFZ/napari-nninteractive) plugin for interactive segmentation using nnInteractive. This plugin removes some of the more advanced features of the original plugin to provide a more streamlined experience for non-technical users. It also prevents users from accidentally breaking out of the intended workflow, for example by accidentally loading a different image or modifying the napari viewer in a way that breaks the plugin.
+
+- [**napari-manual-segmentation**](./packages/napari-manual-segmentation/) — a plugin for manual segmentation, with an workflow and UI aligned to the simplified napari-nninteractive-minimal plugin.
+
+- [**napari-beacon-layers**](./packages/napari-beacon-layers/) — custom napari layers for visualizing and editing segmentations.
 
 It also contains some utility plugins:
 
 - [**napari-edit-log**](./packages/napari-edit-log/) — logs user interactions to a file for replay and analysis.
 - [**napari-shifted-labels**](./packages/napari-shifted-labels/) — visualizes masks across frames to provide a more consistent segmentation experience.
+- [**napari-inverted-scrolling**](./packages/napari-inverted-scrolling/) — inverts the scrolling behaviour in napari to match other software commonly used in medical imaging (scolling through frames with the mouse wheel instead of zooming).
 - [**napari-size-estimator**](./packages/napari-size-estimator/) — computes the volume of segmented objects in physical units.
 - [**napari-shape-based-interpolation**](./packages/napari-shape-based-interpolation/) — shape based interpolation of labels between keyframes. (As an alternative to AI-based methods.)
 - [**napari-quick-view**](./packages/napari-quick-view/) — quickly cycle through different images.
 
-These pulgins are designed to work together for different applications. Examples are provided as *core_tool_apps* in the `core_tool_apps/` folder.
-
-- [**core-tool-apps**](./core_tool_apps/)
-
-The documentation for these plugins is currently work in progress.
 
 ## Table of contents
 
@@ -48,36 +54,35 @@ The documentation for these plugins is currently work in progress.
 
 ### Requirements
 
-The tool should in principle work wherever napari works. However, some plugins may have additional requirements (for example a CUDA-capable GPU for model inference). The project is also only tested on macOS and Linux.
+BEACON can be used on any device that supports napari (Windows/Macos). However, some plugins may have additional requirements (for example a CUDA-capable GPU for model inference) for optimal experience. The project is tested on macOS and Linux.
 
 ### Local installation
 
 For a local installation, clone the repository and install plugin packages in editable mode. We recommend [uv](https://github.com/astral-sh/uv) for this purpose.
 
 ```bash
-# clone the repository
-git clone <repo-url> core_project
-cd core_project
+# clone the repository and navigate into it
+git clone <repo-url> core_project && cd core_project
 
-
-# alternative 1: using uv (recommended)
-# install uv
-# curl -LsSf https://astral.sh/uv/install.sh | sh
-# sync dependencies 
+# sync dependencies and install the plugins in editable mode
 uv sync
-# run the startup script. This opens napari with a demo loading plugin on the bottom left.
+# run the startup script. This opens napari with a demo study.
 uv run startup.py
-
-# alternative 2: using venv and pip:
-# python3 -m venv .venv
-# source .venv/bin/activate 
-# for d in ./packages/napari-*/; do pip install -e "$d"; done
-# pip install -e core_tool_apps/
-# python3 startup.py
-
-# alternative 3: starting napari manually and load the plugins from the plugins menu
-napari
+# alternativly start napari
+uv run napari
 ```
+<details>
+  <summary>Alternativly using `pip` and `venv`</summary>
+
+  ```bash
+  python3 -m venv .venv
+  source .venv/bin/activate 
+  for d in ./packages/napari-*/; do pip install -e "$d"; done
+  pip install -e ./apps/artist_study_app/
+  python3 startup.py
+
+  ```
+</details>
 
 ### In napari
 
@@ -111,7 +116,6 @@ docker run --rm -it --gpus=all -v /project_data/:/project_data/ -v ./artist_stud
 
 To learn how to use napari and the various plugins provided in this repository, please make use of the demos provided in the demo widget (loaded to the bottom left when starting the tool with `startup.py`).
 
-To start using the tool directly, load one of the core tool apps from the plugins menu (e.g. Plugins -> Core Tool Apps -> QuickView).
 
 Additionally please refer to the [Guide](./Guide.md) for video tutorials covering installation and usage of the tool. Finally, the individual plugins also contain documentation on their usage in their respective folders.
 
@@ -127,16 +131,15 @@ We welcome any contributions that align with the goals of the project.
 
 3. (optionally) add a demo for your new plugin in `demo_widget.py`.
 
-4. Use the `startup.ipynb` notebook for (semi-)hot-reloading or run `uv run startup.py`. In both cases, napari will start and you can load your plugin from the plugins menu or the demo widget. With the notebook you can re-run cells to reload your code without restarting napari (best-effort basis).
+4. Use the `startup.ipynb` notebook for (semi-)hot-reloading. With the notebook you can re-run cells to reload your plugin/demo without restarting napari. (best-effort basis might fail for complex changes/plugins)
+
+5. Alternatively, you can also start napari manually with `uv run startup_test.py` and load the plugin you are working on from the plugin menu. (Tipp: modify the `startup_test.py` to load your plugin of interest on startup.)
 
 ## Roadmap
 
 Planned short- and mid-term improvements:
 
-- Better developer documentation and examples.
-- Integration of more segmentation models.
-- Advanced label-management tools and edit-log replay/analysis.
-- Improved testing and CI/CD.
+
 - Packaging and release to napari hub/pypi.
 
 ## License
@@ -150,8 +153,13 @@ The toolkit is typically imported as a library, but some files are copied and ad
 
 This project is developed and maintained by the [LMU Adaptive Radiation Therapy Lab](https://lmu-art-lab.userweb.mwn.de/) (LMU ART Lab) at the  [Department of Radiation Oncology, LMU University Hospital](https://www.lmu-klinikum.de/strahlentherapie-und-radioonkologie/forschung/physikalische-forschung/5e34c41a1e300c37), Munich, Germany, in the context of the [BZKF Lighthouse on Local Therapies](https://bzkf.de/f/forschung/leuchttuerme/lokale-therapien/).
 
+![](images/logos.png)
 
-For more information about napari and related toolkits see:
+For more information about napari and the ui toolkit used:
 
 - **napari**: https://github.com/napari/napari
 - **napari_toolkit**: https://github.com/MIC-DKFZ/napari_toolkit
+
+For more information on the models used in the model-backed plugins:
+- **nnInteractive**:
+- **napari-nninteractive**:

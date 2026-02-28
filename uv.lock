@@ -16,11 +16,9 @@ members = [
     "napari-beacon-layers",
     "napari-edit-log",
     "napari-inverted-scrolling",
-    "napari-label-metrics",
     "napari-manual-segmentation",
     "napari-nninteractive-minimal",
     "napari-promptable",
-    "napari-promptable-nni",
     "napari-promptable-sam2",
     "napari-quick-view",
     "napari-shape-based-interpolation",
@@ -1648,7 +1646,6 @@ dependencies = [
     { name = "napari-nninteractive" },
     { name = "napari-nninteractive-minimal" },
     { name = "napari-promptable" },
-    { name = "napari-promptable-nni" },
     { name = "napari-promptable-sam2" },
     { name = "napari-quick-view" },
     { name = "napari-shape-based-interpolation" },
@@ -1673,7 +1670,6 @@ requires-dist = [
     { name = "napari-nninteractive", specifier = "==1.0.6" },
     { name = "napari-nninteractive-minimal", editable = "packages/napari-nninteractive-minimal" },
     { name = "napari-promptable", editable = "packages/napari-promptable" },
-    { name = "napari-promptable-nni", editable = "packages/napari-promptable-nni" },
     { name = "napari-promptable-sam2", editable = "packages/napari-promptable-sam2" },
     { name = "napari-quick-view", editable = "packages/napari-quick-view" },
     { name = "napari-shape-based-interpolation", editable = "packages/napari-shape-based-interpolation" },
@@ -1738,23 +1734,6 @@ requires-dist = [
 name = "napari-inverted-scrolling"
 version = "1.0.0"
 source = { editable = "packages/napari-inverted-scrolling" }
-dependencies = [
-    { name = "napari-toolkit" },
-    { name = "numpy" },
-    { name = "qtpy" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "napari-toolkit" },
-    { name = "numpy" },
-    { name = "qtpy" },
-]
-
-[[package]]
-name = "napari-label-metrics"
-version = "0.1.0"
-source = { editable = "packages/napari-label-metrics" }
 dependencies = [
     { name = "napari-toolkit" },
     { name = "numpy" },
@@ -1892,44 +1871,6 @@ requires-dist = [
     { name = "torchvision" },
     { name = "tqdm" },
 ]
-
-[[package]]
-name = "napari-promptable-nni"
-version = "0.1.0"
-source = { editable = "packages/napari-promptable-nni" }
-dependencies = [
-    { name = "napari-toolkit" },
-    { name = "nninteractive" },
-    { name = "numpy" },
-    { name = "qtpy" },
-    { name = "torch" },
-    { name = "tqdm" },
-]
-
-[package.optional-dependencies]
-testing = [
-    { name = "napari" },
-    { name = "pyqt5" },
-    { name = "pytest" },
-    { name = "pytest-cov" },
-    { name = "pytest-qt" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "napari", marker = "extra == 'testing'" },
-    { name = "napari-toolkit" },
-    { name = "nninteractive" },
-    { name = "numpy" },
-    { name = "pyqt5", marker = "extra == 'testing'" },
-    { name = "pytest", marker = "extra == 'testing'" },
-    { name = "pytest-cov", marker = "extra == 'testing'" },
-    { name = "pytest-qt", marker = "extra == 'testing'" },
-    { name = "qtpy" },
-    { name = "torch", specifier = ">=2.5.1" },
-    { name = "tqdm" },
-]
-provides-extras = ["testing"]
 
 [[package]]
 name = "napari-promptable-sam2"
