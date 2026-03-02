@@ -48,6 +48,7 @@ The repository also contains some utility plugins:
 
 - [**napari-edit-log**](./packages/napari-edit-log/) — logs user interactions to a file for replay and analysis.
 - [**napari-shifted-labels**](./packages/napari-shifted-labels/) — visualizes masks across frames to provide a more consistent segmentation experience.
+- [**napari-size-estimator**](./packages/napari-size-estimator/) — quickly estimates the volume of a label in a labels layer.
 - [**napari-inverted-scrolling**](./packages/napari-inverted-scrolling/) — inverts the scrolling behaviour in napari to match other software commonly used in medical imaging (scolling through frames with the mouse wheel instead of zooming).
 - [**napari-shape-based-interpolation**](./packages/napari-shape-based-interpolation/) — shape based interpolation of labels between keyframes. (As an alternative to AI-based methods.)
 - [**napari-quick-view**](./packages/napari-quick-view/) — quickly cycle through different images.
