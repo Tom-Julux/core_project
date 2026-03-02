@@ -2,7 +2,7 @@
 
 This plugin for [napari](https://napari.org/) provides a ui to quickly cycle through different images in a napari viewer.
 
-<img src="./quick-view-screenshot.png" loading="lazy" alt="Quick view screenshot" width="500"/>
+![screenshot of napari with the quick view plugin](screenshot.png)
 
 ## Usage
 
