@@ -7,8 +7,8 @@ from napari_beacon_layers import ManualLabelsLayer, PreviewLabelsLayer, FixedIma
 from acvl_utils.cropping_and_padding.bounding_boxes import bounding_box_to_slice, crop_and_pad_nd
 
 class nnInteractiveWidgetMinimal(nnInteractiveWidget):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, viewer: 'napari.viewer.Viewer', **kwargs):
+        super().__init__(viewer, **kwargs)
         self._width = 250
 
         self.layout().setContentsMargins(0,0,0,0)
@@ -30,11 +30,12 @@ class nnInteractiveWidgetMinimal(nnInteractiveWidget):
         self.preview_layer_edited = False
         # add listener that on manual update of the preview label layer, the point layer is updated as well
         def on_interaction(event):
+            label_layer = self._viewer.layers[self.label_layer_name]
             if self._viewer.layers.selection.active == label_layer:
-                preview_layer_edited = True
+                self.preview_layer_edited = True
                 return
-            if self._viewer.layers.selection.active != label_layer and preview_layer_edited:
-                pass
+            if self._viewer.layers.selection.active != label_layer and self.preview_layer_edited:
+                self.preview_layer_edited = False
                 # self.session
                 # crop (as in preprocessing)
                 initial_seg = label_layer.astype(np.uint8)
@@ -44,7 +45,7 @@ class nnInteractiveWidgetMinimal(nnInteractiveWidget):
                 interaction_channel = -7
                 self.interactions[interaction_channel] = initial_seg.to(self.interactions.device)
 
-        self._viewer.layers.selection.events.active.connect(on_interaction)
+        #self._viewer.layers.selection.events.active.connect(on_interaction)
 
 
     def add_preview_label_layer(self, data, name) -> None:

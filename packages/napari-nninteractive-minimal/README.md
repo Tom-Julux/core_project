@@ -1,3 +1,5 @@
-# napari-manual-segmentation
+# napari-nninteractive-minimal
 
-A napari plugin to streamline manual segmentation tasks by providing opinionated labels layer and a helper UI for switching between objects, inspiered by [nnInteractive](https://github.com/MIC-DKFZ/napari-nninteractive).
+A minimal version of [napari-nninteractive](https://github.com/MIC-DKFZ/napari-nninteractive).
+
+![screenshot of napari with the minimal nnInteractive plugin](screenshot.png)

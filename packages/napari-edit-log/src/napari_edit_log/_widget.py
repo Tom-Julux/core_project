@@ -66,8 +66,9 @@ class EditLogWidget(QWidget):
     def _on_log_recorded(self):
         # update log view
         log_entry = self.edit_log.log[-1]
+        i = len(self.edit_log.log)
         timestamp = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(log_entry['timestamp']))
-        item_text = f"{i+1}. [{timestamp}] {log_entry['event_group']} - {log_entry['event_type']}"
+        item_text = f"{i}. [{timestamp}] {log_entry['event_group']} - {log_entry['event_type']}"
         self.past_state_list.addItem(item_text)
 
     def _on_log_updated(self):

@@ -228,7 +228,7 @@ class NapariEditLog():
             return     
         if not self._has_active_edit_series:
             return
-        else:
+        if len(self._log) > 0 and self._log[-1]['event_type'] == 'labels_update':
             self._log[-1]['clicks'] += 1
 
     def on_labels_update_event(self, event):
