@@ -42,4 +42,3 @@ core-tool-apps = { workspace = true }
 
 [tool.uv.workspace]
 members = ["packages/*", "apps/*"]
-exclude = ["packages/napari-camera-stream"]
