@@ -179,4 +179,3 @@ For more information on the models used in the model-backed plugins:
 - **nnInteractive**: https://github.com/MIC-DKFZ/nnInteractive
 - **napari-nninteractive** plugin: https://github.com/MIC-DKFZ/napari-nninteractive
 - **SAM2** (segment-anything model 2): https://github.com/facebookresearch/sam2
-- **MedSAM2**: https://github.com/MedICL-VU/MedSAM2
