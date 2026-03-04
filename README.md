@@ -8,35 +8,35 @@ A collection of napari plugins for interactive segmentation of multidimensional 
 
 <img src="images/Screenshot 2025-09-24 at 12.21.15.png" loading="lazy" alt="BEACON screenshot" width="500"/>
 
-It also contains a number of applications built on top of these plugins, which implement specific workflows for different use cases. Most notably for the **ARTIST** study, which evaluates the effectiveness of interactive promptable image segmenatation, provided by [nnInteractive](https://github.com/MIC-DKFZ/nnInteractive), for applications in treatment planning in radiotheroapy.
+It also contains a number of applications built on top of these plugins, which implement specific workflows for different use cases. Most notably for the **ARTIST** study, which evaluates the effectiveness of interactive promptable image segmentation, provided by [nnInteractive](https://github.com/MIC-DKFZ/nnInteractive), for applications in treatment planning in radiotherapy.
 
 
 ## Overview
 
-This repository is structured as a collection of napari plugins, located in either the `packages` (utility plugins) or `apps` (structured workflow plugins) subfolders. The repo also provides an example for setting up a ARTIST workflow study using a yaml config file located in `example study` and some example data.
+This repository is structured as a collection of napari plugins, located in either the `packages` (utility plugins) or `apps` (structured workflow plugins) subfolders. The repo also provides an example for setting up an ARTIST workflow study using a YAML config file located in `artist_study` and some example data in `example_data`.
 
 ### Workflow apps
 
-- ARTIST study
+- [**artist_study_app**](./apps/artist_study_app/) — a study management and annotation application for conducting controlled comparative segmentation studies. It supports loading YAML-based study protocols, managing multiple annotation methods (e.g. nnInteractive vs. manual segmentation), tracking user interactions, and multi-viewer setups.
 
-- 
+- [**core_tool_apps**](./apps/core_tool_apps/) — a collection of lightweight utility widgets providing quick file browsing, manual editing, and view/size estimation functionality for segmentation workflows.
 
 
-To implement these, a custom collection of napari layers was developed that hide unnecessary UI elements and restricts edits to those allowed in the workflow context. These include a [Labels](https://napari.org/stable/api/napari.layers.Labels.html) layer restricted to one object, an non-editable [Points](https://napari.org/stable/api/napari.layers.Points.html) layer for preview purposes, and a fixed [Image](https://napari.org/stable/api/napari.layers.Image.html) layer with support for quickly switch between different contrast presets.
+To implement these, a custom collection of napari layers was developed that hide unnecessary UI elements and restrict edits to those allowed in the workflow context. These include a [Labels](https://napari.org/stable/api/napari.layers.Labels.html) layer restricted to one object, a non-editable [Points](https://napari.org/stable/api/napari.layers.Points.html) layer for preview purposes, and a fixed [Image](https://napari.org/stable/api/napari.layers.Image.html) layer with support for quickly switching between different contrast presets.
 
 - [**napari-beacon-layers**](./packages/napari-beacon-layers/) — custom napari layers for visualizing and editing segmentations.
 
-### Individual plugins for AI based segmentation
+### Individual plugins for AI-based segmentation
 
-To implement AI-based segmentation, two groups of plugins were developed, either based upon the [napari-nninteractive](https://github.com/MIC-DKFZ/napari-nninteractive) plugin or for
+Two groups of plugins were developed for AI-based segmentation: one based on the [napari-nninteractive](https://github.com/MIC-DKFZ/napari-nninteractive) plugin for 3D segmentation, and another using [SAM2](https://github.com/facebookresearch/sam2) for 2D segmentation.
 
-### For 3D segmentataion 
+### For 3D segmentation 
 
-- [**napari-nninteractive-minimal**](./packages/napari-nninteractive-minimal/) — a simplified version of the excelent [napari-nninteractive](https://github.com/MIC-DKFZ/napari-nninteractive) plugin for interactive segmentation using nnInteractive. This plugin removes some of the more advanced features of the original plugin to provide a more streamlined experience for non-technical users. It also prevents users from accidentally breaking out of the intended workflow, for example by accidentally loading a different image or modifying the napari viewer in a way that breaks the plugin.
+- [**napari-nninteractive-minimal**](./packages/napari-nninteractive-minimal/) — a simplified version of the excellent [napari-nninteractive](https://github.com/MIC-DKFZ/napari-nninteractive) plugin for interactive segmentation using nnInteractive. This plugin removes some of the more advanced features of the original plugin to provide a more streamlined experience for non-technical users. It also prevents users from accidentally breaking out of the intended workflow, for example by accidentally loading a different image or modifying the napari viewer in a way that breaks the plugin.
 
-- [**napari-manual-segmentation**](./packages/napari-manual-segmentation/) — a plugin for manual segmentation, with an workflow and UI aligned to the simplified napari-nninteractive-minimal plugin.
+- [**napari-manual-segmentation**](./packages/napari-manual-segmentation/) — a plugin for manual segmentation, with a workflow and UI aligned to the simplified napari-nninteractive-minimal plugin.
 
-### For 2D segmentataion 
+### For 2D segmentation 
 
 - [**napari-promptable**](./packages/napari-promptable/) - an interactive segmentation widget that supports multi-object workflows and serves as the base class for model-specific plugins.
 Based on this core plugin, several model-backed segmentation plugins are provided:
@@ -49,7 +49,7 @@ The repository also contains some utility plugins:
 - [**napari-edit-log**](./packages/napari-edit-log/) — logs user interactions to a file for replay and analysis.
 - [**napari-shifted-labels**](./packages/napari-shifted-labels/) — visualizes masks across frames to provide a more consistent segmentation experience.
 - [**napari-size-estimator**](./packages/napari-size-estimator/) — quickly estimates the volume of a label in a labels layer.
-- [**napari-inverted-scrolling**](./packages/napari-inverted-scrolling/) — inverts the scrolling behaviour in napari to match other software commonly used in medical imaging (scolling through frames with the mouse wheel instead of zooming).
+- [**napari-inverted-scrolling**](./packages/napari-inverted-scrolling/) — inverts the scrolling behaviour in napari to match other software commonly used in medical imaging (scrolling through frames with the mouse wheel instead of zooming).
 - [**napari-shape-based-interpolation**](./packages/napari-shape-based-interpolation/) — shape based interpolation of labels between keyframes. (As an alternative to AI-based methods.)
 - [**napari-quick-view**](./packages/napari-quick-view/) — quickly cycle through different images.
 - [**napari-view-switch**](./packages/napari-view-switch/) — quickly cycle through axial, coronal, and sagittal views with named buttons.
@@ -83,11 +83,11 @@ git clone <repo-url> core_project && cd core_project
 uv sync
 # run the startup script. This opens napari with a demo study.
 uv run startup.py
-# alternativly start napari
+# alternatively start napari
 uv run napari
 ```
 <details>
-  <summary>Alternativly using `pip` and `venv`</summary>
+  <summary>Alternatively using `pip` and `venv`</summary>
 
   ```bash
   python3 -m venv .venv
@@ -132,11 +132,11 @@ docker run --rm -it --gpus=all -v /project_data/:/project_data/ -v ./artist_stud
 To learn how to use napari and the various plugins provided in this repository, please make use of the demos provided in the demo widget (loaded to the bottom left when starting the tool with `startup.py`).
 
 
-Additionally please refer to the [Guide](./Guide.md) for video tutorials covering installation and usage of the tool. Finally, the individual plugins also contain documentation on their usage in their respective folders.
+Additionally please refer to the [Documentation](./Documentation.md) for more detailed information on the project and its plugins. The individual plugins also contain documentation on their usage in their respective folders.
 
 ## Development & contributing
 
-We welcome any contributions (code or feature requests) that align with the goals of the project, such as adding support for other models, implemnting other utility features, or UI changes that align the napari interface more closely to existing treatment planning software.
+We welcome any contributions (code or feature requests) that align with the goals of the project, such as adding support for other models, implementing other utility features, or UI changes that align the napari interface more closely to existing treatment planning software.
 
 ### Development setup
 
@@ -178,5 +178,5 @@ For more information on the models used in the model-backed plugins:
 
 - **nnInteractive**: https://github.com/MIC-DKFZ/nnInteractive
 - **napari-nninteractive** plugin: https://github.com/MIC-DKFZ/napari-nninteractive
-- **SAM2** (segment-anything model 2):
-- **MedSAM2**:
+- **SAM2** (segment-anything model 2): https://github.com/facebookresearch/sam2
+- **MedSAM2**: https://github.com/MedICL-VU/MedSAM2
